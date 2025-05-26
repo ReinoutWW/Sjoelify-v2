@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isGameParticipant(gameData) {
+      return request.auth.uid in gameData.playerIds;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if false; // Prevent user deletion through client
+    }
+
+    // Games
+    match /games/{gameId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() 
+        && (resource == null 
+            || isGameParticipant(resource.data));
+      allow delete: if isAuthenticated() 
+        && isOwner(resource.data.createdBy);
+      
+      // Game rounds (subcollection)
+      match /rounds/{roundId} {
+        allow read: if isAuthenticated() 
+          && isGameParticipant(get(/databases/$(database)/documents/games/$(gameId)).data);
+        allow write: if isAuthenticated() 
+          && !get(/databases/$(database)/documents/games/$(gameId)).data.isClosed
+          && isGameParticipant(get(/databases/$(database)/documents/games/$(gameId)).data);
+      }
+    }
+  }
+} 
