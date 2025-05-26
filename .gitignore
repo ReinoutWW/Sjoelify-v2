@@ -1,5 +1,9 @@
 node_modules
 
+# Build outputs
+.next
+out
+
 .env
 .env.*
 .env.local
