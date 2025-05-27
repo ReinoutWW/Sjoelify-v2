@@ -168,7 +168,7 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                       <div className="flex-shrink-0">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                           game.isClosed 
-                            ? 'bg-gray-100 text-gray-800'
+                            ? 'bg-gray-100/75 text-gray-600'
                             : 'bg-primary-50 text-primary-700'
                         }`}>
                           {game.isClosed ? 'Completed' : `Round ${game.currentRound}/5`}
