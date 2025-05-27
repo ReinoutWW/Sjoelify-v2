@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/context/auth-context';
 import { GameService } from '../services/game-service';
 import { Game } from '../types';
 import { fadeIn, staggerChildren, slideIn } from '@/shared/styles/animations';
-import { UserCircleIcon, CalendarIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, CalendarIcon, UsersIcon, TrophyIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { GameFilters } from './GameFilters';
 
 // Add helper functions for safe date handling
@@ -102,71 +102,124 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
         className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200"
       >
         <ul className="divide-y divide-gray-100">
-          {games.map((game, index) => (
-            <motion.li
-              key={game.id}
-              variants={slideIn}
-              custom={index}
-              whileHover={{ scale: 1.01 }}
-              className="transition-all duration-200 hover:bg-gray-50 relative"
-            >
-              {!game.isClosed && (
-                <div className="absolute top-4 right-4 flex items-center justify-center">
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-400"></span>
-                  </span>
-                </div>
-              )}
-              <Link 
-                href={`/games/${game.id}`}
-                className="block cursor-pointer"
-              >
-                <div className="px-6 py-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-lg font-medium text-gray-900 truncate pr-4">
-                        {game.title}
-                      </h3>
-                    </div>
-                    <div className="flex-shrink-0">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        game.isClosed 
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-primary-50 text-primary-700'
-                      }`}>
-                        {game.isClosed ? 'Completed' : `Round ${game.currentRound}/5`}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-6 text-sm text-gray-500">
-                    <div className="flex items-center gap-2">
-                      <UsersIcon className="h-4 w-4 text-gray-400" />
-                      <span>{game.players.length} players</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4 text-gray-400" />
-                      <time dateTime={toISOStringOrUndefined(game.updatedAt)}>
-                        {formatDate(game.updatedAt)}
-                      </time>
-                    </div>
-                  </div>
+          {games.map((game, index) => {
+            // Calculate total score for each player
+            const playerScores = game.players.map(player => ({
+              ...player,
+              totalScore: game.scores?.[player.id]?.total || 0
+            }));
+            
+            // Sort players by score in descending order
+            const sortedPlayers = [...playerScores].sort((a, b) => b.totalScore - a.totalScore);
+            const leader = sortedPlayers[0];
+            const isClose = sortedPlayers.length > 1 && 
+              (leader.totalScore - sortedPlayers[1].totalScore) < 20;
 
-                  <div className="mt-3 flex -space-x-2 overflow-hidden">
-                    {game.players.map((player) => (
-                      <div
-                        key={player.id}
-                        className="inline-block h-8 w-8 rounded-full ring-2 ring-white"
-                      >
-                        <UserCircleIcon className="h-full w-full text-gray-300" />
-                      </div>
-                    ))}
+            return (
+              <motion.li
+                key={game.id}
+                variants={slideIn}
+                custom={index}
+                whileHover={{ scale: 1.01 }}
+                className="transition-all duration-200 hover:bg-gray-50 relative"
+              >
+                {!game.isClosed && (
+                  <div className="absolute top-4 right-4 flex items-center justify-center">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-400"></span>
+                    </span>
                   </div>
-                </div>
-              </Link>
-            </motion.li>
-          ))}
+                )}
+                <Link 
+                  href={`/games/${game.id}`}
+                  className="block cursor-pointer"
+                >
+                  <div className="px-6 py-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center">
+                            {game.isClosed ? (
+                              <TrophyIcon className="h-5 w-5 text-primary-600" />
+                            ) : (
+                              <ChartBarIcon className="h-5 w-5 text-primary-600" />
+                            )}
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900 truncate pr-4">
+                              {game.title}
+                            </h3>
+                            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                              <div className="flex items-center gap-1.5">
+                                <UsersIcon className="h-4 w-4 text-gray-400" />
+                                <span>{game.players.length} players</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <CalendarIcon className="h-4 w-4 text-gray-400" />
+                                <time dateTime={toISOStringOrUndefined(game.updatedAt)}>
+                                  {formatDate(game.updatedAt)}
+                                </time>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          game.isClosed 
+                            ? 'bg-gray-100 text-gray-800'
+                            : 'bg-primary-50 text-primary-700'
+                        }`}>
+                          {game.isClosed ? 'Completed' : `Round ${game.currentRound}/5`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex -space-x-2 overflow-hidden">
+                        {game.players.map((player) => (
+                          <div
+                            key={player.id}
+                            className="inline-block h-8 w-8 rounded-full ring-2 ring-white"
+                          >
+                            <UserCircleIcon className="h-full w-full text-gray-300" />
+                          </div>
+                        ))}
+                      </div>
+
+                      {game.isClosed && leader && (
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-sm font-medium">
+                            <TrophyIcon className="h-4 w-4" />
+                            <span>{leader.displayName}</span>
+                            <span className="font-bold">{leader.totalScore}</span>
+                          </div>
+                          {isClose && (
+                            <span className="text-xs text-gray-500 italic">Close game!</span>
+                          )}
+                        </div>
+                      )}
+                      
+                      {!game.isClosed && leader && leader.totalScore > 0 && (
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-sm">
+                            <ChartBarIcon className="h-4 w-4" />
+                            <span>Leading:</span>
+                            <span className="font-medium">{leader.displayName}</span>
+                            <span className="font-bold">{leader.totalScore}</span>
+                          </div>
+                          {isClose && (
+                            <span className="text-xs text-gray-500 italic">Neck and neck!</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              </motion.li>
+            );
+          })}
         </ul>
       </motion.div>
     </motion.div>
