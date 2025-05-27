@@ -99,10 +99,23 @@ export class GameService {
       if (!gameData.playerIds.includes(playerId)) throw new Error('Player not in game');
 
       // Calculate round score
-      const pointValues = [2, 3, 4, 1];
-      const roundScore = scores.reduce((total, score, index) => 
-        total + (score * pointValues[index]), 0
-      );
+      // First, find how many complete sets (1 in each gate)
+      const minDiscsAcrossGates = Math.min(...scores);
+      const completeSets = minDiscsAcrossGates;
+      const completeSetPoints = completeSets * 20;
+
+      // Calculate leftover points after removing complete sets
+      const leftoverScores = scores.map((score, index) => score - completeSets);
+      const leftoverPoints = leftoverScores.reduce((total, score, index) => {
+        const pointValue = index === 0 ? 2 : // First gate (2 points)
+                          index === 1 ? 3 : // Second gate (3 points)
+                          index === 2 ? 4 : // Third gate (4 points)
+                          1;                 // Fourth gate (1 point)
+        return total + (score * pointValue);
+      }, 0);
+
+      // Total round score is complete sets + leftover points
+      const roundScore = completeSetPoints + leftoverPoints;
 
       // Add round
       const roundRef = doc(collection(db, this.gamesCollection, gameId, this.roundsCollection));
@@ -110,6 +123,9 @@ export class GameService {
         playerId,
         roundNumber,
         scores,
+        completeSets,
+        completeSetPoints,
+        leftoverPoints,
         totalScore: roundScore,
         createdAt: new Date()
       });

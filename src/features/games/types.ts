@@ -8,12 +8,17 @@ export interface SlotCounts {
   slot4: number;  // 4-point slot
 }
 
-export interface Round extends BaseEntity {
-  gameId: string;
+export interface Round {
+  id: string;
   playerId: string;
   roundNumber: number;
-  throws: SlotCounts[];  // Array of 3 throws
-  score: number;  // Calculated score including bonuses
+  scores: number[];
+  completeSets: number;
+  completeSetPoints: number;
+  leftoverPoints: number;
+  totalScore: number;
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 export interface Game extends BaseEntity {

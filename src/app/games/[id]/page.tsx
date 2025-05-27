@@ -91,15 +91,15 @@ export default function GamePage() {
     !hasSubmittedCurrentRound(user.uid);
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 pb-12">
+    <div className="min-h-screen bg-gray-50 pt-8 sm:pt-16 pb-8 sm:pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={fadeIn}
-          className="text-center mb-12"
+          className="text-center mb-6 sm:mb-12"
         >
-          <h1 className="text-3xl font-bold text-gray-900">{game.title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{game.title}</h1>
           <p className="mt-2 text-sm text-gray-500">
             {isGameComplete ? (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -115,34 +115,34 @@ export default function GamePage() {
           variants={slideIn}
           className="max-w-3xl mx-auto"
         >
-          <div className="bg-white shadow-lg rounded-xl p-6 mb-8">
-            <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-white shadow-lg rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {game.players.map((player, index) => (
                 <motion.div
                   key={player.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className={`flex items-center space-x-3 p-4 rounded-lg ${
+                  className={`flex items-center space-x-3 p-3 sm:p-4 rounded-lg ${
                     hasSubmittedCurrentRound(player.id) 
                       ? 'bg-primary-50 border border-primary-100' 
                       : 'bg-gray-50'
                   }`}
                 >
                   <div className="flex-shrink-0">
-                    <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                      <span className="text-primary-700 font-medium">
+                    <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                      <span className="text-primary-700 font-medium text-sm sm:text-base">
                         {player.displayName[0].toUpperCase()}
                       </span>
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm sm:text-base font-medium text-gray-900 truncate">
                       {player.displayName}
                       {player.id === user?.uid && ' (You)'}
                     </p>
                     <div className="flex items-center mt-1">
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs sm:text-sm text-gray-500">
                         Total: {getPlayerScore(player.id)}
                       </p>
                       {hasSubmittedCurrentRound(player.id) && (
@@ -154,7 +154,7 @@ export default function GamePage() {
                   </div>
                   {hasSubmittedCurrentRound(player.id) && (
                     <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-primary-600" viewBox="0 0 20 20" fill="currentColor">
+                      <svg className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
@@ -172,14 +172,14 @@ export default function GamePage() {
           ) : (
             <motion.div
               variants={fadeIn}
-              className="text-center p-6 bg-white rounded-xl shadow-lg"
+              className="text-center p-4 sm:p-6 bg-white rounded-xl shadow-lg"
             >
               {isGameComplete ? (
-                <p className="text-gray-500">This game has been completed!</p>
+                <p className="text-sm sm:text-base text-gray-500">This game has been completed!</p>
               ) : hasSubmittedCurrentRound(user?.uid || '') ? (
-                <p className="text-gray-500">Waiting for other players to submit their scores...</p>
+                <p className="text-sm sm:text-base text-gray-500">Waiting for other players to submit their scores...</p>
               ) : (
-                <p className="text-gray-500">You are not a participant in this game.</p>
+                <p className="text-sm sm:text-base text-gray-500">You are not a participant in this game.</p>
               )}
             </motion.div>
           )}
