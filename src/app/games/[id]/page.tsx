@@ -9,6 +9,41 @@ import { ScoreEntry } from '@/features/games/components/ScoreEntry';
 import { GameSummary } from '@/features/games/components/GameSummary';
 import { useGame } from '@/features/games/hooks/use-game';
 import { fadeIn } from '@/shared/styles/animations';
+import { TrophyIcon, ClockIcon } from '@heroicons/react/24/outline';
+
+// Add helper functions for safe date handling
+const toISOStringOrUndefined = (dateString: string | number | Date | undefined | null): string | undefined => {
+  if (!dateString) return undefined;
+  
+  try {
+    const date = new Date(dateString);
+    // Check if date is valid
+    return isNaN(date.getTime()) ? undefined : date.toISOString();
+  } catch (error) {
+    console.error('Error converting date to ISO string:', error);
+    return undefined;
+  }
+};
+
+const formatDate = (dateString: string | number | Date | undefined | null): string => {
+  if (!dateString) return 'Recently updated';
+  
+  try {
+    const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) return 'Recently updated';
+    
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Recently updated';
+  }
+};
 
 export default function GamePage() {
   const { id } = useParams();
@@ -100,56 +135,91 @@ export default function GamePage() {
           variants={fadeIn}
           className="space-y-8"
         >
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">{game.title}</h1>
-            {!isGameComplete && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
-                Round {game.currentRound}/5
-              </span>
-            )}
-          </div>
-
           {isGameComplete ? (
             <GameSummary game={game} />
           ) : (
             <>
               <motion.div
                 variants={fadeIn}
-                className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100"
+                className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-100"
               >
                 <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Current Standings</h3>
-                  <div className="space-y-4">
-                    {game.players.map((player) => (
-                      <motion.div
-                        key={player.id}
-                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm sm:text-base font-medium text-gray-900 truncate">
-                            {player.displayName}
-                            {player.id === user?.uid && ' (You)'}
-                          </p>
-                          <div className="flex items-center mt-1">
-                            <p className="text-xs sm:text-sm text-gray-500">
-                              Total: {getPlayerScore(player.id)}
-                            </p>
-                            {hasSubmittedCurrentRound(player.id) && (
-                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800">
-                                +{getCurrentRoundScore(player.id)}
-                              </span>
-                            )}
+                  <div className="flex flex-col space-y-6">
+                    {/* Header with Game Info */}
+                    <div className="flex flex-col space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+                            <TrophyIcon className="h-6 w-6 text-blue-600" />
+                          </div>
+                          <div>
+                            <h2 className="text-xl font-bold text-gray-900">{game.title}</h2>
+                            <div className="flex items-center gap-2 mt-1">
+                              <ClockIcon className="h-4 w-4 text-gray-400" />
+                              <time dateTime={toISOStringOrUndefined(game.updatedAt)} className="text-sm text-gray-500">
+                                {formatDate(game.updatedAt)}
+                              </time>
+                            </div>
                           </div>
                         </div>
-                        {hasSubmittedCurrentRound(player.id) && (
-                          <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-primary-600" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                          Round {game.currentRound}/5
+                        </span>
+                      </div>
+                      
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                          <div className="w-full border-t border-gray-200"></div>
+                        </div>
+                        <div className="relative flex justify-start">
+                          <span className="pr-3 bg-white text-sm font-medium text-gray-500">Current Standings</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Players List */}
+                    <div className="space-y-3">
+                      {game.players.map((player) => (
+                        <motion.div
+                          key={player.id}
+                          className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-gray-50 to-transparent border border-gray-100 hover:border-blue-200 transition-colors duration-200"
+                          whileHover={{ scale: 1.01 }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-base font-medium text-gray-900 truncate">
+                                {player.displayName}
+                              </p>
+                              {player.id === user?.uid && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                  You
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 mt-1">
+                              <p className="text-sm text-gray-500">
+                                Total: {getPlayerScore(player.id)}
+                              </p>
+                              {hasSubmittedCurrentRound(player.id) && (
+                                <span className="inline-flex items-center gap-1 text-sm text-blue-600">
+                                  <span className="text-blue-400">+</span>
+                                  {getCurrentRoundScore(player.id)}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </motion.div>
-                    ))}
+                          {hasSubmittedCurrentRound(player.id) && (
+                            <div className="flex-shrink-0">
+                              <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center">
+                                <svg className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -162,7 +232,7 @@ export default function GamePage() {
               ) : (
                 <motion.div
                   variants={fadeIn}
-                  className="text-center p-6 bg-white rounded-xl shadow-lg"
+                  className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-100"
                 >
                   <p className="text-gray-500">
                     {hasSubmittedCurrentRound(user?.uid || '') 

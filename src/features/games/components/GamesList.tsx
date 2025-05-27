@@ -7,6 +7,41 @@ import { useAuth } from '@/lib/context/auth-context';
 import { GameService } from '../services/game-service';
 import { Game } from '../types';
 import { fadeIn, staggerChildren, slideIn } from '@/shared/styles/animations';
+import { UserCircleIcon, CalendarIcon, UsersIcon } from '@heroicons/react/24/outline';
+
+// Add helper functions for safe date handling
+const toISOStringOrUndefined = (dateString: string | number | Date | undefined | null): string | undefined => {
+  if (!dateString) return undefined;
+  
+  try {
+    const date = new Date(dateString);
+    // Check if date is valid
+    return isNaN(date.getTime()) ? undefined : date.toISOString();
+  } catch (error) {
+    console.error('Error converting date to ISO string:', error);
+    return undefined;
+  }
+};
+
+const formatDate = (dateString: string | number | Date | undefined | null) => {
+  if (!dateString) return 'Unknown date';
+  
+  try {
+    const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) return 'Invalid date';
+    
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'Invalid date';
+  }
+};
 
 interface GameListSectionProps {
   title: string;
@@ -44,24 +79,26 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
 
       <motion.div
         variants={fadeIn}
-        className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100"
+        className="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200"
       >
-        <ul role="list" className="divide-y divide-gray-100">
+        <ul className="divide-y divide-gray-100">
           {games.map((game, index) => (
             <motion.li
               key={game.id}
               variants={slideIn}
               custom={index}
-              whileHover={{ scale: 1.02, background: 'rgba(243, 244, 246, 0.5)' }}
-              className="transition-colors duration-200"
+              whileHover={{ scale: 1.01 }}
+              className="transition-all duration-200 hover:bg-gray-50"
             >
               <Link href={`/games/${game.id}`} className="block">
                 <div className="px-6 py-5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-lg font-medium text-primary-600 truncate">
-                      {game.title}
-                    </p>
-                    <div className="ml-2 flex-shrink-0">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-lg font-medium text-gray-900 truncate pr-4">
+                        {game.title}
+                      </h3>
+                    </div>
+                    <div className="flex-shrink-0">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
                         game.isClosed 
                           ? 'bg-gray-100 text-gray-800'
@@ -71,41 +108,29 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                       </span>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
-                    <div className="flex items-center space-x-2">
-                      <svg
-                        className="h-5 w-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                        />
-                      </svg>
+                  
+                  <div className="flex items-center gap-6 text-sm text-gray-500">
+                    <div className="flex items-center gap-2">
+                      <UsersIcon className="h-4 w-4 text-gray-400" />
                       <span>{game.players.length} players</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <svg
-                        className="h-5 w-5 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                      <span>
-                        {new Date(game.updatedAt).toLocaleDateString()}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4 text-gray-400" />
+                      <time dateTime={toISOStringOrUndefined(game.updatedAt)}>
+                        {formatDate(game.updatedAt)}
+                      </time>
                     </div>
+                  </div>
+
+                  <div className="mt-3 flex -space-x-2 overflow-hidden">
+                    {game.players.map((player) => (
+                      <div
+                        key={player.id}
+                        className="inline-block h-8 w-8 rounded-full ring-2 ring-white"
+                      >
+                        <UserCircleIcon className="h-full w-full text-gray-300" />
+                      </div>
+                    ))}
                   </div>
                 </div>
               </Link>
