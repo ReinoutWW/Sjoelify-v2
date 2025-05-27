@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/context/auth-context';
@@ -8,6 +8,7 @@ import { GameService } from '../services/game-service';
 import { Game } from '../types';
 import { fadeIn, staggerChildren, slideIn } from '@/shared/styles/animations';
 import { UserCircleIcon, CalendarIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { GameFilters } from './GameFilters';
 
 // Add helper functions for safe date handling
 const toISOStringOrUndefined = (dateString: string | number | Date | undefined | null): string | undefined => {
@@ -70,12 +71,14 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
       variants={staggerChildren}
       className="space-y-4"
     >
-      <motion.h2
-        variants={fadeIn}
-        className="text-xl font-semibold text-gray-900"
-      >
-        {title}
-      </motion.h2>
+      {title && (
+        <motion.h2
+          variants={fadeIn}
+          className="text-xl font-semibold text-gray-900"
+        >
+          {title}
+        </motion.h2>
+      )}
 
       <motion.div
         variants={fadeIn}
@@ -90,7 +93,10 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
               whileHover={{ scale: 1.01 }}
               className="transition-all duration-200 hover:bg-gray-50"
             >
-              <Link href={`/games/${game.id}`} className="block">
+              <Link 
+                href={`/games/${game.id}`}
+                className="block cursor-pointer"
+              >
                 <div className="px-6 py-5">
                   <div className="flex items-center justify-between mb-2">
                     <div className="min-w-0 flex-1">
@@ -146,6 +152,7 @@ export function GamesList() {
   const { user } = useAuth();
   const [activeGames, setActiveGames] = useState<Game[]>([]);
   const [finishedGames, setFinishedGames] = useState<Game[]>([]);
+  const [filteredFinishedGames, setFilteredFinishedGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -160,6 +167,8 @@ export function GamesList() {
         ]);
         setActiveGames(active);
         setFinishedGames(finished);
+        // Initialize filtered games only once when data is loaded
+        setFilteredFinishedGames(finished);
       } catch (err) {
         setError('Failed to load games');
         console.error('Error loading games:', err);
@@ -170,6 +179,11 @@ export function GamesList() {
 
     fetchGames();
   }, [user?.uid]);
+
+  // Memoize the filter handler to prevent unnecessary re-renders
+  const handleFinishedGamesFilters = useCallback((filteredGames: Game[]) => {
+    setFilteredFinishedGames(filteredGames);
+  }, []);
 
   if (loading) {
     return (
@@ -256,17 +270,31 @@ export function GamesList() {
         </motion.div>
       </div>
 
-      <GameListSection
-        title="Active Games"
-        games={activeGames}
-        emptyMessage="No active games"
-      />
+      {activeGames.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-900">Active Games</h2>
+          <GameListSection
+            title=""
+            games={activeGames}
+            emptyMessage="No active games match your filters"
+          />
+        </div>
+      )}
 
-      <GameListSection
-        title="Finished Games"
-        games={finishedGames}
-        emptyMessage="No finished games"
-      />
+      {finishedGames.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-900">Finished Games</h2>
+          <GameFilters
+            games={finishedGames}
+            onFiltersChange={handleFinishedGamesFilters}
+          />
+          <GameListSection
+            title=""
+            games={filteredFinishedGames}
+            emptyMessage="No finished games match your filters"
+          />
+        </div>
+      )}
     </motion.div>
   );
 } 
