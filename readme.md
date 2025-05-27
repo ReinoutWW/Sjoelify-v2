@@ -1,5 +1,8 @@
 # Sjoelify v2
 
+![image](https://github.com/user-attachments/assets/9871c9bb-098b-4bb2-bb65-adf7bca0221c)
+
+
 A modern web platform for tracking Sjoelen games and statistics. Built with Next.js, TypeScript, and Firebase.
 
 ## Features
