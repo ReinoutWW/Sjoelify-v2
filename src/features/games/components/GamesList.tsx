@@ -91,8 +91,16 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
               variants={slideIn}
               custom={index}
               whileHover={{ scale: 1.01 }}
-              className="transition-all duration-200 hover:bg-gray-50"
+              className="transition-all duration-200 hover:bg-gray-50 relative"
             >
+              {!game.isClosed && (
+                <div className="absolute top-4 right-4 flex items-center justify-center">
+                  <span className="relative flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-400"></span>
+                  </span>
+                </div>
+              )}
               <Link 
                 href={`/games/${game.id}`}
                 className="block cursor-pointer"
