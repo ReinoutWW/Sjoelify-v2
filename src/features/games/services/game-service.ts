@@ -1,4 +1,4 @@
-import { collection, addDoc, updateDoc, doc, getDoc, query, where, getDocs, orderBy, limit, runTransaction, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDoc, query, where, getDocs, orderBy, limit, runTransaction, onSnapshot, Query } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Game, Round, PlayerScore } from '../types';
 import { UserProfile } from '@/features/account/types';
@@ -169,14 +169,30 @@ export class GameService {
       collection(db, this.gamesCollection),
       where('playerIds', 'array-contains', userId),
       where('isClosed', '==', false),
-      orderBy('createdAt', 'desc'),
+      orderBy('updatedAt', 'desc'),
       limit(10)
     );
 
+    return this.fetchGamesWithPlayers(q);
+  }
+
+  static async getFinishedGames(userId: string): Promise<Game[]> {
+    const q = query(
+      collection(db, this.gamesCollection),
+      where('playerIds', 'array-contains', userId),
+      where('isClosed', '==', true),
+      orderBy('updatedAt', 'desc'),
+      limit(10)
+    );
+
+    return this.fetchGamesWithPlayers(q);
+  }
+
+  private static async fetchGamesWithPlayers(q: Query): Promise<Game[]> {
     const snapshot = await getDocs(q);
     const games = await Promise.all(
       snapshot.docs.map(async (doc) => {
-        const gameData = doc.data();
+        const gameData = doc.data() as Omit<Game, 'id' | 'players'>;
         const playersQuery = query(
           collection(db, 'users'),
           where('id', 'in', gameData.playerIds)

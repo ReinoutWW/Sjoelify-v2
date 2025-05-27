@@ -1,9 +1,8 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { ActiveGamesList } from '@/features/games/components/ActiveGamesList';
+import { motion } from 'framer-motion';
+import { GamesList } from '@/features/games/components/GamesList';
 import { fadeIn } from '@/shared/styles/animations';
-import { useAuth } from '@/lib/context/auth-context';
 
 export default function Home() {
   return (
@@ -72,7 +71,7 @@ export default function Home() {
         </motion.div>
 
         <div className="mt-16">
-          <ActiveGamesList />
+          <GamesList />
         </div>
       </div>
     </main>
