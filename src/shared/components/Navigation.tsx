@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/context/auth-context';
 import { AuthService } from '@/features/account/services/auth-service';
 import { fadeIn } from '@/shared/styles/animations';
+import { SjoelifyLogo } from './SjoelifyLogo';
 import { 
   UserCircleIcon, 
   ArrowRightOnRectangleIcon,
@@ -59,14 +60,17 @@ export function Navigation() {
       variants={fadeIn}
       className="bg-white shadow-sm sticky top-0 z-50"
     >
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-        <div className="flex justify-between items-center min-h-[5rem] py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10">
+        <div className="flex justify-between items-center h-32 sm:h-40 py-4">
           <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center group">
-              <span className="text-2xl font-bold text-primary-600 group-hover:text-primary-700 transition-colors">
-                Sjoelify
-              </span>
-            </Link>
+            <SjoelifyLogo 
+              size="small" 
+              className="sm:hidden" // Show small logo on mobile
+            />
+            <SjoelifyLogo 
+              size="medium" 
+              className="hidden sm:flex" // Show medium logo on desktop
+            />
             {user && (
               <div className="hidden sm:ml-8 sm:flex sm:space-x-8">
                 <Link
