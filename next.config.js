@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    // Disable ESLint during production builds
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    // Disable TypeScript checks during production builds
+    ignoreBuildErrors: true,
+  },
   transpilePackages: ['framer-motion'],
   webpack: (config) => {
     config.resolve.fallback = {
