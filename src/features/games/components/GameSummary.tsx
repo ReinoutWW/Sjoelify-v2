@@ -5,6 +5,12 @@ import { motion } from 'framer-motion';
 import { Game } from '../types';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
+import { formatDate, isFirestoreTimestamp } from '@/shared/utils/date-utils';
+
+interface FirestoreTimestamp {
+  seconds: number;
+  nanoseconds: number;
+}
 
 interface PlayerStats {
   playerId: string;
@@ -75,7 +81,13 @@ export function GameSummary({ game }: GameSummaryProps) {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{game.title}</h1>
-            <p className="text-sm text-gray-500">Game Summary</p>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>Game Summary</span>
+              <span>•</span>
+              <time dateTime={formatDate(game.createdAt)}>
+                {formatDate(game.createdAt)}
+              </time>
+            </div>
           </div>
         </div>
         {!game.isClosed && (

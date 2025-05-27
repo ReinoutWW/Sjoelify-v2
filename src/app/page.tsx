@@ -4,7 +4,17 @@ import { useAuth } from '@/lib/context/auth-context';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRightIcon, ChartBarIcon, UserGroupIcon, TrophyIcon, ClockIcon, UserPlusIcon, PencilSquareIcon, ChartPieIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { 
+  ArrowRightIcon, 
+  ChartBarIcon, 
+  UserGroupIcon, 
+  TrophyIcon, 
+  ClockIcon, 
+  UserPlusIcon, 
+  PencilSquareIcon, 
+  ChartPieIcon, 
+  ArrowPathIcon 
+} from '@heroicons/react/24/outline';
 
 const features = [
   {
@@ -81,15 +91,40 @@ export default function Home() {
     );
   }
 
-  if (!loading && user) {
-    redirect('/dashboard');
-  }
-
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-white to-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+        <div className="absolute inset-0 bg-[length:100%_100%] opacity-[0.015] pointer-events-none animate-subtle-flow"
+          style={{
+            backgroundImage: `
+              radial-gradient(at 100% 50%, rgb(56, 189, 248) 0, transparent 50%),
+              radial-gradient(at 0% 100%, rgb(59, 130, 246) 0, transparent 50%),
+              radial-gradient(at 100% 0%, rgb(99, 102, 241) 0, transparent 50%)
+            `
+          }}
+        />
+
+        <style jsx global>{`
+          @keyframes subtle-flow {
+            0% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: 0% 50%;
+            }
+          }
+
+          .animate-subtle-flow {
+            animation: subtle-flow 20s ease infinite;
+            background-size: 200% 200%;
+          }
+        `}</style>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -106,20 +141,41 @@ export default function Home() {
               Track your Sjoelen games, compete with friends, and improve your
               skills with our modern scoring system.
             </p>
-            <div className="flex justify-center space-x-4">
-              <Link
-                href="/auth/sign-up"
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 transition-colors"
-              >
-                Get Started
-                <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5" />
-              </Link>
-              <Link
-                href="/auth/sign-in"
-                className="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-              >
-                Sign In
-              </Link>
+            <div className="flex flex-col sm:flex-row justify-center gap-4 px-4 sm:px-0">
+              {user ? (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+                  >
+                    Go to Dashboard
+                    <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5" />
+                  </Link>
+                  <Link
+                    href="/statistics"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  >
+                    Statistics
+                    <ChartBarIcon className="ml-2 -mr-1 h-5 w-5" />
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/sign-up"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+                  >
+                    Get Started
+                    <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5" />
+                  </Link>
+                  <Link
+                    href="/auth/sign-in"
+                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         </div>
@@ -281,6 +337,95 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Leaderboard Section */}
+      <section className="py-24 bg-gradient-to-b from-gray-50 to-white" id="leaderboard">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4">
+              Compete with the Best
+            </h2>
+            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+              Track your progress, climb the ranks, and see how you stack up against other players in our global leaderboard.
+            </p>
+            <div className="flex justify-center">
+              <Link
+                href="/leaderboard"
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+              >
+                View Leaderboard
+                <TrophyIcon className="ml-2 -mr-1 h-5 w-5" />
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Decorative elements */}
+          <div className="mt-16 relative">
+            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="px-3 bg-gradient-to-b from-gray-50 to-white text-lg font-medium text-gray-900">
+                Features
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-white rounded-xl shadow-sm p-8 border border-gray-200"
+            >
+              <div className="flex items-center justify-center w-12 h-12 bg-primary-100 rounded-lg mb-4">
+                <TrophyIcon className="h-6 w-6 text-primary-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Global Rankings</h3>
+              <p className="text-gray-600">
+                Compare your scores with players from around the world and see where you stand.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-white rounded-xl shadow-sm p-8 border border-gray-200"
+            >
+              <div className="flex items-center justify-center w-12 h-12 bg-primary-100 rounded-lg mb-4">
+                <ChartBarIcon className="h-6 w-6 text-primary-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Performance Tracking</h3>
+              <p className="text-gray-600">
+                Track your improvement over time with detailed statistics and performance metrics.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-xl shadow-sm p-8 border border-gray-200"
+            >
+              <div className="flex items-center justify-center w-12 h-12 bg-primary-100 rounded-lg mb-4">
+                <UserGroupIcon className="h-6 w-6 text-primary-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Community Competition</h3>
+              <p className="text-gray-600">
+                Join a thriving community of Sjoelen enthusiasts and compete in friendly matches.
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-gray-900" id="footer">
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -294,24 +439,76 @@ export default function Home() {
             <div>
               <h3 className="text-white text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2">
-                <li>
-                  <Link href="/auth/sign-up" className="text-gray-400 hover:text-white transition-colors">
-                    Get Started
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/sign-in" className="text-gray-400 hover:text-white transition-colors">
-                    Sign In
-                  </Link>
-                </li>
+                {user ? (
+                  <>
+                    <li>
+                      <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
+                        Dashboard
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/statistics" className="text-gray-400 hover:text-white transition-colors">
+                        Statistics
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/leaderboard" className="text-gray-400 hover:text-white transition-colors">
+                        Leaderboard
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/games/new" className="text-gray-400 hover:text-white transition-colors">
+                        New Game
+                      </Link>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li>
+                      <Link href="/auth/sign-up" className="text-gray-400 hover:text-white transition-colors">
+                        Get Started
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/auth/sign-in" className="text-gray-400 hover:text-white transition-colors">
+                        Sign In
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/leaderboard" className="text-gray-400 hover:text-white transition-colors">
+                        Leaderboard
+                      </Link>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
             <div>
               <h3 className="text-white text-lg font-semibold mb-4">Contact</h3>
               <ul className="space-y-2">
                 <li>
-                  <a href="mailto:info@sjoelify.com" className="text-gray-400 hover:text-white transition-colors">
+                  <a 
+                    href="mailto:info@sjoelify.com" 
+                    className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
+                      <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
+                    </svg>
                     info@sjoelify.com
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="https://github.com/ReinoutWW/Sjoelify-v2" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.607 9.607 0 0112 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48 3.97-1.32 6.833-5.054 6.833-9.458C22 6.463 17.522 2 12 2z" />
+                    </svg>
+                    GitHub
                   </a>
                 </li>
               </ul>

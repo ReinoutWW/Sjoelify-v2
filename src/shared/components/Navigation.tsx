@@ -12,7 +12,8 @@ import {
   UserCircleIcon, 
   ArrowRightOnRectangleIcon,
   HomeIcon,
-  TrophyIcon
+  TrophyIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 export function Navigation() {
@@ -45,7 +46,7 @@ export function Navigation() {
     try {
       setIsProfileOpen(false);
       await AuthService.signOut();
-      router.push('/auth/sign-in');
+      window.location.href = '/';
     } catch (err) {
       console.error('Sign out error:', err);
     }
@@ -142,6 +143,14 @@ export function Navigation() {
                             >
                               <TrophyIcon className="h-5 w-5 mr-2" />
                               Leaderboard
+                            </Link>
+                            <Link
+                              href="/statistics"
+                              onClick={() => setIsProfileOpen(false)}
+                              className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <ChartBarIcon className="h-5 w-5 mr-2" />
+                              Statistics
                             </Link>
                           </div>
 

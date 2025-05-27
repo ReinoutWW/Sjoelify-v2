@@ -21,7 +21,7 @@ export default function SignInPage() {
 
     try {
       await AuthService.signIn({ email, password });
-      router.push('/');
+      router.push('/dashboard');
     } catch (err) {
       setError('Invalid email or password');
       console.error('Sign in error:', err);
