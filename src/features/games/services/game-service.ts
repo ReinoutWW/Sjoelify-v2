@@ -1,4 +1,4 @@
-import { collection, addDoc, updateDoc, doc, getDoc, query, where, getDocs, orderBy, limit, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDoc, query, where, getDocs, orderBy, limit, runTransaction, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Game, Round, PlayerScore } from '../types';
 import { UserProfile } from '@/features/account/types';
@@ -250,5 +250,54 @@ export class GameService {
     stats.averageScore = stats.averageScore / Object.keys(playerStats).length;
 
     return stats;
+  }
+
+  static subscribeToGame(gameId: string, callback: (game: Game | null) => void): () => void {
+    const gameRef = doc(db, this.gamesCollection, gameId);
+    
+    // Subscribe to game document changes
+    const unsubscribeGame = onSnapshot(gameRef, async (gameDoc) => {
+      if (!gameDoc.exists()) {
+        callback(null);
+        return;
+      }
+
+      const gameData = gameDoc.data() as Game;
+
+      try {
+        // Fetch player details
+        const playersQuery = query(
+          collection(db, 'users'),
+          where('id', 'in', gameData.playerIds)
+        );
+        const playersSnapshot = await getDocs(playersQuery);
+        const players = playersSnapshot.docs.map(doc => doc.data() as UserProfile);
+
+        // Subscribe to rounds collection
+        const roundsQuery = query(
+          collection(db, this.gamesCollection, gameId, this.roundsCollection),
+          orderBy('roundNumber', 'asc')
+        );
+        const roundsSnapshot = await getDocs(roundsQuery);
+        const rounds = roundsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Round[];
+
+        callback({
+          ...gameData,
+          id: gameDoc.id,
+          players,
+          rounds
+        });
+      } catch (error) {
+        console.error('Error fetching related game data:', error);
+        callback(null);
+      }
+    });
+
+    return () => {
+      unsubscribeGame();
+    };
   }
 } 

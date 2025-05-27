@@ -1,38 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/context/auth-context';
 import { GameService } from '@/features/games/services/game-service';
 import { ScoreEntry } from '@/features/games/components/ScoreEntry';
-import { Game } from '@/features/games/types';
+import { useGame } from '@/features/games/hooks/use-game';
 import { fadeIn, slideIn } from '@/shared/styles/animations';
 
 export default function GamePage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const [game, setGame] = useState<Game | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { game, loading, error } = useGame(id as string);
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    const loadGame = async () => {
-      try {
-        if (typeof id !== 'string') throw new Error('Invalid game ID');
-        const gameData = await GameService.getGame(id);
-        if (!gameData) throw new Error('Game not found');
-        setGame(gameData);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load game');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadGame();
-  }, [id]);
 
   const handleScoreSubmit = async (scores: number[]) => {
     if (!game || !user) return;
@@ -40,14 +21,8 @@ export default function GamePage() {
     setSubmitting(true);
     try {
       await GameService.submitRound(game.id, user.uid, game.currentRound, scores);
-      
-      // Reload game data to get updated scores
-      const updatedGame = await GameService.getGame(game.id);
-      if (updatedGame) {
-        setGame(updatedGame);
-      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to submit scores');
+      console.error('Failed to submit scores:', err);
     } finally {
       setSubmitting(false);
     }
@@ -199,11 +174,13 @@ export default function GamePage() {
               variants={fadeIn}
               className="text-center p-6 bg-white rounded-xl shadow-lg"
             >
-              <p className="text-gray-500">
-                {isGameComplete
-                  ? 'Game is complete! Check the statistics page for detailed results.'
-                  : 'Waiting for other players to submit their scores for this round.'}
-              </p>
+              {isGameComplete ? (
+                <p className="text-gray-500">This game has been completed!</p>
+              ) : hasSubmittedCurrentRound(user?.uid || '') ? (
+                <p className="text-gray-500">Waiting for other players to submit their scores...</p>
+              ) : (
+                <p className="text-gray-500">You are not a participant in this game.</p>
+              )}
             </motion.div>
           )}
         </motion.div>

@@ -109,7 +109,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false }: ScoreEntryPr
               aria-describedby={errors[index] ? `error-${index}` : undefined}
               className={`block w-full px-3 py-2 rounded-md border-gray-300 
                 focus:ring-primary-500 focus:border-primary-500 
-                text-lg text-center transition-colors duration-200
+                text-lg text-center text-gray-900 transition-colors duration-200
                 ${errors[index] ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
                 ${isSubmitting ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             />
