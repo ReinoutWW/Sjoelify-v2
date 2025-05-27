@@ -20,7 +20,7 @@ import { useAuth } from '@/lib/context/auth-context';
 import { GameService } from '@/features/games/services/game-service';
 import { Game } from '@/features/games/types';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
-import { TrophyIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { TrophyIcon, ChartBarIcon, XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline';
 
 // Register ChartJS components
 ChartJS.register(
@@ -57,11 +57,72 @@ interface PlayerStats {
   averageScoreHistory: { date: Date; average: number }[];
 }
 
+// Add interfaces for filters
+interface TimeFilter {
+  label: string;
+  value: string;
+  getDate: () => Date;
+}
+
+interface Filters {
+  timeRange: string | null;
+}
+
+// Add time filter options
+const timeFilters: TimeFilter[] = [
+  {
+    label: 'Last Week',
+    value: 'week',
+    getDate: () => {
+      const date = new Date();
+      date.setDate(date.getDate() - 7);
+      return date;
+    }
+  },
+  {
+    label: 'Last Month',
+    value: 'month',
+    getDate: () => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - 1);
+      return date;
+    }
+  },
+  {
+    label: 'Last 3 Months',
+    value: '3months',
+    getDate: () => {
+      const date = new Date();
+      date.setMonth(date.getMonth() - 3);
+      return date;
+    }
+  },
+  {
+    label: 'Last Year',
+    value: 'year',
+    getDate: () => {
+      const date = new Date();
+      date.setFullYear(date.getFullYear() - 1);
+      return date;
+    }
+  },
+  {
+    label: 'All Time',
+    value: 'all',
+    getDate: () => new Date(0)
+  }
+];
+
 export default function StatisticsPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [filteredStats, setFilteredStats] = useState<PlayerStats | null>(null);
+  const [filters, setFilters] = useState<Filters>({
+    timeRange: null
+  });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -272,6 +333,59 @@ export default function StatisticsPage() {
     }
   };
 
+  // Add filter functions
+  const applyFilters = (originalStats: PlayerStats) => {
+    if (!originalStats) return null;
+
+    let filteredScoreHistory = [...originalStats.scoreHistory];
+
+    // Apply time filter
+    if (filters.timeRange) {
+      const timeFilter = timeFilters.find(tf => tf.value === filters.timeRange);
+      if (timeFilter) {
+        const cutoffDate = timeFilter.getDate();
+        filteredScoreHistory = filteredScoreHistory.filter(
+          entry => entry.date >= cutoffDate
+        );
+      }
+    }
+
+    // Recalculate stats based on filtered data
+    const filteredStats: PlayerStats = {
+      ...originalStats,
+      scoreHistory: filteredScoreHistory,
+      averageScoreHistory: [],
+      gamesPlayed: new Set(filteredScoreHistory.map(s => s.date.toDateString())).size,
+      averageScore: filteredScoreHistory.length > 0
+        ? Math.round(filteredScoreHistory.reduce((sum, entry) => sum + entry.score, 0) / filteredScoreHistory.length)
+        : 0,
+      personalBest: filteredScoreHistory.length > 0
+        ? Math.max(...filteredScoreHistory.map(entry => entry.score))
+        : 0
+    };
+
+    // Recalculate running average
+    let runningTotal = 0;
+    filteredStats.averageScoreHistory = filteredScoreHistory
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .map((entry, index) => {
+        runningTotal += entry.score;
+        return {
+          date: entry.date,
+          average: Math.round(runningTotal / (index + 1))
+        };
+      });
+
+    return filteredStats;
+  };
+
+  // Update filtered stats when filters or original stats change
+  useEffect(() => {
+    if (stats) {
+      setFilteredStats(applyFilters(stats));
+    }
+  }, [filters, stats]);
+
   if (loading) {
     return (
       <motion.div
@@ -316,12 +430,88 @@ export default function StatisticsPage() {
           variants={staggerChildren}
           className="space-y-8"
         >
-          {/* Header */}
-          <motion.div variants={fadeIn} className="text-center">
+          {/* Header with integrated filter button */}
+          <motion.div variants={fadeIn} className="text-center relative">
             <h1 className="text-4xl font-bold text-gray-900">Your Statistics</h1>
             <p className="mt-4 text-lg text-gray-600">
               Track your progress and performance over time
             </p>
+            
+            {/* Subtle filter button */}
+            <div className="absolute right-0 top-1/2 -translate-y-1/2">
+              <div className="relative">
+                <button
+                  onClick={() => setIsFilterOpen(!isFilterOpen)}
+                  className={`inline-flex items-center space-x-1 px-3 py-1.5 text-sm rounded-full transition-colors
+                    ${filters.timeRange
+                      ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                    }`}
+                >
+                  <FunnelIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">Filter</span>
+                  {filters.timeRange && (
+                    <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-blue-100 text-blue-600 rounded-full">
+                      1
+                    </span>
+                  )}
+                </button>
+
+                {/* Filter dropdown panel */}
+                {isFilterOpen && (
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg z-10 border border-gray-100">
+                    <div className="p-4 space-y-4">
+                      {/* Active Filters */}
+                      {filters.timeRange && (
+                        <div className="flex flex-wrap gap-2 pb-3 border-b border-gray-100">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
+                            {timeFilters.find(tf => tf.value === filters.timeRange)?.label}
+                            <button
+                              onClick={() => setFilters({ timeRange: null })}
+                              className="ml-1 hover:text-blue-800"
+                            >
+                              <XMarkIcon className="h-3 w-3" />
+                            </button>
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Time Period Filter */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-2">
+                          Time Period
+                        </label>
+                        <div className="grid grid-cols-2 gap-1 text-sm">
+                          {timeFilters.map((filter) => (
+                            <button
+                              key={filter.value}
+                              onClick={() => setFilters({ timeRange: filter.value })}
+                              className={`px-3 py-1.5 rounded ${
+                                filters.timeRange === filter.value
+                                  ? 'bg-blue-50 text-blue-600'
+                                  : 'text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              {filter.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Clear filters button */}
+                      {filters.timeRange && (
+                        <button
+                          onClick={() => setFilters({ timeRange: null })}
+                          className="w-full mt-2 px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700"
+                        >
+                          Clear filter
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </motion.div>
 
           {/* Stats Overview */}
@@ -335,7 +525,9 @@ export default function StatisticsPage() {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">Games Played</dt>
-                      <dd className="text-2xl font-semibold text-gray-900">{stats.gamesPlayed}</dd>
+                      <dd className="text-2xl font-semibold text-gray-900">
+                        {filteredStats?.gamesPlayed || 0}
+                      </dd>
                     </dl>
                   </div>
                 </div>
@@ -351,7 +543,7 @@ export default function StatisticsPage() {
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">Average Score</dt>
                       <dd className="text-2xl font-semibold text-gray-900">
-                        {Math.round(stats.averageScore)}
+                        {filteredStats?.averageScore || 0}
                       </dd>
                     </dl>
                   </div>
@@ -367,7 +559,9 @@ export default function StatisticsPage() {
                   <div className="ml-5 w-0 flex-1">
                     <dl>
                       <dt className="text-sm font-medium text-gray-500 truncate">Personal Best</dt>
-                      <dd className="text-2xl font-semibold text-gray-900">{stats.personalBest}</dd>
+                      <dd className="text-2xl font-semibold text-gray-900">
+                        {filteredStats?.personalBest || 0}
+                      </dd>
                     </dl>
                   </div>
                 </div>
@@ -386,10 +580,10 @@ export default function StatisticsPage() {
                     datasets: [
                       {
                         label: 'Score',
-                        data: stats.scoreHistory.map(entry => ({
+                        data: filteredStats?.scoreHistory.map(entry => ({
                           x: entry.date.getTime(),
                           y: entry.score
-                        })),
+                        })) || [],
                         borderColor: 'rgb(59, 130, 246)',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         fill: false,
@@ -413,10 +607,10 @@ export default function StatisticsPage() {
                     datasets: [
                       {
                         label: 'Average Score',
-                        data: stats.averageScoreHistory.map(entry => ({
+                        data: filteredStats?.averageScoreHistory.map(entry => ({
                           x: entry.date.getTime(),
                           y: entry.average
-                        })),
+                        })) || [],
                         borderColor: 'rgb(16, 185, 129)',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         fill: true,
