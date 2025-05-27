@@ -1,13 +1,14 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { AuthProvider } from "@/lib/context/auth-context";
-import "./globals.css";
+import { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import { AuthProvider } from '@/lib/context/auth-context';
+import { Navigation } from '@/shared/components/Navigation';
+import './globals.css';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Sjoelify - Track Your Sjoelen Games",
-  description: "A modern web platform for tracking Sjoelen games and statistics",
+  title: 'Sjoelify',
+  description: 'Modern Sjoelen scoring app',
 };
 
 export default function RootLayout({
@@ -18,7 +19,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <Navigation />
+          <main>{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

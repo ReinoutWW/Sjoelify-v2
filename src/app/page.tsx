@@ -15,7 +15,7 @@ export default function Home() {
           variants={fadeIn}
           className="text-center mb-12"
         >
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
+          <h1 className="text-5xl py-5 font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
             Welcome to Sjoelify
           </h1>
           <p className="mt-6 text-xl text-gray-600 max-w-2xl mx-auto">

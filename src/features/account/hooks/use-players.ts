@@ -1,40 +1,68 @@
-import { useEffect, useState } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { UserProfile } from '../types';
 
-export function usePlayers(excludeUserId?: string) {
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
+
+export function usePlayers(currentUserId: string | undefined) {
   const [players, setPlayers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let retryCount = 0;
+    let mounted = true;
+
     const fetchPlayers = async () => {
+      if (!currentUserId) {
+        setPlayers([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         const usersRef = collection(db, 'users');
-        let q = query(usersRef);
+        const querySnapshot = await getDocs(usersRef);
         
-        if (excludeUserId) {
-          q = query(usersRef, where('id', '!=', excludeUserId));
-        }
+        if (!mounted) return;
 
-        const snapshot = await getDocs(q);
-        const playerData = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id,
-        })) as UserProfile[];
+        const playersList = querySnapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }))
+          .filter(player => player.id !== currentUserId) as UserProfile[];
 
-        setPlayers(playerData);
+        setPlayers(playersList);
+        setError(null);
       } catch (err) {
-        setError('Failed to fetch players');
         console.error('Error fetching players:', err);
+        
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          console.log(`Retrying fetch (${retryCount}/${MAX_RETRIES})...`);
+          setTimeout(fetchPlayers, RETRY_DELAY);
+          return;
+        }
+        
+        if (mounted) {
+          setError('Failed to load players. Please check your internet connection and try again.');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchPlayers();
-  }, [excludeUserId]);
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentUserId]);
 
   return { players, loading, error };
 } 
