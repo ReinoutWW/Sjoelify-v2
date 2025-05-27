@@ -1,5 +1,8 @@
 # Sjoelify v2
 
+![SjoelifyLogo](https://github.com/user-attachments/assets/4f9fd79c-dca9-4f4f-8614-1020b8176787)
+
+
 ![image](https://github.com/user-attachments/assets/9871c9bb-098b-4bb2-bb65-adf7bca0221c)
 
 
