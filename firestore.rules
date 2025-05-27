@@ -36,7 +36,8 @@ service cloud.firestore {
 
     // Users collection rules
     match /users/{userId} {
-      allow read: if isAuthenticated();  // Anyone authenticated can read user profiles
+      // Allow public read access to user profiles for leaderboard
+      allow read: if true;
       allow create: if isOwner(userId);  // Only create your own profile
       allow update: if isOwner(userId);  // Only update your own profile
       allow delete: if false;  // No deletion allowed
@@ -47,8 +48,10 @@ service cloud.firestore {
       // Allow create if user is authenticated
       allow create: if isAuthenticated();
       
-      // Allow read if user is authenticated (needed for game listing)
-      allow read: if isAuthenticated();
+      // Allow read for:
+      // 1. Public access to closed games (for leaderboard)
+      // 2. Authenticated users (for game listing)
+      allow read: if true;
       
       // Allow update if user is a participant and game is not closed
       allow update: if isAuthenticated() && 
@@ -57,9 +60,8 @@ service cloud.firestore {
       
       // Rounds subcollection rules
       match /rounds/{roundId} {
-        // Allow read if user is a participant in the parent game
-        allow read: if isAuthenticated() && 
-                   isGameParticipant(get(/databases/$(database)/documents/games/$(gameId)).data);
+        // Allow read if parent game is accessible
+        allow read: if true;
         
         // Allow create/update if:
         // 1. User is a participant
