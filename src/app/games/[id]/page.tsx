@@ -50,13 +50,24 @@ export default function GamePage() {
   const { user } = useAuth();
   const { game, loading, error } = useGame(id as string);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
   const handleScoreSubmit = async (scores: number[]) => {
     if (!game || !user) return;
     
+    const targetPlayerId = selectedPlayerId || user.uid;
+    
+    // Check permissions before submitting
+    if (!canSubmitForPlayer(targetPlayerId)) {
+      console.error('Not authorized to submit scores for this player');
+      return;
+    }
+    
     setSubmitting(true);
     try {
-      await GameService.submitRound(game.id, user.uid, game.currentRound, scores);
+      await GameService.submitRound(game.id, targetPlayerId, game.currentRound, scores);
+      // Reset selected player after successful submission
+      setSelectedPlayerId(null);
     } catch (err) {
       console.error('Failed to submit scores:', err);
     } finally {
@@ -76,6 +87,30 @@ export default function GamePage() {
 
   const hasSubmittedCurrentRound = (playerId: string) => {
     return getCurrentRoundScore(playerId) !== null;
+  };
+
+  const canSelectPlayer = (playerId: string) => {
+    if (!user || !game) return false;
+    // Can't select yourself (use default submission)
+    if (playerId === user.uid) return false;
+    // Can't select if player already submitted
+    if (hasSubmittedCurrentRound(playerId)) return false;
+    // Must be a participant to submit for others
+    return game.playerIds.includes(user.uid) && !game.isClosed;
+  };
+
+  const canSubmitForPlayer = (playerId: string) => {
+    if (!user || !game) return false;
+    // Game must not be closed
+    if (game.isClosed) return false;
+    // Must be a participant in the game
+    if (!game.playerIds.includes(user.uid)) return false;
+    // Can't submit if round already submitted
+    if (hasSubmittedCurrentRound(playerId)) return false;
+    // Can submit for yourself
+    if (playerId === user.uid) return true;
+    // Can submit for others if you're a participant and they haven't submitted
+    return game.playerIds.includes(playerId);
   };
 
   if (loading) {
@@ -124,7 +159,7 @@ export default function GamePage() {
   const canSubmitScore = !isGameComplete && 
     user?.uid && 
     game.playerIds.includes(user.uid) && 
-    !hasSubmittedCurrentRound(user.uid);
+    (selectedPlayerId ? canSubmitForPlayer(selectedPlayerId) : canSubmitForPlayer(user.uid));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -172,7 +207,12 @@ export default function GamePage() {
                           <div className="w-full border-t border-gray-200"></div>
                         </div>
                         <div className="relative flex justify-start">
-                          <span className="pr-3 bg-white text-sm font-medium text-gray-500">Current Standings</span>
+                          <span className="pr-3 bg-white text-sm font-medium text-gray-500">
+                            {selectedPlayerId 
+                              ? `Entering Score for ${game.players.find(p => p.id === selectedPlayerId)?.displayName}`
+                              : 'Current Standings'
+                            }
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -182,8 +222,22 @@ export default function GamePage() {
                       {game.players.map((player) => (
                         <motion.div
                           key={player.id}
-                          className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-gray-50 to-transparent border border-gray-100 hover:border-blue-200 transition-colors duration-200"
-                          whileHover={{ scale: 1.01 }}
+                          className={`flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-gray-50 to-transparent 
+                            border border-gray-100 transition-colors duration-200
+                            ${canSelectPlayer(player.id) 
+                              ? 'hover:border-blue-200 cursor-pointer' 
+                              : ''
+                            }
+                            ${selectedPlayerId === player.id
+                              ? 'border-blue-400 bg-blue-50/50'
+                              : ''
+                            }`}
+                          whileHover={canSelectPlayer(player.id) ? { scale: 1.01 } : undefined}
+                          onClick={() => {
+                            if (canSelectPlayer(player.id)) {
+                              setSelectedPlayerId(selectedPlayerId === player.id ? null : player.id);
+                            }
+                          }}
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
@@ -194,6 +248,9 @@ export default function GamePage() {
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
                                   You
                                 </span>
+                              )}
+                              {canSelectPlayer(player.id) && (
+                                <span className="text-xs text-blue-600">(Click to enter score)</span>
                               )}
                             </div>
                             <div className="flex items-center gap-3 mt-1">

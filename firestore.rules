@@ -19,7 +19,22 @@ service cloud.firestore {
               request.auth.uid in gameData.playerIds);
     }
 
-    // Users collection rules - Allow reading all user profiles
+    // Helper function to validate round data
+    function isValidRoundData(roundData) {
+      return roundData.keys().hasAll([
+        'playerId', 'roundNumber', 'scores', 
+        'completeSets', 'completeSetPoints', 
+        'leftoverPoints', 'totalScore', 
+        'createdAt'
+      ]);
+    }
+
+    // Helper function to check if fields are unchanged
+    function areFieldsUnchanged(oldData, newData, fields) {
+      return oldData.diff(newData).unchangedKeys().hasAll(fields);
+    }
+
+    // Users collection rules
     match /users/{userId} {
       allow read: if isAuthenticated();  // Anyone authenticated can read user profiles
       allow create: if isOwner(userId);  // Only create your own profile
@@ -35,28 +50,29 @@ service cloud.firestore {
       // Allow read if user is authenticated (needed for game listing)
       allow read: if isAuthenticated();
       
-      // Allow update if user is a participant
+      // Allow update if user is a participant and game is not closed
       allow update: if isAuthenticated() && 
-                     (resource == null || 
-                      isGameParticipant(resource.data));
+                   isGameParticipant(resource.data) && 
+                   !resource.data.isClosed;
       
-      // Subcollection rules for rounds
+      // Rounds subcollection rules
       match /rounds/{roundId} {
-        // Get parent game data
-        function getGame() {
-          return get(/databases/$(database)/documents/games/$(gameId)).data;
-        }
-        
         // Allow read if user is a participant in the parent game
-        allow read: if isAuthenticated() && isGameParticipant(getGame());
+        allow read: if isAuthenticated() && 
+                   isGameParticipant(get(/databases/$(database)/documents/games/$(gameId)).data);
         
-        // Allow create if user is a participant and writing their own round
-        allow create: if isAuthenticated() && 
-                     isGameParticipant(getGame()) &&
-                     request.resource.data.playerId == request.auth.uid;
-                     
-        // No updates or deletes to rounds
-        allow update, delete: if false;
+        // Allow create/update if:
+        // 1. User is a participant
+        // 2. Game is not closed
+        // 3. Round number matches current round
+        // 4. Target player is a participant
+        allow write: if isAuthenticated() && 
+                    isGameParticipant(get(/databases/$(database)/documents/games/$(gameId)).data) && 
+                    !get(/databases/$(database)/documents/games/$(gameId)).data.isClosed && 
+                    request.resource.data.roundNumber == get(/databases/$(database)/documents/games/$(gameId)).data.currentRound && 
+                    request.resource.data.playerId in get(/databases/$(database)/documents/games/$(gameId)).data.playerIds;
+        
+        allow delete: if false;
       }
     }
   }
