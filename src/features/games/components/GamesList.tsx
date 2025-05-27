@@ -67,6 +67,19 @@ interface GameListSectionProps {
   emptyMessage: string;
 }
 
+const LoadingCard = () => (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 animate-pulse">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <div className="h-10 w-10 bg-gray-200 rounded-lg flex-shrink-0"></div>
+      <div className="flex-1 w-full">
+        <div className="h-5 bg-gray-200 rounded w-1/3 mb-3"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      </div>
+      <div className="h-8 w-24 bg-gray-200 rounded-lg mt-2 sm:mt-0"></div>
+    </div>
+  </div>
+);
+
 function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
   if (games.length === 0) {
     return (
@@ -74,7 +87,7 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
         initial="hidden"
         animate="visible"
         variants={fadeIn}
-        className="text-center py-8 bg-white rounded-xl shadow-sm border border-gray-100"
+        className="text-center py-6 sm:py-8 bg-white rounded-xl shadow-sm border border-gray-100"
       >
         <p className="text-sm text-gray-500">{emptyMessage}</p>
       </motion.div>
@@ -86,12 +99,12 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
       initial="hidden"
       animate="visible"
       variants={staggerChildren}
-      className="space-y-4"
+      className="space-y-3 sm:space-y-4"
     >
       {title && (
         <motion.h2
           variants={fadeIn}
-          className="text-xl font-semibold text-gray-900"
+          className="text-lg sm:text-xl font-semibold text-gray-900"
         >
           {title}
         </motion.h2>
@@ -131,42 +144,41 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                     </span>
                   </div>
                 )}
-                <Link 
+                <Link
                   href={`/games/${game.id}`}
                   className="block cursor-pointer"
                 >
-                  <div className="px-6 py-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center">
-                            {game.isClosed ? (
-                              <TrophyIcon className="h-5 w-5 text-primary-600" />
-                            ) : (
-                              <ChartBarIcon className="h-5 w-5 text-primary-600" />
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="text-lg font-medium text-gray-900 truncate pr-4">
-                              {game.title}
-                            </h3>
-                            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                              <div className="flex items-center gap-1.5">
-                                <UsersIcon className="h-4 w-4 text-gray-400" />
-                                <span>{game.players.length} players</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <CalendarIcon className="h-4 w-4 text-gray-400" />
-                                <time dateTime={toISOStringOrUndefined(game.updatedAt)}>
-                                  {formatDate(game.updatedAt)}
-                                </time>
-                              </div>
+                  <div className="px-4 sm:px-6 py-4 sm:py-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-3">
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                        <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center flex-shrink-0">
+                          {game.isClosed ? (
+                            <TrophyIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600" />
+                          ) : (
+                            <ChartBarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate pr-4">
+                            {game.title}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-gray-500">
+                            <div className="flex items-center gap-1">
+                              <UsersIcon className="h-4 w-4 text-gray-400" />
+                              <span>{game.players.length} players</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <CalendarIcon className="h-4 w-4 text-gray-400" />
+                              <time dateTime={toISOStringOrUndefined(game.updatedAt)} className="whitespace-nowrap">
+                                {formatDate(game.updatedAt)}
+                              </time>
                             </div>
                           </div>
                         </div>
                       </div>
-                      <div className="flex-shrink-0">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      
+                      <div className="flex items-center">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${
                           game.isClosed 
                             ? 'bg-gray-100/75 text-gray-600'
                             : 'bg-primary-50 text-primary-700'
@@ -176,12 +188,12 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                       <div className="flex -space-x-2 overflow-hidden">
                         {game.players.map((player) => (
                           <div
                             key={player.id}
-                            className="inline-block h-8 w-8 rounded-full ring-2 ring-white"
+                            className="inline-block h-7 w-7 sm:h-8 sm:w-8 rounded-full ring-2 ring-white"
                           >
                             <UserCircleIcon className="h-full w-full text-gray-300" />
                           </div>
@@ -189,28 +201,28 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                       </div>
 
                       {game.isClosed && leader && (
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-sm font-medium">
-                            <TrophyIcon className="h-4 w-4" />
-                            <span>{leader.displayName}</span>
-                            <span className="font-bold">{leader.totalScore}</span>
+                        <div className="flex items-center gap-2 overflow-hidden flex-1">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 text-sm">
+                            <TrophyIcon className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate">{leader.displayName}</span>
+                            <span className="font-semibold">{leader.totalScore}</span>
                           </div>
                           {isClose && (
-                            <span className="text-xs text-gray-500 italic">Close game!</span>
+                            <span className="text-xs text-gray-500 italic whitespace-nowrap">Close game!</span>
                           )}
                         </div>
                       )}
                       
-                      {!game.isClosed && leader && leader.totalScore > 0 && (
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-sm">
-                            <ChartBarIcon className="h-4 w-4" />
+                      {!game.isClosed && leader && (
+                        <div className="flex items-center gap-2 overflow-hidden flex-1">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary-50 text-primary-700 text-sm">
+                            <ChartBarIcon className="h-4 w-4 flex-shrink-0" />
                             <span>Leading:</span>
-                            <span className="font-medium">{leader.displayName}</span>
-                            <span className="font-bold">{leader.totalScore}</span>
+                            <span className="font-medium truncate">{leader.displayName}</span>
+                            <span className="font-semibold">{leader.totalScore}</span>
                           </div>
                           {isClose && (
-                            <span className="text-xs text-gray-500 italic">Neck and neck!</span>
+                            <span className="text-xs text-gray-500 italic whitespace-nowrap">Neck and neck!</span>
                           )}
                         </div>
                       )}
@@ -245,7 +257,6 @@ export function GamesList() {
         ]);
         setActiveGames(active);
         setFinishedGames(finished);
-        // Initialize filtered games only once when data is loaded
         setFilteredFinishedGames(finished);
       } catch (err) {
         setError('Failed to load games');
@@ -258,7 +269,6 @@ export function GamesList() {
     fetchGames();
   }, [user?.uid]);
 
-  // Memoize the filter handler to prevent unnecessary re-renders
   const handleFinishedGamesFilters = useCallback((filteredGames: Game[]) => {
     setFilteredFinishedGames(filteredGames);
   }, []);
@@ -268,15 +278,11 @@ export function GamesList() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex items-center justify-center py-12"
+        className="space-y-4"
       >
-        <div className="animate-pulse flex space-x-4">
-          <div className="h-12 w-12 rounded-full bg-primary-200"></div>
-          <div className="space-y-3">
-            <div className="h-4 w-[200px] rounded bg-primary-200"></div>
-            <div className="h-4 w-[150px] rounded bg-primary-200"></div>
-          </div>
-        </div>
+        <LoadingCard />
+        <LoadingCard />
+        <LoadingCard />
       </motion.div>
     );
   }
@@ -304,7 +310,7 @@ export function GamesList() {
         initial="hidden"
         animate="visible"
         variants={fadeIn}
-        className="text-center py-12"
+        className="text-center py-8 sm:py-12"
       >
         <h3 className="text-lg font-medium text-gray-900">No games yet</h3>
         <p className="mt-2 text-sm text-gray-500">
@@ -331,17 +337,18 @@ export function GamesList() {
       initial="hidden"
       animate="visible"
       variants={staggerChildren}
-      className="space-y-8"
+      className="space-y-6 sm:space-y-8"
     >
       <div className="flex justify-end">
         <motion.div
           variants={fadeIn}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
+          className="w-full sm:w-auto"
         >
           <Link
             href="/games/new"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200 shadow-sm"
+            className="inline-flex w-full sm:w-auto items-center justify-center px-4 sm:px-6 py-2 sm:py-3 border border-transparent text-sm sm:text-base font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200 shadow-sm"
           >
             New Game
           </Link>
@@ -349,8 +356,8 @@ export function GamesList() {
       </div>
 
       {activeGames.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Active Games</h2>
+        <div className="space-y-3 sm:space-y-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Active Games</h2>
           <GameListSection
             title=""
             games={activeGames}
@@ -360,8 +367,8 @@ export function GamesList() {
       )}
 
       {finishedGames.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Finished Games</h2>
+        <div className="space-y-3 sm:space-y-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Finished Games</h2>
           <GameFilters
             games={finishedGames}
             onFiltersChange={handleFinishedGamesFilters}
