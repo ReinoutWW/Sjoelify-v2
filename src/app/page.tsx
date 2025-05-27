@@ -73,6 +73,14 @@ const steps = [
 export default function Home() {
   const { user, loading } = useAuth();
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600" />
+      </div>
+    );
+  }
+
   if (!loading && user) {
     redirect('/dashboard');
   }

@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-gradient-to-b from-white to-gray-50`}>
         <AuthProvider>
           <Navigation />
           <main>{children}</main>

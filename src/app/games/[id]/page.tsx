@@ -16,8 +16,13 @@ const toISOStringOrUndefined = (dateString: string | number | Date | undefined |
   if (!dateString) return undefined;
   
   try {
+    // Handle Firestore Timestamp
+    if (typeof dateString === 'object' && dateString !== null && 'seconds' in dateString && typeof dateString.seconds === 'number') {
+      const date = new Date(dateString.seconds * 1000);
+      return isNaN(date.getTime()) ? undefined : date.toISOString();
+    }
+    
     const date = new Date(dateString);
-    // Check if date is valid
     return isNaN(date.getTime()) ? undefined : date.toISOString();
   } catch (error) {
     console.error('Error converting date to ISO string:', error);
@@ -29,8 +34,20 @@ const formatDate = (dateString: string | number | Date | undefined | null): stri
   if (!dateString) return 'Recently updated';
   
   try {
+    // Handle Firestore Timestamp
+    if (typeof dateString === 'object' && dateString !== null && 'seconds' in dateString && typeof dateString.seconds === 'number') {
+      const date = new Date(dateString.seconds * 1000);
+      if (isNaN(date.getTime())) return 'Recently updated';
+      
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    }
+    
     const date = new Date(dateString);
-    // Check if date is valid
     if (isNaN(date.getTime())) return 'Recently updated';
     
     return new Intl.DateTimeFormat('en-US', {

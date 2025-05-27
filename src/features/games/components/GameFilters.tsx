@@ -14,6 +14,31 @@ interface GameFiltersProps {
   games: Game[];
 }
 
+const getDateFromFirestore = (dateString: any): Date | null => {
+  try {
+    // Handle Firestore Timestamp
+    if (typeof dateString === 'object' && dateString !== null && 'seconds' in dateString && typeof dateString.seconds === 'number') {
+      const date = new Date(dateString.seconds * 1000);
+      return isNaN(date.getTime()) ? null : date;
+    }
+    
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  } catch (error) {
+    console.error('Error converting date:', error);
+    return null;
+  }
+};
+
+const isSameDay = (date1: Date | null, date2: Date | null): boolean => {
+  if (!date1 || !date2) return false;
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
+};
+
 export function GameFilters({ onFiltersChange, games }: GameFiltersProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState<GameFilter[]>([]);
@@ -27,8 +52,9 @@ export function GameFilters({ onFiltersChange, games }: GameFiltersProps) {
           return game.title.toLowerCase().includes(filter.value.toLowerCase());
         }
         if (filter.type === 'date') {
-          const gameDate = new Date(game.createdAt).toLocaleDateString();
-          return gameDate === filter.value;
+          const filterDate = new Date(filter.value);
+          const gameDate = getDateFromFirestore(game.createdAt);
+          return isSameDay(filterDate, gameDate);
         }
         return true;
       });
@@ -46,7 +72,8 @@ export function GameFilters({ onFiltersChange, games }: GameFiltersProps) {
     
     let label = value;
     if (type === 'date') {
-      label = `Date: ${new Date(value).toLocaleDateString()}`;
+      const date = new Date(value);
+      label = `Date: ${date.toLocaleDateString()}`;
     } else {
       label = `Search: ${value}`;
     }
@@ -113,13 +140,32 @@ export function GameFilters({ onFiltersChange, games }: GameFiltersProps) {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}
-          className="relative inline-block"
+          className="relative"
         >
-          <input
-            type="date"
-            onChange={(e) => addFilter('date', e.target.value)}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-          />
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <CalendarIcon className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="date"
+                onChange={(e) => addFilter('date', e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm 
+                  focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 
+                  sm:text-sm text-gray-900
+                  [&::-webkit-calendar-picker-indicator]:bg-transparent
+                  [&::-webkit-calendar-picker-indicator]:hover:cursor-pointer"
+              />
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowDatePicker(false)}
+              className="inline-flex items-center justify-center p-2 border border-gray-300 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-50"
+            >
+              <XMarkIcon className="h-5 w-5" />
+            </motion.button>
+          </div>
         </motion.div>
       )}
 
