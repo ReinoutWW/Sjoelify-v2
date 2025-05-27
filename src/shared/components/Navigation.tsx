@@ -8,13 +8,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/context/auth-context';
 import { AuthService } from '@/features/account/services/auth-service';
 import { fadeIn } from '@/shared/styles/animations';
-import { UserCircleIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { 
+  UserCircleIcon, 
+  ArrowRightOnRectangleIcon,
+  HomeIcon,
+  TrophyIcon
+} from '@heroicons/react/24/outline';
 
 export function Navigation() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  // Debug user object
+  useEffect(() => {
+    if (user) {
+      console.log('User object:', user);
+      console.log('User email:', user.email);
+    }
+  }, [user]);
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -78,11 +91,14 @@ export function Navigation() {
                   <div className="relative">
                     <button
                       onClick={() => setIsProfileOpen(!isProfileOpen)}
-                      className="group"
+                      className="group flex items-center gap-2"
                       aria-label="Account menu"
                     >
+                      <span className="block text-sm font-medium text-gray-700">
+                        {user?.email?.split('@')[0]}
+                      </span>
                       <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden ring-2 ring-white transition-all group-hover:ring-primary-100 group-hover:scale-105">
-                        {user.photoURL ? (
+                        {user?.photoURL ? (
                           <Image
                             src={user.photoURL}
                             alt="Profile"
@@ -105,18 +121,39 @@ export function Navigation() {
                           className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 py-1"
                         >
                           <div className="px-4 py-2 border-b border-gray-100">
-                            <p className="text-sm text-gray-500 break-all">
-                              {user.email}
+                            <p className="text-sm text-gray-500">
+                              {user?.email?.split('@')[0]}
                             </p>
                           </div>
 
-                          <button
-                            onClick={handleSignOut}
-                            className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          >
-                            <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" />
-                            Sign out
-                          </button>
+                          <div className="py-1">
+                            <Link
+                              href="/dashboard"
+                              onClick={() => setIsProfileOpen(false)}
+                              className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <HomeIcon className="h-5 w-5 mr-2" />
+                              Dashboard
+                            </Link>
+                            <Link
+                              href="/leaderboard"
+                              onClick={() => setIsProfileOpen(false)}
+                              className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <TrophyIcon className="h-5 w-5 mr-2" />
+                              Leaderboard
+                            </Link>
+                          </div>
+
+                          <div className="border-t border-gray-100">
+                            <button
+                              onClick={handleSignOut}
+                              className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" />
+                              Sign out
+                            </button>
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
