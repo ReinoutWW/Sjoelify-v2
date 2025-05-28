@@ -161,6 +161,12 @@ export class GameService {
         isClosed: shouldAdvanceRound && isLastRound,
         updatedAt: new Date()
       });
+
+      // Game is completed, but we don't need to do anything special
+      if (shouldAdvanceRound && isLastRound) {
+        // Game completed
+        console.log('Game completed:', gameId);
+      }
     });
   }
 

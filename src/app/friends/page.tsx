@@ -14,13 +14,16 @@ import {
   UserGroupIcon,
   BellIcon,
   MagnifyingGlassIcon,
-  ClockIcon
+  ClockIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import { useDebounce } from '@/shared/hooks/useDebounce';
+import Link from 'next/link';
 
 interface SearchResult extends UserProfile {
   requestSent?: boolean;
+  isFriend?: boolean;
 }
 
 interface FriendRequestWithSender extends FriendRequest {
@@ -48,6 +51,11 @@ export default function FriendsPage() {
       user.uid,
       (updatedFriends) => {
         setFriends(updatedFriends);
+        // Update search results to reflect friendship status
+        setSearchResults(prev => prev.map(result => ({
+          ...result,
+          isFriend: updatedFriends.some(friend => friend.id === result.id)
+        })));
         setLoading(false);
       },
       (error) => {
@@ -90,12 +98,13 @@ export default function FriendsPage() {
     try {
       setSearching(true);
       const results = await FriendsService.searchUsers(debouncedSearchQuery, user.uid);
-      // Mark users who have already been sent a request
-      const resultsWithRequestStatus = results.map(user => ({
+      // Mark users who have already been sent a request or are friends
+      const resultsWithStatus = results.map(user => ({
         ...user,
-        requestSent: sentRequests.includes(user.id)
+        requestSent: sentRequests.includes(user.id),
+        isFriend: friends.some(friend => friend.id === user.id)
       }));
-      setSearchResults(resultsWithRequestStatus);
+      setSearchResults(resultsWithStatus);
     } catch (error) {
       console.error('Error searching users:', error);
       toast.error('Failed to search users');
@@ -146,6 +155,16 @@ export default function FriendsPage() {
       toast.error(error instanceof Error ? error.message : 'Failed to send friend request');
     }
   };
+
+  const UserNameLink = ({ user, className = "" }: { user: UserProfile; className?: string }) => (
+    <Link
+      href={`/players/${user.id}`}
+      className={`group inline-flex items-center gap-2 text-gray-900 hover:text-primary-600 transition-colors ${className}`}
+    >
+      <UserCircleIcon className="h-5 w-5 text-gray-400 group-hover:text-primary-600 transition-colors" />
+      <span className="font-medium">{user.displayName}</span>
+    </Link>
+  );
 
   return (
     <motion.div
@@ -215,15 +234,13 @@ export default function FriendsPage() {
                       key={friend.id}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     >
-                      <div>
-                        <h3 className="font-medium text-gray-900">
-                          {friend.displayName}
-                        </h3>
-                        <p className="text-sm text-gray-500">{friend.email}</p>
+                      <div className="min-w-0 flex-1">
+                        <UserNameLink user={friend} />
+                        <p className="text-sm text-gray-500 mt-1">{friend.email}</p>
                       </div>
                       <button
                         onClick={() => handleRemoveFriend(friend.id)}
-                        className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        className="ml-4 p-2 text-gray-400 hover:text-red-500 transition-colors"
                         title="Remove friend"
                       >
                         <UserMinusIcon className="w-5 h-5" />
@@ -245,15 +262,13 @@ export default function FriendsPage() {
                       key={request.id}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     >
-                      <div>
-                        <h3 className="font-medium text-gray-900">
-                          {request.sender.displayName}
-                        </h3>
-                        <p className="text-sm text-gray-500">
+                      <div className="min-w-0 flex-1">
+                        <UserNameLink user={request.sender} />
+                        <p className="text-sm text-gray-500 mt-1">
                           {request.sender.email}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="ml-4 flex gap-2">
                         <button
                           onClick={() => handleFriendRequest(request.id, 'accepted')}
                           className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
@@ -298,26 +313,31 @@ export default function FriendsPage() {
                       key={user.id}
                       className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                     >
-                      <div>
-                        <h3 className="font-medium text-gray-900">
-                          {user.displayName}
-                        </h3>
-                        <p className="text-sm text-gray-500">{user.email}</p>
+                      <div className="min-w-0 flex-1">
+                        <UserNameLink user={user} />
+                        <p className="text-sm text-gray-500 mt-1">{user.email}</p>
                       </div>
-                      {user.requestSent ? (
-                        <div className="flex items-center gap-2 text-gray-500 text-sm">
-                          <ClockIcon className="w-5 h-5" />
-                          <span>Request sent</span>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleSendFriendRequest(user.id)}
-                          className="p-2 text-primary-600 hover:bg-primary-50 rounded-full transition-colors"
-                          title="Send friend request"
-                        >
-                          <UserPlusIcon className="w-5 h-5" />
-                        </button>
-                      )}
+                      <div className="ml-4">
+                        {user.isFriend ? (
+                          <div className="flex items-center gap-2 text-primary-600">
+                            <CheckIcon className="w-5 h-5" />
+                            <span className="text-sm font-medium">Friends</span>
+                          </div>
+                        ) : user.requestSent ? (
+                          <div className="flex items-center gap-2 text-gray-500 text-sm">
+                            <ClockIcon className="w-5 h-5" />
+                            <span>Request sent</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => handleSendFriendRequest(user.id)}
+                            className="p-2 text-primary-600 hover:bg-primary-50 rounded-full transition-colors"
+                            title="Send friend request"
+                          >
+                            <UserPlusIcon className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -10,7 +10,7 @@ import { useFriends } from '@/features/friends/hooks/use-friends';
 import { UserProfile } from '@/features/account/types';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
 import { toast } from 'react-hot-toast';
-import { UserPlusIcon } from '@heroicons/react/24/outline';
+import { UserPlusIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 
 interface PlayerSelection {
   id: string;
@@ -18,11 +18,16 @@ interface PlayerSelection {
   selected: boolean;
 }
 
+const TITLE_MAX_LENGTH = 50;
+const TITLE_MIN_LENGTH = 3;
+const TITLE_PATTERN = /^[a-zA-Z0-9\s]*$/;
+
 export function CreateGameForm() {
   const router = useRouter();
   const { user } = useAuth();
   const { friends: availablePlayers, loading: playersLoading } = useFriends(user?.uid);
   const [title, setTitle] = useState('');
+  const [titleError, setTitleError] = useState<string | null>(null);
   const [players, setPlayers] = useState<PlayerSelection[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,9 +46,35 @@ export function CreateGameForm() {
     }
   }, [availablePlayers]);
 
+  const validateTitle = (value: string): string | null => {
+    if (value.length < TITLE_MIN_LENGTH) {
+      return `Title must be at least ${TITLE_MIN_LENGTH} characters`;
+    }
+    if (value.length > TITLE_MAX_LENGTH) {
+      return `Title cannot exceed ${TITLE_MAX_LENGTH} characters`;
+    }
+    if (!TITLE_PATTERN.test(value)) {
+      return 'Title can only contain letters, numbers, and spaces';
+    }
+    return null;
+  };
+
+  const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setTitle(newTitle);
+    setTitleError(validateTitle(newTitle));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.uid) return;
+
+    // Validate title before submission
+    const titleValidationError = validateTitle(title);
+    if (titleValidationError) {
+      setTitleError(titleValidationError);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -63,7 +94,7 @@ export function CreateGameForm() {
       }
 
       const gameId = await GameService.createGame(
-        title,
+        title.trim(),
         user.uid,
         selectedPlayerIds
       );
@@ -117,20 +148,41 @@ export function CreateGameForm() {
       className="space-y-8"
     >
       <motion.div variants={fadeIn}>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-          Game Title
-        </label>
+        <div className="flex justify-between items-center">
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+            Game Title
+          </label>
+          <span className="text-sm text-gray-500">
+            {title.length}/{TITLE_MAX_LENGTH}
+          </span>
+        </div>
         <div className="mt-1 relative rounded-md shadow-sm">
           <input
             type="text"
             id="title"
             value={title}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
+            onChange={handleTitleChange}
             required
-            className="block w-full px-4 py-3 rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder-gray-400 bg-white transition-shadow duration-200"
+            maxLength={TITLE_MAX_LENGTH}
+            className={`block w-full px-4 py-3 rounded-lg border ${
+              titleError 
+                ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' 
+                : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
+            } text-gray-900 placeholder-gray-400 bg-white transition-shadow duration-200`}
             placeholder="e.g., Sunday Evening Game"
           />
+          {titleError && (
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <ExclamationCircleIcon className="h-5 w-5 text-red-500" aria-hidden="true" />
+            </div>
+          )}
         </div>
+        {titleError && (
+          <p className="mt-2 text-sm text-red-600">{titleError}</p>
+        )}
+        <p className="mt-2 text-sm text-gray-500">
+          Use letters, numbers, and spaces only
+        </p>
       </motion.div>
 
       <motion.div variants={fadeIn} className="space-y-4">

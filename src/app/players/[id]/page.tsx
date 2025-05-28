@@ -21,6 +21,7 @@ import { UserCircleIcon, TrophyIcon, ChartBarIcon, CalendarIcon } from '@heroico
 import { GameService } from '@/features/games/services/game-service';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
 import { LeaderboardService } from '@/features/leaderboard/services/leaderboard-service';
+import Link from 'next/link';
 
 // Register ChartJS components
 ChartJS.register(
@@ -60,17 +61,12 @@ export default function PlayerProfilePage() {
         setLoading(true);
         setError(null);
 
-        // Fetch leaderboard data
-        console.log('Fetching leaderboard data...');
+        // Fetch player data
         const leaderboardData = await LeaderboardService.getLeaderboard();
-        console.log('Leaderboard data:', leaderboardData);
         
         const playerData = leaderboardData.find(player => player.playerId === id);
-        console.log('Player data:', playerData);
 
         if (!playerData) {
-          console.log('No player data found');
-          // For new users without any games, show empty stats
           setPlayerName('New Player');
           setLastPlayed(null);
           setStats({
@@ -183,6 +179,13 @@ export default function PlayerProfilePage() {
         }
       }
     }
+  };
+
+  const rarityColors = {
+    common: 'from-gray-100 to-gray-50 text-gray-600 border-gray-200',
+    rare: 'from-blue-100 to-blue-50 text-blue-600 border-blue-200',
+    epic: 'from-purple-100 to-purple-50 text-purple-600 border-purple-200',
+    legendary: 'from-amber-100 to-amber-50 text-amber-600 border-amber-200'
   };
 
   if (loading) {

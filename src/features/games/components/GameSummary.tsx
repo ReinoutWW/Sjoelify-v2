@@ -43,7 +43,7 @@ export function GameSummary({ game }: GameSummaryProps) {
         // Get the overall best average from the leaderboard
         const leaderboardData = await LeaderboardService.getLeaderboard();
 
-        const stats = game.players.map(player => {
+        const stats = game.players.map((player) => {
           const playerScores = game.scores[player.id];
           const rounds = playerScores?.rounds || {};
           const roundScores = Object.values(rounds);
@@ -348,60 +348,57 @@ export function GameSummary({ game }: GameSummaryProps) {
           const isBestAverage = player.playerId === gameStats.bestAveragePlayer.playerId;
           
           return (
-            <div
-              key={player.playerId}
-              className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"
-            >
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-4">
-                  <UserCircleIcon className="h-6 w-6 text-gray-400" />
-                  <Link
-                    href={`/players/${player.playerId}`}
-                    className="hover:text-primary-600 transition-colors"
-                  >
-                    <h3 className="font-medium text-gray-900 truncate">{player.displayName}</h3>
-                  </Link>
-                </div>
-                <dl className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <dt className="text-sm text-gray-500">Best Round</dt>
-                    <dd className="flex items-center space-x-1.5">
-                      {isBestRound && (
-                        <span className="text-xs font-medium text-primary-600">Best</span>
-                      )}
-                      <span className="text-sm font-medium text-gray-900">{player.bestRound}</span>
-                    </dd>
+            <div key={player.playerId}>
+              <Link
+                href={`/players/${player.playerId}`}
+                className="block bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:border-primary-200 hover:shadow-md transition-all group"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-4">
+                    <UserCircleIcon className="h-6 w-6 text-gray-400 group-hover:text-primary-600 transition-colors" />
+                    <h3 className="font-medium text-gray-900 truncate group-hover:text-primary-600 transition-colors">{player.displayName}</h3>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-sm text-gray-500">Average</dt>
-                    <dd className="flex items-center gap-1.5">
-                      {player.isNewBestAverage && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 animate-pulse">
-                          New Best!
+                  <dl className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <dt className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">Best Round</dt>
+                      <dd className="flex items-center space-x-1.5">
+                        {isBestRound && (
+                          <span className="text-xs font-medium text-primary-600">Best</span>
+                        )}
+                        <span className="text-sm font-medium text-gray-900 group-hover:text-gray-950 transition-colors">{player.bestRound}</span>
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <dt className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">Average</dt>
+                      <dd className="flex items-center gap-1.5">
+                        {player.isNewBestAverage && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 animate-pulse">
+                            New Best!
+                          </span>
+                        )}
+                        <span
+                          className={`text-xs font-medium ${
+                            player.relativeAverage >= 0
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }`}
+                        >
+                          {player.relativeAverage >= 0 ? '+' : ''}{player.relativeAverage}
                         </span>
-                      )}
-                      <span
-                        className={`text-xs font-medium ${
-                          player.relativeAverage >= 0
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}
-                      >
-                        {player.relativeAverage >= 0 ? '+' : ''}{player.relativeAverage}
-                      </span>
-                      <span className="text-sm font-medium text-gray-900">{player.averageScore}</span>
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-sm text-gray-500">Worst Round</dt>
-                    <dd className="text-sm font-medium text-gray-900">{player.worstRound}</dd>
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <dt className="text-sm font-medium text-gray-500">Total Score</dt>
-                    <dd className="text-sm font-bold text-primary-600">{player.totalScore}</dd>
-                  </div>
-                </dl>
-              </div>
+                        <span className="text-sm font-medium text-gray-900 group-hover:text-gray-950 transition-colors">{player.averageScore}</span>
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <dt className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">Worst Round</dt>
+                      <dd className="text-sm font-medium text-gray-900 group-hover:text-gray-950 transition-colors">{player.worstRound}</dd>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                      <dt className="text-sm font-medium text-gray-500 group-hover:text-gray-600 transition-colors">Total Score</dt>
+                      <dd className="text-sm font-bold text-primary-600">{player.totalScore}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </Link>
             </div>
           );
         })}
