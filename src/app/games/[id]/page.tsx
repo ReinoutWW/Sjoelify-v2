@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { useAuth } from '@/lib/context/auth-context';
 import { GameService } from '@/features/games/services/game-service';
 import { ScoreEntry } from '@/features/games/components/ScoreEntry';
 import { GameSummary } from '@/features/games/components/GameSummary';
 import { useGame } from '@/features/games/hooks/use-game';
 import { fadeIn } from '@/shared/styles/animations';
-import { TrophyIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { TrophyIcon, ClockIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 
 // Add helper functions for safe date handling
 const toISOStringOrUndefined = (dateString: string | number | Date | undefined | null): string | undefined => {
@@ -239,17 +240,18 @@ export default function GamePage() {
                       {game.players.map((player) => (
                         <motion.div
                           key={player.id}
-                          className={`flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-gray-50 to-transparent 
-                            border border-gray-100 transition-colors duration-200
+                          className={`flex items-center justify-between p-4 rounded-lg 
+                            border-2 transition-all duration-200
                             ${canSelectPlayer(player.id) 
-                              ? 'hover:border-blue-200 cursor-pointer' 
+                              ? 'hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer hover:shadow-md' 
                               : ''
                             }
                             ${selectedPlayerId === player.id
-                              ? 'border-blue-400 bg-blue-50/50'
-                              : ''
+                              ? 'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-500 ring-opacity-50'
+                              : 'border-gray-200 bg-white'
                             }`}
                           whileHover={canSelectPlayer(player.id) ? { scale: 1.01 } : undefined}
+                          whileTap={canSelectPlayer(player.id) ? { scale: 0.99 } : undefined}
                           onClick={() => {
                             if (canSelectPlayer(player.id)) {
                               setSelectedPlayerId(selectedPlayerId === player.id ? null : player.id);
@@ -258,16 +260,23 @@ export default function GamePage() {
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="text-base font-medium text-gray-900 truncate">
+                              <UserCircleIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                              <Link 
+                                href={`/players/${player.id}`}
+                                className="text-base font-medium text-gray-900 hover:text-blue-600 transition-colors truncate"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 {player.displayName}
-                              </p>
+                              </Link>
                               {player.id === user?.uid && (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
                                   You
                                 </span>
                               )}
-                              {canSelectPlayer(player.id) && (
-                                <span className="text-xs text-blue-600">(Click to enter score)</span>
+                              {selectedPlayerId === player.id && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-600 text-white">
+                                  Selected
+                                </span>
                               )}
                             </div>
                             <div className="flex items-center gap-3 mt-1">
@@ -275,22 +284,32 @@ export default function GamePage() {
                                 Total: {getPlayerScore(player.id)}
                               </p>
                               {hasSubmittedCurrentRound(player.id) && (
-                                <span className="inline-flex items-center gap-1 text-sm text-blue-600">
-                                  <span className="text-blue-400">+</span>
-                                  {getCurrentRoundScore(player.id)}
+                                <span className="inline-flex items-center gap-1 text-sm text-green-600">
+                                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                  Round {game.currentRound}: +{getCurrentRoundScore(player.id)}
                                 </span>
                               )}
                             </div>
                           </div>
-                          {hasSubmittedCurrentRound(player.id) && (
-                            <div className="flex-shrink-0">
-                              <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center">
-                                <svg className="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                </svg>
+                          <div className="flex items-center gap-2">
+                            {canSelectPlayer(player.id) && (
+                              <div className="text-right">
+                                <p className="text-xs text-gray-500">Click to</p>
+                                <p className="text-xs font-medium text-blue-600">enter score</p>
                               </div>
-                            </div>
-                          )}
+                            )}
+                            {hasSubmittedCurrentRound(player.id) && (
+                              <div className="flex-shrink-0">
+                                <div className="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center">
+                                  <svg className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </motion.div>
                       ))}
                     </div>
@@ -302,6 +321,7 @@ export default function GamePage() {
                 <ScoreEntry
                   onScoreSubmit={handleScoreSubmit}
                   isSubmitting={submitting}
+                  selectedPlayer={selectedPlayerId ? game.players.find(p => p.id === selectedPlayerId) : null}
                 />
               ) : (
                 <motion.div

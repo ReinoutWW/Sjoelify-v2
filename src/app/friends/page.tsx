@@ -27,7 +27,7 @@ interface SearchResult extends UserProfile {
 }
 
 interface FriendRequestWithSender extends FriendRequest {
-  sender: UserProfile;
+  sender?: UserProfile;
 }
 
 export default function FriendsPage() {
@@ -272,10 +272,16 @@ export default function FriendsPage() {
                       className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="min-w-0 flex-1">
-                        <UserNameLink user={request.sender} />
-                        <p className="text-sm text-gray-500 mt-1 truncate">
-                          {request.sender.email}
-                        </p>
+                        {request.sender ? (
+                          <>
+                            <UserNameLink user={request.sender} />
+                            {request.sender.email && (
+                              <p className="text-sm text-gray-500 mt-1 truncate">{request.sender.email}</p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm font-medium text-gray-900 truncate">Unknown Sender</p>
+                        )}
                       </div>
                       <div className="ml-3 sm:ml-4 flex gap-1 sm:gap-2 flex-shrink-0">
                         <button

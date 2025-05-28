@@ -1,16 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeIn } from '@/shared/styles/animations';
+import { BoltIcon, CommandLineIcon } from '@heroicons/react/24/outline';
 
 interface ScoreEntryProps {
   onScoreSubmit: (scores: number[]) => void;
   isSubmitting?: boolean;
+  selectedPlayer?: {
+    id: string;
+    displayName: string;
+  } | null;
 }
 
-export function ScoreEntry({ onScoreSubmit, isSubmitting = false }: ScoreEntryProps) {
+export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer }: ScoreEntryProps) {
   const [scores, setScores] = useState<number[]>([0, 0, 0, 0]);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [quickInsertMode, setQuickInsertMode] = useState(false);
+  const [quickInsertValue, setQuickInsertValue] = useState('');
+  const quickInsertRef = useRef<HTMLInputElement>(null);
   const MAX_TOTAL_DISCS = 30;
   
   const gates = [
@@ -57,6 +65,32 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false }: ScoreEntryPr
     setScores(newScores);
   };
 
+  const handleQuickInsert = (value: string) => {
+    setQuickInsertValue(value);
+    
+    // Only process if we have exactly 4 digits
+    if (value.length === 4) {
+      const newScores = value.split('').map(char => parseInt(char) || 0);
+      const totalDiscs = getTotalDiscs(newScores);
+      
+      if (totalDiscs > MAX_TOTAL_DISCS) {
+        setError(`Maximum of ${MAX_TOTAL_DISCS} discs reached`);
+        return;
+      }
+      
+      setScores(newScores);
+      setError(null);
+    }
+  };
+
+  const toggleQuickInsert = () => {
+    setQuickInsertMode(!quickInsertMode);
+    setQuickInsertValue('');
+    if (!quickInsertMode) {
+      setTimeout(() => quickInsertRef.current?.focus(), 100);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, index: number) => {
     if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
@@ -77,6 +111,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false }: ScoreEntryPr
     e.preventDefault();
     onScoreSubmit(scores);
     setScores([0, 0, 0, 0]);
+    setQuickInsertValue('');
   };
 
   // Calculate score breakdown
@@ -108,7 +143,22 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false }: ScoreEntryPr
       {/* Score Entry Row */}
       <div>
         <div className="mb-4">
-          <h3 className="text-base font-medium text-gray-900">Enter Discs per Gate</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-medium text-gray-900">Enter Discs per Gate</h3>
+            <button
+              type="button"
+              onClick={toggleQuickInsert}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+                ${quickInsertMode 
+                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              <BoltIcon className="h-4 w-4" />
+              Quick Insert
+            </button>
+          </div>
+          
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-1">
             <p className="text-sm text-gray-500">Count discs from left to right</p>
             <div className="flex-1 hidden sm:block" />
@@ -132,83 +182,131 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false }: ScoreEntryPr
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          {gates.map((gate, index) => (
+        {/* Quick Insert Mode */}
+        <AnimatePresence mode="wait">
+          {quickInsertMode && (
             <motion.div
-              key={index}
-              id={`gate-${index}`}
-              tabIndex={0}
-              className={`relative p-3 sm:p-4 rounded-lg border-2 transition-all duration-200
-                focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                activeSlot === index
-                  ? 'border-blue-400 bg-blue-50/50 shadow-md focus:ring-blue-500'
-                  : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 focus:ring-blue-400'
-              }`}
-              variants={fadeIn}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              onFocus={() => setActiveSlot(index)}
-              onBlur={() => setActiveSlot(null)}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-4"
             >
-              <div className="flex flex-col items-center space-y-3">
-                {/* Gate identifier dots */}
-                <div className="flex items-center justify-center gap-1 py-1">
-                  {Array.from({ length: gate.dots }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-1.5 w-1.5 rounded-full bg-blue-300"
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <CommandLineIcon className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900 mb-2">
+                      Type 4 digits for gates 2-3-4-1
+                    </p>
+                    <input
+                      ref={quickInsertRef}
+                      type="text"
+                      value={quickInsertValue}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                        handleQuickInsert(value);
+                      }}
+                      placeholder="e.g., 3345"
+                      className="w-full px-3 py-2 text-lg font-mono text-center text-gray-900 bg-white border-2 border-blue-300 rounded-md
+                        focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400
+                        placeholder:text-gray-400"
+                      maxLength={4}
                     />
-                  ))}
-                </div>
-                {/* Score input */}
-                <div className="relative w-full">
-                  <input
-                    type="number"
-                    min="0"
-                    value={scores[index]}
-                    onChange={(e) => handleInputChange(index, e.target.value)}
-                    className="block w-full px-2 py-2 sm:py-1 text-center rounded-md text-blue-600 font-medium bg-blue-50 border-2 border-blue-100
-                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300
-                      [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleScoreChange(index, true);
-                    }}
-                    disabled={isSubmitting || getTotalDiscs(scores) >= MAX_TOTAL_DISCS}
-                    className="absolute inset-y-0 right-0 flex items-center pr-1.5 text-blue-500 hover:text-blue-600 disabled:text-blue-300 disabled:cursor-not-allowed p-0.5"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
-                      <path fillRule="evenodd" d="M14.77 12.79a.75.75 0 01-1.06-.02L10 8.832 6.29 12.77a.75.75 0 11-1.08-1.04l4.25-4.5a.75.75 0 011.08 0l4.25 4.5a.75.75 0 01-.02 1.06z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleScoreChange(index, false);
-                    }}
-                    disabled={scores[index] <= 0 || isSubmitting}
-                    className="absolute inset-y-0 left-0 flex items-center pl-1.5 text-blue-500 hover:text-blue-600 disabled:text-blue-300 disabled:cursor-not-allowed p-0.5"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
-                      <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25-4.5a.75.75 0 01-1.08 0l-4.25 4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                    </svg>
-                  </button>
+                    <div className="flex justify-center gap-3 mt-2 text-xs text-blue-700">
+                      {gates.map((gate, index) => (
+                        <div key={index} className="text-center">
+                          <div className="font-semibold">{quickInsertValue[index] || '-'}</div>
+                          <div className="opacity-60">{gate.points}pts</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
-          ))}
-        </div>
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          Click the arrows or use up/down keys to adjust the score
-        </p>
+          )}
+        </AnimatePresence>
+
+        {/* Manual Input Mode */}
+        {!quickInsertMode && (
+          <div>
+            <div className="grid grid-cols-4 gap-2 sm:gap-3">
+              {gates.map((gate, index) => (
+                <div
+                  key={index}
+                  id={`gate-${index}`}
+                  tabIndex={0}
+                  className={`relative p-2 sm:p-3 lg:p-4 rounded-lg border-2 transition-all duration-200
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                    activeSlot === index
+                      ? 'border-blue-400 bg-blue-50/50 shadow-md focus:ring-blue-500'
+                      : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/30 focus:ring-blue-400'
+                  }`}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
+                  onFocus={() => setActiveSlot(index)}
+                  onBlur={() => setActiveSlot(null)}
+                >
+                  <div className="space-y-1 sm:space-y-2">
+                    {/* Gate identifier dots */}
+                    <div className="flex items-center justify-center gap-0.5 sm:gap-1 py-0.5 sm:py-1">
+                      {Array.from({ length: gate.dots }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-blue-300"
+                        />
+                      ))}
+                    </div>
+                    {/* Score input */}
+                    <div className="relative w-full">
+                      <input
+                        type="number"
+                        min="0"
+                        value={scores[index]}
+                        onChange={(e) => handleInputChange(index, e.target.value)}
+                        className="block w-full px-1 sm:px-2 py-1.5 sm:py-2 text-center text-sm sm:text-base rounded-md text-blue-600 font-medium bg-blue-50 border-2 border-blue-100
+                          focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300
+                          [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleScoreChange(index, true);
+                        }}
+                        disabled={isSubmitting || getTotalDiscs(scores) >= MAX_TOTAL_DISCS}
+                        className="absolute inset-y-0 right-0 flex items-center pr-1 sm:pr-1.5 text-blue-500 hover:text-blue-600 disabled:text-blue-300 disabled:cursor-not-allowed p-0.5"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-2.5 h-2.5 sm:w-3 sm:h-3">
+                          <path fillRule="evenodd" d="M14.77 12.79a.75.75 0 01-1.06-.02L10 8.832 6.29 12.77a.75.75 0 11-1.08-1.04l4.25-4.5a.75.75 0 011.08 0l4.25 4.5a.75.75 0 01-.02 1.06z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleScoreChange(index, false);
+                        }}
+                        disabled={scores[index] <= 0 || isSubmitting}
+                        className="absolute inset-y-0 left-0 flex items-center pl-1 sm:pl-1.5 text-blue-500 hover:text-blue-600 disabled:text-blue-300 disabled:cursor-not-allowed p-0.5"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-2.5 h-2.5 sm:w-3 sm:h-3">
+                          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25 4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+              Click the arrows or use up/down keys to adjust the score
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Score Breakdown */}
-      {scores.every(score => score > 0) && (
+      {scoreBreakdown.total > 0 && (
         <motion.div
           className="p-3 sm:p-4 rounded-lg bg-gradient-to-br from-blue-50 to-blue-50/30 border border-blue-100"
           variants={fadeIn}
@@ -243,12 +341,15 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false }: ScoreEntryPr
           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
           disabled:opacity-50 disabled:cursor-not-allowed shadow-sm
           transition-all duration-200"
-        disabled={isSubmitting}
+        disabled={isSubmitting || getTotalDiscs(scores) === 0}
         variants={fadeIn}
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.98 }}
       >
-        Submit Scores
+        {selectedPlayer 
+          ? `Submit Scores for ${selectedPlayer.displayName}`
+          : 'Submit Scores'
+        }
       </motion.button>
     </motion.div>
   );
