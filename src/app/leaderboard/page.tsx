@@ -91,8 +91,8 @@ const LeaderboardCard = ({ entry, rank }: { entry: LeaderboardEntry; rank: numbe
                 href={`/games/${entry.bestGameId}`}
                 className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1 px-4 py-2 rounded-lg bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
               >
-                <span className="text-2xl font-bold">{entry.bestScore}</span>
-                <span className="text-xs whitespace-nowrap">Best Score</span>
+                <span className="text-2xl font-bold">{entry.bestAverageInGame}</span>
+                <span className="text-xs whitespace-nowrap">Best Average</span>
               </Link>
             </div>
 
@@ -103,8 +103,8 @@ const LeaderboardCard = ({ entry, rank }: { entry: LeaderboardEntry; rank: numbe
                 <span className="font-medium">{entry.averageScore}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span>Total:</span>
-                <span className="font-medium">{entry.totalScore}</span>
+                <span>Best Score:</span>
+                <span className="font-medium">{entry.bestScore}</span>
               </div>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function LeaderboardPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Leaderboard</h1>
-          <p className="mt-2 text-base sm:text-lg text-gray-600">Top Sjoelen players and their best scores</p>
+          <p className="mt-2 text-base sm:text-lg text-gray-600">Top Sjoelen players ranked by best game average</p>
         </div>
 
         <div className="space-y-3 sm:space-y-4">

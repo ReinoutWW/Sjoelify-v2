@@ -26,6 +26,7 @@ interface PlayerStats {
   relativeAverage: number;
   isNewPersonalBest: boolean;
   isNewBestAverage: boolean;
+  bestAverageInGame: number;
 }
 
 interface GameSummaryProps {
@@ -41,7 +42,6 @@ export function GameSummary({ game }: GameSummaryProps) {
       try {
         // Get the overall best average from the leaderboard
         const leaderboardData = await LeaderboardService.getLeaderboard();
-        const bestAverage = Math.max(...leaderboardData.map(player => player.averageScore));
 
         const stats = game.players.map(player => {
           const playerScores = game.scores[player.id];
@@ -54,10 +54,13 @@ export function GameSummary({ game }: GameSummaryProps) {
             ? Math.round(roundScores.reduce((a, b) => a + b, 0) / roundScores.length) 
             : 0;
           
-          // Calculate relative scores against overall best average
+          // Get this player's best average
+          const playerBestAverage = playerData?.bestAverageInGame || 0;
+          
+          // Calculate relative scores against player's own best average
           const relativeScores = Object.entries(rounds).reduce((acc, [round, score]) => ({
             ...acc,
-            [round]: score - bestAverage
+            [round]: score - playerBestAverage
           }), {});
           
           return {
@@ -69,9 +72,10 @@ export function GameSummary({ game }: GameSummaryProps) {
             bestRound: roundScores.length > 0 ? Math.max(...roundScores) : 0,
             worstRound: roundScores.length > 0 ? Math.min(...roundScores) : 0,
             relativeScores,
-            relativeAverage: playerAverage - bestAverage,
+            relativeAverage: playerAverage - playerBestAverage,
             isNewPersonalBest: playerData ? Math.max(...roundScores) > playerData.bestScore : false,
-            isNewBestAverage: playerData ? playerAverage > playerData.bestAverageInGame : false
+            isNewBestAverage: playerData ? playerAverage > playerBestAverage : false,
+            bestAverageInGame: playerBestAverage
           } as PlayerStats;
         }).sort((a, b) => b.totalScore - a.totalScore); // Sort by total score
 
@@ -270,27 +274,49 @@ export function GameSummary({ game }: GameSummaryProps) {
                     key={player.playerId}
                     className="px-6 py-4 whitespace-nowrap text-sm"
                   >
-                    <div className="flex items-center space-x-1.5">
-                      {player.isNewBestAverage && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 animate-pulse">
-                          New Best!
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-gray-900">{player.averageScore}</span>
+                        <span
+                          className={`inline-flex items-center text-xs font-medium ${
+                            player.relativeAverage >= 0
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }`}
+                        >
+                          {player.relativeAverage >= 0 ? '+' : ''}{player.relativeAverage}
                         </span>
-                      )}
-                      <span className="text-gray-900">{player.averageScore}</span>
-                      <span
-                        className={`inline-flex items-center text-xs font-medium ${
-                          player.relativeAverage >= 0
-                            ? 'text-green-600'
-                            : 'text-red-600'
-                        }`}
-                      >
-                        {player.relativeAverage >= 0 ? '+' : ''}{player.relativeAverage}
-                      </span>
+                        {player.isNewBestAverage && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 animate-pulse">
+                            New Best!
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
                 ))}
               </tr>
-              <tr className="bg-gray-50 font-medium">
+              <tr className="bg-gray-50/50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  Best Average
+                </td>
+                {playerStats.map((player) => (
+                  <td
+                    key={player.playerId}
+                    className="px-6 py-4 whitespace-nowrap text-sm"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-medium text-gray-900">{player.bestAverageInGame}</span>
+                      {player.isNewBestAverage && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200">
+                          New Record
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                ))}
+              </tr>
+              <tr className="bg-gray-50/25">
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   Total
                 </td>
@@ -348,13 +374,12 @@ export function GameSummary({ game }: GameSummaryProps) {
                   </div>
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-500">Average</dt>
-                    <dd className="flex items-center space-x-1.5">
+                    <dd className="flex items-center gap-1.5">
                       {player.isNewBestAverage && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 animate-pulse">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 animate-pulse">
                           New Best!
                         </span>
                       )}
-                      <span className="text-sm font-medium text-gray-900">{player.averageScore}</span>
                       <span
                         className={`text-xs font-medium ${
                           player.relativeAverage >= 0
@@ -364,6 +389,7 @@ export function GameSummary({ game }: GameSummaryProps) {
                       >
                         {player.relativeAverage >= 0 ? '+' : ''}{player.relativeAverage}
                       </span>
+                      <span className="text-sm font-medium text-gray-900">{player.averageScore}</span>
                     </dd>
                   </div>
                   <div className="flex items-center justify-between">

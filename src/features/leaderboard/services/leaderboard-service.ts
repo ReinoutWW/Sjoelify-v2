@@ -37,10 +37,15 @@ interface Game {
 interface PlayerStats {
   displayName: string;
   gamesPlayed: number;
-  scores: ScoreWithTimestamp[];  // Each score with its timestamp
+  scores: Array<{
+    score: number;
+    timestamp: Date;
+    relativeScore: number;
+  }>;
   bestScore: number;
   bestGameId: string;
   lastPlayed: Date;
+  bestAverageInGame: number;
 }
 
 export interface LeaderboardEntry {
@@ -53,7 +58,11 @@ export interface LeaderboardEntry {
   bestGameId: string;
   lastPlayed: Date;
   bestAverageInGame: number;
-  scoreHistory: ScoreWithTimestamp[];  // Add score history with timestamps
+  scoreHistory: Array<{
+    score: number;
+    timestamp: Date;
+    relativeScore: number;
+  }>;
 }
 
 export class LeaderboardService {
@@ -75,7 +84,15 @@ export class LeaderboardService {
 
   private static getBestAverageScore(leaderboard: LeaderboardEntry[]): number {
     if (leaderboard.length === 0) return 0;
-    return Math.max(...leaderboard.map(entry => entry.averageScore));
+    const bestAverage = Math.max(...leaderboard.map(entry => entry.bestAverageInGame));
+    console.log('Calculating best average across all players:', {
+      allAverages: leaderboard.map(entry => ({
+        player: entry.displayName,
+        bestAverageInGame: entry.bestAverageInGame
+      })),
+      overallBest: bestAverage
+    });
+    return bestAverage;
   }
 
   static async getLeaderboard(): Promise<LeaderboardEntry[]> {
@@ -89,25 +106,15 @@ export class LeaderboardService {
         orderBy('updatedAt', 'desc')
       );
 
-      // Get all users for player information
       const usersQuery = query(collection(db, this.usersCollection));
       
-      console.log('Executing Firebase queries...');
       const [gamesSnapshot, usersSnapshot] = await Promise.all([
         getDocs(gamesQuery),
         getDocs(usersQuery)
       ]);
 
-      console.log('Games found:', gamesSnapshot.size);
-      console.log('Users found:', usersSnapshot.size);
-
-      if (gamesSnapshot.size === 0) {
-        console.log('No games found in the database');
-        return [];
-      }
-
-      if (usersSnapshot.size === 0) {
-        console.log('No users found in the database');
+      if (gamesSnapshot.size === 0 || usersSnapshot.size === 0) {
+        console.log('No games or users found');
         return [];
       }
 
@@ -115,107 +122,93 @@ export class LeaderboardService {
       const userMap = new Map<string, string>();
       usersSnapshot.forEach(doc => {
         const userData = doc.data() as UserProfile;
-        console.log('Processing user:', doc.id, userData);
         userMap.set(doc.id, userData.displayName || doc.id);
       });
 
-      console.log('Users with display names:', userMap.size);
-
       const playerStats = new Map<string, PlayerStats>();
 
-      // Process all games and aggregate player statistics
-      gamesSnapshot.forEach((doc) => {
-        try {
-          const gameData = doc.data();
-          const gameId = doc.id;
-          console.log('Processing game:', gameId);
+      // First pass: Calculate best averages for each player
+      gamesSnapshot.docs.forEach(doc => {
+        const gameData = doc.data() as Game;
+        const scores = gameData.scores || {};
 
-          // Skip invalid games
-          if (!gameData.isClosed || !gameData.scores) {
-            console.warn('Skipping invalid game:', gameId);
-            return;
+        Object.entries(scores).forEach(([playerId, scoreData]) => {
+          if (!scoreData.rounds) return;
+
+          const roundScores = Object.values(scoreData.rounds);
+          if (roundScores.length === 0) return;
+
+          const gameAverage = Math.round(
+            roundScores.reduce((sum, score) => sum + score, 0) / roundScores.length
+          );
+
+          const currentStats = playerStats.get(playerId) || {
+            displayName: userMap.get(playerId) || playerId,
+            gamesPlayed: 0,
+            scores: [],
+            bestScore: 0,
+            bestGameId: '',
+            lastPlayed: new Date(),
+            bestAverageInGame: 0
+          };
+
+          if (gameAverage > currentStats.bestAverageInGame) {
+            currentStats.bestAverageInGame = gameAverage;
           }
 
-          const scores = gameData.scores as Record<string, GameScore>;
-          const gameStartTime = this.convertTimestampToDate(gameData.createdAt);
-
-          // Process each player's score in the game
-          Object.entries(scores).forEach(([playerId, scoreData]) => {
-            try {
-              const displayName = userMap.get(playerId);
-              if (!displayName) {
-                console.warn('No display name found for player:', playerId);
-                return;
-              }
-
-              let currentStats = playerStats.get(playerId) || {
-                displayName,
-                gamesPlayed: 0,
-                scores: [],
-                bestScore: 0,
-                bestGameId: '',
-                lastPlayed: gameStartTime
-              };
-
-              // Process rounds
-              if (scoreData.rounds) {
-                const roundScores = Object.entries(scoreData.rounds)
-                  .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                  .map(([roundNum, score]) => {
-                    // Calculate timestamp for each round (assume each round is ~5 minutes apart)
-                    const roundTime = new Date(gameStartTime);
-                    roundTime.setMinutes(roundTime.getMinutes() + (parseInt(roundNum) - 1) * 5);
-                    return {
-                      score,
-                      timestamp: roundTime,
-                      relativeScore: 0 // This will be updated later when we have the best average
-                    };
-                  });
-
-                console.log('Processing rounds for player:', {
-                  playerId,
-                  displayName,
-                  roundScores
-                });
-
-                if (roundScores.length > 0) {
-                  // Add each round score with its timestamp
-                  currentStats.scores.push(...roundScores);
-
-                  // Update best score if any round score is higher
-                  const maxRoundScore = Math.max(...roundScores.map(r => r.score));
-                  if (maxRoundScore > currentStats.bestScore) {
-                    currentStats.bestScore = maxRoundScore;
-                    currentStats.bestGameId = gameId;
-                  }
-
-                  // Update games played and last played
-                  currentStats.gamesPlayed++;
-                  const lastRoundTime = roundScores[roundScores.length - 1].timestamp;
-                  if (!currentStats.lastPlayed || lastRoundTime > currentStats.lastPlayed) {
-                    currentStats.lastPlayed = lastRoundTime;
-                  }
-                }
-              }
-
-              playerStats.set(playerId, currentStats);
-              console.log('Updated player stats:', {
-                playerId,
-                stats: currentStats
-              });
-            } catch (playerError) {
-              console.error('Error processing player score:', playerId, playerError);
-            }
-          });
-        } catch (gameError) {
-          console.error('Error processing game:', doc.id, gameError);
-        }
+          playerStats.set(playerId, currentStats);
+        });
       });
 
-      console.log('Final player stats:', Array.from(playerStats.entries()));
+      // Second pass: Calculate relative scores against player's own best score
+      gamesSnapshot.docs.forEach(doc => {
+        const gameData = doc.data() as Game;
+        const gameId = doc.id;
+        const scores = gameData.scores || {};
+        const gameTime = this.convertTimestampToDate(gameData.updatedAt);
 
-      // Convert Map to array and calculate averages
-      const leaderboard = Array.from(playerStats.entries()).map(([playerId, stats]) => ({
+        Object.entries(scores).forEach(([playerId, scoreData]) => {
+          if (!scoreData.rounds) return;
+
+          const playerStat = playerStats.get(playerId);
+          if (!playerStat) return;
+
+          const roundScores = Object.entries(scoreData.rounds)
+            .sort(([a], [b]) => parseInt(a) - parseInt(b))
+            .map(([roundNum, score]) => {
+              const roundTime = new Date(gameTime);
+              roundTime.setMinutes(roundTime.getMinutes() + (parseInt(roundNum) - 1) * 5);
+              
+              // Calculate relative score against player's best score
+              const relativeScore = score - playerStat.bestScore;
+
+              return {
+                score,
+                timestamp: roundTime,
+                relativeScore
+              };
+            });
+
+          playerStat.scores.push(...roundScores);
+          playerStat.gamesPlayed++;
+
+          // Update best score if any round score is higher
+          const maxRoundScore = Math.max(...roundScores.map(r => r.score));
+          if (maxRoundScore > playerStat.bestScore) {
+            playerStat.bestScore = maxRoundScore;
+            playerStat.bestGameId = gameId;
+          }
+
+          // Update last played time
+          const lastRoundTime = roundScores[roundScores.length - 1].timestamp;
+          if (!playerStat.lastPlayed || lastRoundTime > playerStat.lastPlayed) {
+            playerStat.lastPlayed = lastRoundTime;
+          }
+        });
+      });
+
+      // Convert to leaderboard entries
+      const leaderboard = Array.from(playerStats.entries()).map(([playerId, stats]: [string, PlayerStats]): LeaderboardEntry => ({
         playerId,
         displayName: stats.displayName,
         gamesPlayed: stats.gamesPlayed,
@@ -226,27 +219,12 @@ export class LeaderboardService {
         bestScore: stats.bestScore,
         bestGameId: stats.bestGameId,
         lastPlayed: stats.lastPlayed,
-        bestAverageInGame: 0, // This will be updated after we find the best average
+        bestAverageInGame: stats.bestAverageInGame,
         scoreHistory: stats.scores.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
       }));
 
-      console.log('Final leaderboard entries:', leaderboard);
-
-      // Sort by best score descending
-      const sortedLeaderboard = leaderboard.sort((a, b) => b.bestScore - a.bestScore);
-      
-      // Calculate best average score
-      const bestAverageScore = this.getBestAverageScore(sortedLeaderboard);
-
-      // Add relative scores to each player's score history
-      return sortedLeaderboard.map(entry => ({
-        ...entry,
-        bestAverageInGame: bestAverageScore,
-        scoreHistory: entry.scoreHistory.map(score => ({
-          ...score,
-          relativeScore: score.score - bestAverageScore
-        }))
-      }));
+      // Sort by best average in game descending
+      return leaderboard.sort((a, b) => b.bestAverageInGame - a.bestAverageInGame);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       throw error;

@@ -90,11 +90,15 @@ export default function PlayerProfilePage() {
 
         // Convert leaderboard data to chart format
         console.log('Converting score history:', playerData.scoreHistory);
-        const scoreHistory = playerData.scoreHistory.map(score => ({
-          date: new Date(score.timestamp),
-          score: score.score,
-          relativeScore: score.relativeScore
-        }));
+        const scoreHistory = playerData.scoreHistory.map(score => {
+          const relativeScore = score.score - playerData.bestAverageInGame;
+          console.log(`Calculating relative score: ${score.score} - ${playerData.bestAverageInGame} = ${relativeScore}`);
+          return {
+            date: new Date(score.timestamp),
+            score: score.score,
+            relativeScore
+          };
+        });
         console.log('Converted score history:', scoreHistory);
 
         // Sort by date
@@ -371,13 +375,13 @@ export default function PlayerProfilePage() {
 
             {/* Relative Score Chart */}
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Relative to Best Average</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Relative to Personal Best Average ({stats.bestAverage})</h3>
               <div className="h-[300px] sm:h-[400px]">
                 <Line
                   data={{
                     datasets: [
                       {
-                        label: 'Relative Score',
+                        label: 'Points vs Best Average',
                         data: stats.scoreHistory.map(entry => ({
                           x: entry.date,
                           y: entry.relativeScore
@@ -424,7 +428,7 @@ export default function PlayerProfilePage() {
                         beginAtZero: true,
                         title: {
                           display: true,
-                          text: 'Points Relative to Best Average'
+                          text: `Points Relative to Best Average (${stats.bestAverage})`
                         },
                         grid: {
                           color: (context) => {
@@ -444,7 +448,8 @@ export default function PlayerProfilePage() {
                           label: (context) => {
                             if (!context?.parsed?.y) return '';
                             const score = context.parsed.y;
-                            return `${score >= 0 ? '+' : ''}${score} points`;
+                            const rawData = context.raw as { x: Date; y: number };
+                            return `Score: ${score >= 0 ? '+' : ''}${score} (${rawData.y} vs ${stats.bestAverage})`;
                           }
                         }
                       }
@@ -463,12 +468,12 @@ export default function PlayerProfilePage() {
                     <tr>
                       <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
                       <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Relative</th>
+                      <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">vs Best Avg ({stats.bestAverage})</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {stats.scoreHistory.map((entry, index) => (
-                      <tr key={index}>
+                      <tr key={index} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {entry.date.toLocaleTimeString()}
                         </td>
@@ -482,6 +487,7 @@ export default function PlayerProfilePage() {
                                 ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'
                             }`}
+                            title={`${entry.score} - ${stats.bestAverage} = ${entry.relativeScore}`}
                           >
                             {entry.relativeScore >= 0 ? (
                               <>
