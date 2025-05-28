@@ -5,7 +5,8 @@ import {
   updateProfile,
   AuthError,
   onAuthStateChanged as firebaseOnAuthStateChanged,
-  User
+  User,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
@@ -27,6 +28,8 @@ export class AuthService {
       case 'auth/user-not-found':
       case 'auth/wrong-password':
         return 'Invalid email or password.';
+      case 'auth/missing-email':
+        return 'Please enter your email address.';
       default:
         return 'An error occurred. Please try again.';
     }
@@ -115,6 +118,14 @@ export class AuthService {
       await firebaseSignOut(auth);
     } catch (error) {
       throw new Error('Failed to sign out. Please try again.');
+    }
+  }
+
+  static async sendPasswordResetEmail(email: string): Promise<void> {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      throw new Error(this.getErrorMessage(error as AuthError));
     }
   }
 

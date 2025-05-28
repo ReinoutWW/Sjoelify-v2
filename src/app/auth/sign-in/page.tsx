@@ -31,9 +31,9 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col py-16 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col py-8 px-4 sm:py-16 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
           Sign in to your account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
@@ -44,12 +44,12 @@ export default function SignInPage() {
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={fadeIn}
-          className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10"
+          className="bg-white py-6 px-4 shadow sm:rounded-lg sm:px-10 sm:py-8"
         >
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
@@ -95,6 +95,14 @@ export default function SignInPage() {
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-gray-900"
                 />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                <Link href="/auth/reset-password" className="font-medium text-primary-600 hover:text-primary-500">
+                  Forgot your password?
+                </Link>
               </div>
             </div>
 

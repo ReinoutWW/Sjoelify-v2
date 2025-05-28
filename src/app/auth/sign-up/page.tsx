@@ -96,9 +96,9 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col py-16 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col py-8 px-4 sm:py-16 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
           Create your account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
@@ -109,12 +109,12 @@ export default function SignUpPage() {
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="mt-6 sm:mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={fadeIn}
-          className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10"
+          className="bg-white py-6 px-4 shadow sm:rounded-lg sm:px-10 sm:py-8"
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
