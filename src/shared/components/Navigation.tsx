@@ -141,20 +141,20 @@ export function Navigation() {
                               Dashboard
                             </Link>
                             <Link
+                              href={`/players/${user?.uid}`}
+                              onClick={() => setIsProfileOpen(false)}
+                              className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <ChartBarIcon className="h-5 w-5 mr-2" />
+                              Your Stats
+                            </Link>
+                            <Link
                               href="/leaderboard"
                               onClick={() => setIsProfileOpen(false)}
                               className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                               <TrophyIcon className="h-5 w-5 mr-2" />
                               Leaderboard
-                            </Link>
-                            <Link
-                              href="/statistics"
-                              onClick={() => setIsProfileOpen(false)}
-                              className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
-                              <ChartBarIcon className="h-5 w-5 mr-2" />
-                              Statistics
                             </Link>
                           </div>
 

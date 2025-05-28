@@ -7,6 +7,16 @@ interface PlayerScore {
   rounds: Record<number, number>;
 }
 
+interface GameScore {
+  total?: number;
+  rounds?: Record<string, number>;
+}
+
+interface ScoreWithTimestamp {
+  score: number;
+  timestamp: Date;
+}
+
 interface Game {
   id: string;
   title: string;
@@ -20,7 +30,16 @@ interface Game {
     seconds: number;
     nanoseconds: number;
   };
-  scores: Record<string, PlayerScore>;
+  scores: Record<string, GameScore>;
+}
+
+interface PlayerStats {
+  displayName: string;
+  gamesPlayed: number;
+  scores: ScoreWithTimestamp[];  // Each score with its timestamp
+  bestScore: number;
+  bestGameId: string;
+  lastPlayed: Date;
 }
 
 export interface LeaderboardEntry {
@@ -32,6 +51,7 @@ export interface LeaderboardEntry {
   bestScore: number;
   bestGameId: string;
   lastPlayed: Date;
+  scoreHistory: ScoreWithTimestamp[];  // Add score history with timestamps
 }
 
 export class LeaderboardService {
@@ -54,7 +74,6 @@ export class LeaderboardService {
   static async getLeaderboard(): Promise<LeaderboardEntry[]> {
     try {
       console.log('Starting leaderboard fetch...');
-      console.log('Firebase db instance:', !!db);
 
       // Get all completed games
       const gamesQuery = query(
@@ -90,49 +109,28 @@ export class LeaderboardService {
       usersSnapshot.forEach(doc => {
         const userData = doc.data() as UserProfile;
         console.log('Processing user:', doc.id, userData);
-        if (userData.displayName) {
-          userMap.set(doc.id, userData.displayName);
-        }
+        userMap.set(doc.id, userData.displayName || doc.id);
       });
 
       console.log('Users with display names:', userMap.size);
-      console.log('User map:', Object.fromEntries(userMap));
 
-      const playerStats = new Map<string, {
-        displayName: string;
-        gamesPlayed: number;
-        scores: number[];
-        bestScore: number;
-        bestGameId: string;
-        lastPlayed: Date;
-      }>();
+      const playerStats = new Map<string, PlayerStats>();
 
       // Process all games and aggregate player statistics
       gamesSnapshot.forEach((doc) => {
         try {
           const gameData = doc.data();
           const gameId = doc.id;
-
-          console.log('Processing game:', gameId, {
-            isClosed: gameData.isClosed,
-            playerIds: gameData.playerIds?.length,
-            hasScores: !!gameData.scores,
-            updatedAt: gameData.updatedAt,
-            scores: gameData.scores
-          });
+          console.log('Processing game:', gameId);
 
           // Skip invalid games
-          if (!gameData.isClosed || !gameData.scores || !gameData.updatedAt) {
-            console.warn('Skipping invalid game:', gameId, {
-              isClosed: gameData.isClosed,
-              hasScores: !!gameData.scores,
-              hasUpdatedAt: !!gameData.updatedAt
-            });
+          if (!gameData.isClosed || !gameData.scores) {
+            console.warn('Skipping invalid game:', gameId);
             return;
           }
 
-          const scores = gameData.scores as Record<string, { total: number }>;
-          const updatedAt = this.convertTimestampToDate(gameData.updatedAt);
+          const scores = gameData.scores as Record<string, GameScore>;
+          const gameStartTime = this.convertTimestampToDate(gameData.createdAt);
 
           // Process each player's score in the game
           Object.entries(scores).forEach(([playerId, scoreData]) => {
@@ -143,41 +141,62 @@ export class LeaderboardService {
                 return;
               }
 
-              const totalScore = typeof scoreData.total === 'number' ? scoreData.total : 0;
-              console.log('Processing score:', {
-                playerId,
-                displayName,
-                gameId,
-                totalScore,
-                scoreData
-              });
-
-              const currentStats = playerStats.get(playerId) || {
+              let currentStats = playerStats.get(playerId) || {
                 displayName,
                 gamesPlayed: 0,
-                scores: [] as number[],
+                scores: [],
                 bestScore: 0,
                 bestGameId: '',
-                lastPlayed: updatedAt
+                lastPlayed: gameStartTime
               };
 
-              currentStats.scores.push(totalScore);
-              currentStats.gamesPlayed++;
+              // Process rounds
+              if (scoreData.rounds) {
+                const roundScores = Object.entries(scoreData.rounds)
+                  .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                  .map(([roundNum, score]) => {
+                    // Calculate timestamp for each round (assume each round is ~5 minutes apart)
+                    const roundTime = new Date(gameStartTime);
+                    roundTime.setMinutes(roundTime.getMinutes() + (parseInt(roundNum) - 1) * 5);
+                    return {
+                      score,
+                      timestamp: roundTime
+                    };
+                  });
 
-              // Update best score if current score is higher
-              if (totalScore > currentStats.bestScore) {
-                currentStats.bestScore = totalScore;
-                currentStats.bestGameId = gameId;
-              }
+                console.log('Processing rounds for player:', {
+                  playerId,
+                  displayName,
+                  roundScores
+                });
 
-              // Update last played if this game is more recent
-              if (!currentStats.lastPlayed || updatedAt > currentStats.lastPlayed) {
-                currentStats.lastPlayed = updatedAt;
+                if (roundScores.length > 0) {
+                  // Add each round score with its timestamp
+                  currentStats.scores.push(...roundScores);
+
+                  // Update best score if any round score is higher
+                  const maxRoundScore = Math.max(...roundScores.map(r => r.score));
+                  if (maxRoundScore > currentStats.bestScore) {
+                    currentStats.bestScore = maxRoundScore;
+                    currentStats.bestGameId = gameId;
+                  }
+
+                  // Update games played and last played
+                  currentStats.gamesPlayed++;
+                  const lastRoundTime = roundScores[roundScores.length - 1].timestamp;
+                  if (!currentStats.lastPlayed || lastRoundTime > currentStats.lastPlayed) {
+                    currentStats.lastPlayed = lastRoundTime;
+                  }
+                }
               }
 
               playerStats.set(playerId, currentStats);
+              console.log('Updated player stats:', {
+                playerId,
+                stats: currentStats
+              });
             } catch (playerError) {
-              console.error('Error processing player:', playerId, playerError);
+              console.error('Error processing player score:', playerId, playerError);
             }
           });
         } catch (gameError) {
@@ -185,34 +204,24 @@ export class LeaderboardService {
         }
       });
 
-      console.log('Players with stats:', playerStats.size);
-      console.log('Player stats:', Object.fromEntries(playerStats));
-
-      if (playerStats.size === 0) {
-        console.warn('No valid player stats found');
-        return [];
-      }
+      console.log('Final player stats:', Array.from(playerStats.entries()));
 
       // Convert Map to array and calculate averages
-      const leaderboard = Array.from(playerStats.entries()).map(([playerId, stats]) => {
-        const entry = {
-          playerId,
-          displayName: stats.displayName,
-          gamesPlayed: stats.gamesPlayed,
-          totalScore: stats.scores.reduce((sum, score) => sum + score, 0),
-          averageScore: Math.round(
-            stats.scores.reduce((sum, score) => sum + score, 0) / stats.gamesPlayed
-          ),
-          bestScore: stats.bestScore,
-          bestGameId: stats.bestGameId,
-          lastPlayed: stats.lastPlayed
-        };
-        console.log('Created leaderboard entry:', entry);
-        return entry;
-      });
+      const leaderboard = Array.from(playerStats.entries()).map(([playerId, stats]) => ({
+        playerId,
+        displayName: stats.displayName,
+        gamesPlayed: stats.gamesPlayed,
+        totalScore: stats.scores.reduce((sum, { score }) => sum + score, 0),
+        averageScore: Math.round(
+          stats.scores.reduce((sum, { score }) => sum + score, 0) / stats.scores.length
+        ),
+        bestScore: stats.bestScore,
+        bestGameId: stats.bestGameId,
+        lastPlayed: stats.lastPlayed,
+        scoreHistory: stats.scores.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+      }));
 
-      console.log('Final leaderboard entries:', leaderboard.length);
-      console.log('Leaderboard data:', leaderboard);
+      console.log('Final leaderboard entries:', leaderboard);
 
       // Sort by best score descending
       return leaderboard.sort((a, b) => b.bestScore - a.bestScore);

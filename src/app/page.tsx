@@ -152,10 +152,10 @@ export default function Home() {
                     <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5" />
                   </Link>
                   <Link
-                    href="/statistics"
+                    href={`/players/${user.uid}`}
                     className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                   >
-                    Statistics
+                    Your Stats
                     <ChartBarIcon className="ml-2 -mr-1 h-5 w-5" />
                   </Link>
                 </>
@@ -447,8 +447,8 @@ export default function Home() {
                       </Link>
                     </li>
                     <li>
-                      <Link href="/statistics" className="text-gray-400 hover:text-white transition-colors">
-                        Statistics
+                      <Link href={`/players/${user.uid}`} className="text-gray-400 hover:text-white transition-colors">
+                        Your Stats
                       </Link>
                     </li>
                     <li>

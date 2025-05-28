@@ -4,8 +4,9 @@ import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Game } from '../types';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
-import { UserCircleIcon } from '@heroicons/react/24/solid';
+import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { formatDate, isFirestoreTimestamp } from '@/shared/utils/date-utils';
+import Link from 'next/link';
 
 interface FirestoreTimestamp {
   seconds: number;
@@ -142,7 +143,12 @@ export function GameSummary({ game }: GameSummaryProps) {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[140px]"
                   >
-                    <div className="truncate">{player.displayName}</div>
+                    <Link
+                      href={`/players/${player.playerId}`}
+                      className="hover:text-primary-600 transition-colors"
+                    >
+                      <div className="truncate">{player.displayName}</div>
+                    </Link>
                   </th>
                 ))}
               </tr>
@@ -231,7 +237,12 @@ export function GameSummary({ game }: GameSummaryProps) {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <UserCircleIcon className="h-6 w-6 text-gray-400" />
-                  <h3 className="font-medium text-gray-900 truncate">{player.displayName}</h3>
+                  <Link
+                    href={`/players/${player.playerId}`}
+                    className="hover:text-primary-600 transition-colors"
+                  >
+                    <h3 className="font-medium text-gray-900 truncate">{player.displayName}</h3>
+                  </Link>
                 </div>
                 <dl className="mt-3 space-y-2">
                   <div className="flex justify-between items-center gap-2">

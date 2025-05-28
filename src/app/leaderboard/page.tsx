@@ -66,9 +66,14 @@ const LeaderboardCard = ({ entry, rank }: { entry: LeaderboardEntry; rank: numbe
           <div className="flex-1 min-w-0 w-full">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 truncate">
-                  {entry.displayName}
-                </h2>
+                <Link
+                  href={`/players/${entry.playerId}`}
+                  className="hover:text-primary-600 transition-colors"
+                >
+                  <h2 className="text-lg font-semibold text-gray-900 truncate">
+                    {entry.displayName}
+                  </h2>
+                </Link>
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
                   <div className="flex items-center gap-1.5">
                     <ChartBarIcon className="h-4 w-4" />
@@ -117,12 +122,25 @@ export default function LeaderboardPage() {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
+        console.log('Fetching leaderboard data...');
         const data = await LeaderboardService.getLeaderboard();
-        const formattedData = data.map(entry => ({
-          ...entry,
-          displayName: entry.displayName.split('@')[0].replace(/["']/g, ''),
-          lastPlayed: new Date(entry.lastPlayed)
-        }));
+        console.log('Raw leaderboard data:', data);
+        
+        if (!data || data.length === 0) {
+          console.log('No leaderboard data returned');
+          setLeaderboard([]);
+          return;
+        }
+
+        const formattedData = data.map(entry => {
+          console.log('Processing entry:', entry);
+          return {
+            ...entry,
+            displayName: entry.displayName ? entry.displayName.split('@')[0].replace(/["']/g, '') : 'Unknown Player',
+            lastPlayed: entry.lastPlayed ? new Date(entry.lastPlayed) : new Date()
+          };
+        });
+        console.log('Formatted leaderboard data:', formattedData);
         setLeaderboard(formattedData);
       } catch (err) {
         console.error('Error loading leaderboard:', err);
