@@ -56,31 +56,35 @@ export default function DashboardPage() {
         >
           {/* Header */}
           <motion.div variants={fadeIn} className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900">Your Dashboard</h1>
+            <h1 className="text-4xl font-bold text-gray-900">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">
+                Your Dashboard
+              </span>
+            </h1>
             <p className="mt-4 text-lg text-gray-600">
               Track your progress and manage your games
             </p>
           </motion.div>
 
           {/* Quick Actions */}
-          <motion.div variants={fadeIn} className="flex flex-wrap justify-center gap-4">
+          <motion.div variants={fadeIn} className="flex flex-col sm:flex-row sm:flex-wrap sm:justify-center gap-4">
             <Link
               href="/games/new"
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
             >
               Start New Game
               <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5" />
             </Link>
             <Link
               href={`/players/${user.uid}`}
-              className="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
             >
               View Your Stats
               <ChartBarIcon className="ml-2 -mr-1 h-5 w-5" />
             </Link>
             <Link
               href="/leaderboard"
-              className="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
             >
               View Leaderboard
               <TrophyIcon className="ml-2 -mr-1 h-5 w-5" />

@@ -225,10 +225,9 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false }: ScoreEntryPr
               <span className="font-medium text-blue-700">+{scoreBreakdown.leftoverPoints}</span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-blue-100">
-              <span className="font-medium text-gray-700">Average</span>
+              <span className="font-medium text-gray-700">Score</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-lg sm:text-xl font-bold text-blue-700">{scoreBreakdown.total}</span>
-                <span className="text-sm font-medium text-emerald-600">+7</span>
               </div>
             </div>
           </div>

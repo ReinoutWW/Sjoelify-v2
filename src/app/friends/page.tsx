@@ -171,55 +171,64 @@ export default function FriendsPage() {
       initial="hidden"
       animate="visible"
       variants={fadeIn}
-      className="max-w-4xl mx-auto px-4 py-8"
+      className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
     >
+      <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {/* Header */}
         <div className="border-b border-gray-200">
-          <div className="flex">
+          <div className="flex overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab('friends')}
-              className={`flex items-center px-6 py-4 text-sm font-medium ${
+              className={`flex items-center flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-medium ${
                 activeTab === 'friends'
                   ? 'text-primary-600 border-b-2 border-primary-600'
                   : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <UserGroupIcon className="w-5 h-5 mr-2" />
-              Friends List
+              <UserGroupIcon className="w-5 h-5 mr-1.5 sm:mr-2" />
+              <span className="whitespace-nowrap">Friends</span>
             </button>
             <button
               onClick={() => setActiveTab('requests')}
-              className={`flex items-center px-6 py-4 text-sm font-medium ${
+              className={`flex items-center flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-medium ${
                 activeTab === 'requests'
                   ? 'text-primary-600 border-b-2 border-primary-600'
                   : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <BellIcon className="w-5 h-5 mr-2" />
-              Friend Requests
+              <BellIcon className="w-5 h-5 mr-1.5 sm:mr-2" />
+              <span className="whitespace-nowrap">Requests</span>
               {friendRequests.length > 0 && (
-                <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-600 rounded-full">
+                <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-600 rounded-full">
                   {friendRequests.length}
                 </span>
               )}
             </button>
             <button
               onClick={() => setActiveTab('search')}
-              className={`flex items-center px-6 py-4 text-sm font-medium ${
+              className={`flex items-center flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-medium ${
                 activeTab === 'search'
                   ? 'text-primary-600 border-b-2 border-primary-600'
                   : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
-              Find Friends
+              <MagnifyingGlassIcon className="w-5 h-5 mr-1.5 sm:mr-2" />
+              <span className="whitespace-nowrap">Find</span>
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {loading ? (
             <div className="text-center py-8 text-gray-500">Loading...</div>
           ) : activeTab === 'friends' ? (
@@ -228,19 +237,19 @@ export default function FriendsPage() {
               {friends.length === 0 ? (
                 <p className="text-gray-500">You haven't added any friends yet.</p>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                   {friends.map((friend) => (
                     <div
                       key={friend.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="min-w-0 flex-1">
                         <UserNameLink user={friend} />
-                        <p className="text-sm text-gray-500 mt-1">{friend.email}</p>
+                        <p className="text-sm text-gray-500 mt-1 truncate">{friend.email}</p>
                       </div>
                       <button
                         onClick={() => handleRemoveFriend(friend.id)}
-                        className="ml-4 p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        className="ml-3 sm:ml-4 p-2 text-gray-400 hover:text-red-500 transition-colors"
                         title="Remove friend"
                       >
                         <UserMinusIcon className="w-5 h-5" />
@@ -256,29 +265,29 @@ export default function FriendsPage() {
               {friendRequests.length === 0 ? (
                 <p className="text-gray-500">No pending friend requests.</p>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {friendRequests.map((request) => (
                     <div
                       key={request.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="min-w-0 flex-1">
                         <UserNameLink user={request.sender} />
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 mt-1 truncate">
                           {request.sender.email}
                         </p>
                       </div>
-                      <div className="ml-4 flex gap-2">
+                      <div className="ml-3 sm:ml-4 flex gap-1 sm:gap-2 flex-shrink-0">
                         <button
                           onClick={() => handleFriendRequest(request.id, 'accepted')}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                          className="p-1.5 sm:p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
                           title="Accept request"
                         >
                           <CheckIcon className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleFriendRequest(request.id, 'rejected')}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                          className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
                           title="Reject request"
                         >
                           <XMarkIcon className="w-5 h-5" />
@@ -297,41 +306,42 @@ export default function FriendsPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by display name or email..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                  placeholder="Search by name or email..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400 text-sm sm:text-base"
                 />
                 {searching && (
-                  <div className="absolute right-3 top-2.5 text-gray-400">
+                  <div className="absolute right-3 top-2.5 text-gray-400 text-sm">
                     Searching...
                   </div>
                 )}
               </div>
               {searchResults.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                   {searchResults.map((user) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg"
                     >
                       <div className="min-w-0 flex-1">
                         <UserNameLink user={user} />
-                        <p className="text-sm text-gray-500 mt-1">{user.email}</p>
+                        <p className="text-sm text-gray-500 mt-1 truncate">{user.email}</p>
                       </div>
-                      <div className="ml-4">
+                      <div className="ml-3 sm:ml-4 flex-shrink-0">
                         {user.isFriend ? (
-                          <div className="flex items-center gap-2 text-primary-600">
-                            <CheckIcon className="w-5 h-5" />
-                            <span className="text-sm font-medium">Friends</span>
+                          <div className="flex items-center gap-1 sm:gap-2 text-primary-600">
+                            <CheckIcon className="w-4 sm:w-5 h-4 sm:h-5" />
+                            <span className="text-xs sm:text-sm font-medium">Friends</span>
                           </div>
                         ) : user.requestSent ? (
-                          <div className="flex items-center gap-2 text-gray-500 text-sm">
-                            <ClockIcon className="w-5 h-5" />
-                            <span>Request sent</span>
+                          <div className="flex items-center gap-1 sm:gap-2 text-gray-500 text-xs sm:text-sm">
+                            <ClockIcon className="w-4 sm:w-5 h-4 sm:h-5" />
+                            <span className="hidden sm:inline">Request sent</span>
+                            <span className="sm:hidden">Sent</span>
                           </div>
                         ) : (
                           <button
                             onClick={() => handleSendFriendRequest(user.id)}
-                            className="p-2 text-primary-600 hover:bg-primary-50 rounded-full transition-colors"
+                            className="p-1.5 sm:p-2 text-primary-600 hover:bg-primary-50 rounded-full transition-colors"
                             title="Send friend request"
                           >
                             <UserPlusIcon className="w-5 h-5" />
