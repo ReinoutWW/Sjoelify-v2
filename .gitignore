@@ -4,6 +4,9 @@ node_modules
 .next
 out
 
+firebase-debug.log
+firestore-debug.log
+
 .env
 .env.*
 .env.local

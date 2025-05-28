@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:emulators": "firebase emulators:start",
+    "dev:with-emulators": "concurrently \"npm run dev:emulators\" \"npm run dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -51,6 +53,7 @@
     "assert": "^2.1.0",
     "autoprefixer": "^10.0.1",
     "browserify-zlib": "^0.2.0",
+    "concurrently": "^9.1.2",
     "crypto-browserify": "^3.12.1",
     "eslint": "^8",
     "eslint-config-next": "14.1.3",
