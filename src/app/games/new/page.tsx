@@ -9,7 +9,7 @@ export default function NewGamePage() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Create New Game</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Set up a new Sjoelen game with 2-5 players
+            Set up a new Sjoelen game with 1-10 players
           </p>
         </div>
 

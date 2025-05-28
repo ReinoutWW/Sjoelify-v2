@@ -56,8 +56,8 @@ export function CreateGameForm() {
         selectedPlayerIds.push(user.uid);
       }
 
-      if (selectedPlayerIds.length < 2 || selectedPlayerIds.length > 5) {
-        throw new Error('Please select between 2 and 5 players (including yourself)');
+      if (selectedPlayerIds.length < 1 || selectedPlayerIds.length > 10) {
+        throw new Error('Please select between 1 and 10 players (including yourself)');
       }
 
       const gameId = await GameService.createGame(
@@ -132,7 +132,7 @@ export function CreateGameForm() {
 
         <motion.div variants={fadeIn} className="space-y-4">
           <label className="block text-sm font-medium text-gray-700">
-            Select Players (2-5)
+            Select Players (1-10)
           </label>
           <div className="relative">
             <input
