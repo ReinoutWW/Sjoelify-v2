@@ -9,6 +9,19 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Sjoelify',
   description: 'Modern Sjoelen scoring app',
+  icons: {
+    icon: [
+      {
+        url: '/favicon-light.ico',
+        media: '(prefers-color-scheme: light)',
+      },
+      {
+        url: '/favicon-dark.ico', 
+        media: '(prefers-color-scheme: dark)',
+      },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({
