@@ -20,13 +20,21 @@ interface PlayerSelection {
 
 const TITLE_MAX_LENGTH = 50;
 const TITLE_MIN_LENGTH = 3;
-const TITLE_PATTERN = /^[a-zA-Z0-9\s]*$/;
+const TITLE_PATTERN = /^[a-zA-Z0-9\s-]*$/;
+
+// Generate default game title with current date
+const generateDefaultTitle = (): string => {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `game-${month}-${day}`;
+};
 
 export function CreateGameForm() {
   const router = useRouter();
   const { user } = useAuth();
   const { friends: availablePlayers, loading: playersLoading } = useFriends(user?.uid);
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState(generateDefaultTitle());
   const [titleError, setTitleError] = useState<string | null>(null);
   const [players, setPlayers] = useState<PlayerSelection[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +62,7 @@ export function CreateGameForm() {
       return `Title cannot exceed ${TITLE_MAX_LENGTH} characters`;
     }
     if (!TITLE_PATTERN.test(value)) {
-      return 'Title can only contain letters, numbers, and spaces';
+      return 'Title can only contain letters, numbers, spaces, and hyphens';
     }
     return null;
   };
@@ -169,7 +177,7 @@ export function CreateGameForm() {
                 ? 'border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500' 
                 : 'border-gray-300 focus:ring-primary-500 focus:border-primary-500'
             } text-gray-900 placeholder-gray-400 bg-white transition-shadow duration-200`}
-            placeholder="e.g., Sunday Evening Game"
+            placeholder="e.g., weekend-match or team-battle"
           />
           {titleError && (
             <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -181,7 +189,7 @@ export function CreateGameForm() {
           <p className="mt-2 text-sm text-red-600">{titleError}</p>
         )}
         <p className="mt-2 text-sm text-gray-500">
-          Use letters, numbers, and spaces only
+          Use letters, numbers, spaces, and hyphens only
         </p>
       </motion.div>
 

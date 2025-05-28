@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/lib/context/auth-context';
@@ -10,7 +10,7 @@ import { ScoreEntry } from '@/features/games/components/ScoreEntry';
 import { GameSummary } from '@/features/games/components/GameSummary';
 import { useGame } from '@/features/games/hooks/use-game';
 import { fadeIn } from '@/shared/styles/animations';
-import { TrophyIcon, ClockIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { TrophyIcon, ClockIcon, UserCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 // Add helper functions for safe date handling
 const toISOStringOrUndefined = (dateString: string | number | Date | undefined | null): string | undefined => {
@@ -69,6 +69,8 @@ export default function GamePage() {
   const { game, loading, error } = useGame(id as string);
   const [submitting, setSubmitting] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [abandoning, setAbandoning] = useState(false);
+  const router = useRouter();
 
   const handleScoreSubmit = async (scores: number[]) => {
     if (!game || !user) return;
@@ -90,6 +92,29 @@ export default function GamePage() {
       console.error('Failed to submit scores:', err);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAbandonGame = async () => {
+    if (!game || !user) return;
+    
+    // Only allow game creator to abandon
+    if (game.createdBy !== user.uid) return;
+    
+    if (!confirm('Are you sure you want to abandon this game? This action cannot be undone.')) {
+      return;
+    }
+    
+    setAbandoning(true);
+    try {
+      await GameService.deleteGame(game.id);
+      // Redirect to dashboard after successful deletion
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Failed to abandon game:', err);
+      alert('Failed to abandon game. Please try again.');
+    } finally {
+      setAbandoning(false);
     }
   };
 
@@ -200,24 +225,36 @@ export default function GamePage() {
                   <div className="flex flex-col space-y-6">
                     {/* Header with Game Info */}
                     <div className="flex flex-col space-y-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
                             <TrophyIcon className="h-6 w-6 text-blue-600" />
                           </div>
-                          <div>
-                            <h2 className="text-xl font-bold text-gray-900">{game.title}</h2>
+                          <div className="min-w-0 flex-1">
+                            <h2 className="text-lg sm:text-xl font-bold text-gray-900 truncate">{game.title}</h2>
                             <div className="flex items-center gap-2 mt-1">
                               <ClockIcon className="h-4 w-4 text-gray-400" />
-                              <time dateTime={toISOStringOrUndefined(game.updatedAt)} className="text-sm text-gray-500">
+                              <time dateTime={toISOStringOrUndefined(game.updatedAt)} className="text-sm text-gray-500 truncate">
                                 {formatDate(game.updatedAt)}
                               </time>
                             </div>
                           </div>
                         </div>
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                          Round {game.currentRound}/5
-                        </span>
+                        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                            Round {game.currentRound}/5
+                          </span>
+                          {game.createdBy === user?.uid && (
+                            <button
+                              onClick={handleAbandonGame}
+                              disabled={abandoning}
+                              className="inline-flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-full text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                              title="Abandon game (deletes permanently)"
+                            >
+                              <TrashIcon className="h-3.5 w-3.5 sm:h-3 sm:w-3 flex-shrink-0" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       
                       <div className="relative">

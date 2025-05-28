@@ -1,4 +1,4 @@
-import { collection, addDoc, updateDoc, doc, getDoc, query, where, getDocs, orderBy, limit, runTransaction, onSnapshot, Query } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDoc, query, where, getDocs, orderBy, limit, runTransaction, onSnapshot, Query, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Game, Round, PlayerScore } from '../types';
 import { UserProfile } from '@/features/account/types';
@@ -68,6 +68,11 @@ export class GameService {
       ...updates,
       updatedAt: new Date(),
     });
+  }
+
+  static async deleteGame(gameId: string): Promise<void> {
+    const gameRef = doc(db, this.gamesCollection, gameId);
+    await deleteDoc(gameRef);
   }
 
   static async addRound(gameId: string, round: Omit<Round, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {

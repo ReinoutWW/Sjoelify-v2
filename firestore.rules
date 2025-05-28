@@ -90,6 +90,10 @@ service cloud.firestore {
                    isGameParticipant(resource.data) && 
                    !resource.data.isClosed;
       
+      // Allow delete if user is the game creator
+      allow delete: if isAuthenticated() && 
+                   resource.data.createdBy == request.auth.uid;
+      
       // Rounds subcollection rules
       match /rounds/{roundId} {
         // Allow read if parent game is accessible
