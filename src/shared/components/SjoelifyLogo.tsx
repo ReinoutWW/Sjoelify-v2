@@ -9,9 +9,9 @@ interface SjoelifyLogoProps {
 export function SjoelifyLogo({ className = '', size = 'medium' }: SjoelifyLogoProps) {
   // Define sizes for different variants
   const sizes = {
-    small: { width: 80, height: 27 },
-    medium: { width: 180, height: 60 },
-    large: { width: 210, height: 70 }
+    small: { width: 100, height: 34 },
+    medium: { width: 120, height: 40 },
+    large: { width: 180, height: 60 }
   };
 
   const { width, height } = sizes[size];

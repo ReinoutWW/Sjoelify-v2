@@ -62,15 +62,11 @@ export function Navigation() {
       className="bg-white shadow-sm sticky top-0 z-50"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-10">
-        <div className="flex justify-between items-center h-32 sm:h-40 py-4">
+        <div className="flex justify-between items-center h-16 sm:h-20 py-4">
           <div className="flex items-center">
             <SjoelifyLogo 
               size="small" 
-              className="sm:hidden" // Show small logo on mobile
-            />
-            <SjoelifyLogo 
-              size="medium" 
-              className="hidden sm:flex" // Show medium logo on desktop
+              className="block" // Always show small logo
             />
             {user && (
               <div className="hidden sm:ml-8 sm:flex sm:space-x-8">
