@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Game } from '../types';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { formatDate, isFirestoreTimestamp } from '@/shared/utils/date-utils';
 import Link from 'next/link';
+import { LeaderboardService } from '@/features/leaderboard/services/leaderboard-service';
 
 interface FirestoreTimestamp {
   seconds: number;
@@ -21,6 +22,10 @@ interface PlayerStats {
   averageScore: number;
   bestRound: number;
   worstRound: number;
+  relativeScores: { [key: number]: number };
+  relativeAverage: number;
+  isNewPersonalBest: boolean;
+  isNewBestAverage: boolean;
 }
 
 interface GameSummaryProps {
@@ -28,29 +33,63 @@ interface GameSummaryProps {
 }
 
 export function GameSummary({ game }: GameSummaryProps) {
-  // Calculate player statistics
-  const playerStats = useMemo(() => {
-    return game.players.map(player => {
-      const playerScores = game.scores[player.id];
-      const rounds = playerScores?.rounds || {};
-      const roundScores = Object.values(rounds);
-      
-      return {
-        playerId: player.id,
-        displayName: player.displayName,
-        rounds,
-        totalScore: playerScores?.total || 0,
-        averageScore: roundScores.length > 0 
-          ? Math.round(roundScores.reduce((a, b) => a + b, 0) / roundScores.length) 
-          : 0,
-        bestRound: roundScores.length > 0 ? Math.max(...roundScores) : 0,
-        worstRound: roundScores.length > 0 ? Math.min(...roundScores) : 0,
-      } as PlayerStats;
-    }).sort((a, b) => b.totalScore - a.totalScore); // Sort by total score
+  const [playerStats, setPlayerStats] = useState<PlayerStats[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchAndProcessStats() {
+      try {
+        // Get the overall best average from the leaderboard
+        const leaderboardData = await LeaderboardService.getLeaderboard();
+        const bestAverage = Math.max(...leaderboardData.map(player => player.averageScore));
+
+        const stats = game.players.map(player => {
+          const playerScores = game.scores[player.id];
+          const rounds = playerScores?.rounds || {};
+          const roundScores = Object.values(rounds);
+          
+          // Get player data from leaderboard
+          const playerData = leaderboardData.find(p => p.playerId === player.id);
+          const playerAverage = roundScores.length > 0 
+            ? Math.round(roundScores.reduce((a, b) => a + b, 0) / roundScores.length) 
+            : 0;
+          
+          // Calculate relative scores against overall best average
+          const relativeScores = Object.entries(rounds).reduce((acc, [round, score]) => ({
+            ...acc,
+            [round]: score - bestAverage
+          }), {});
+          
+          return {
+            playerId: player.id,
+            displayName: player.displayName,
+            rounds,
+            totalScore: playerScores?.total || 0,
+            averageScore: playerAverage,
+            bestRound: roundScores.length > 0 ? Math.max(...roundScores) : 0,
+            worstRound: roundScores.length > 0 ? Math.min(...roundScores) : 0,
+            relativeScores,
+            relativeAverage: playerAverage - bestAverage,
+            isNewPersonalBest: playerData ? Math.max(...roundScores) > playerData.bestScore : false,
+            isNewBestAverage: playerData ? playerAverage > playerData.bestAverageInGame : false
+          } as PlayerStats;
+        }).sort((a, b) => b.totalScore - a.totalScore); // Sort by total score
+
+        setPlayerStats(stats);
+      } catch (error) {
+        console.error('Error fetching leaderboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchAndProcessStats();
   }, [game]);
 
   // Find overall statistics
   const gameStats = useMemo(() => {
+    if (playerStats.length === 0) return null;
+
     const allScores = playerStats.flatMap(player => Object.values(player.rounds));
     return {
       highestScore: Math.max(...allScores),
@@ -61,6 +100,25 @@ export function GameSummary({ game }: GameSummaryProps) {
       bestSingleRoundPlayer: [...playerStats].sort((a, b) => b.bestRound - a.bestRound)[0],
     };
   }, [playerStats]);
+
+  if (loading || !gameStats) {
+    return (
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={fadeIn}
+        className="flex items-center justify-center min-h-[200px]"
+      >
+        <div className="animate-pulse flex space-x-4">
+          <div className="h-12 w-12 rounded-full bg-primary-200"></div>
+          <div className="space-y-3">
+            <div className="h-4 w-[200px] rounded bg-primary-200"></div>
+            <div className="h-4 w-[150px] rounded bg-primary-200"></div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -117,6 +175,9 @@ export function GameSummary({ game }: GameSummaryProps) {
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-2xl font-bold text-amber-900 truncate">{gameStats.winner.displayName}</h2>
               <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-0.5 text-sm font-medium text-amber-800 border border-amber-200">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1 text-amber-600">
+                  <path fillRule="evenodd" d="M5.166 2.621v.858c-1.035.148-2.059.33-3.071.543a.75.75 0 00-.584.859 6.753 6.753 0 006.138 5.6 6.73 6.73 0 002.743 1.346A6.707 6.707 0 019.279 15H8.54c-1.036 0-1.875.84-1.875 1.875V19.5h-.75a2.25 2.25 0 00-2.25 2.25c0 .414.336.75.75.75h15.19c.414 0 .75-.336.75-.75a2.25 2.25 0 00-2.25-2.25h-.75v-2.625c0-1.036-.84-1.875-1.875-1.875h-.739a6.706 6.706 0 01-1.112-3.173 6.73 6.73 0 002.743-1.347 6.753 6.753 0 006.139-5.6.75.75 0 00-.585-.858 47.077 47.077 0 00-3.07-.543V2.62a.75.75 0 00-.658-.744 49.22 49.22 0 00-6.093-.377c-2.063 0-4.096.128-6.093.377a.75.75 0 00-.657.744zm0 2.629c0 1.196.312 2.32.857 3.294A5.266 5.266 0 013.16 5.337a45.6 45.6 0 012.006-.343v.256zm13.5 0v-.256c.674.1 1.343.214 2.006.343a5.265 5.265 0 01-2.863 3.207 6.72 6.72 0 00.857-3.294z" clipRule="evenodd" />
+                </svg>
                 Winner
               </span>
             </div>
@@ -141,7 +202,7 @@ export function GameSummary({ game }: GameSummaryProps) {
                   <th
                     key={player.playerId}
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[140px]"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]"
                   >
                     <Link
                       href={`/players/${player.playerId}`}
@@ -165,6 +226,7 @@ export function GameSummary({ game }: GameSummaryProps) {
                   </td>
                   {playerStats.map((player) => {
                     const score = player.rounds[roundIndex + 1];
+                    const relativeScore = player.relativeScores[roundIndex + 1];
                     const isHighestInRound = score === Math.max(
                       ...playerStats.map(p => p.rounds[roundIndex + 1] || 0)
                     );
@@ -172,29 +234,59 @@ export function GameSummary({ game }: GameSummaryProps) {
                     return (
                       <td
                         key={player.playerId}
-                        className={`px-6 py-4 whitespace-nowrap text-sm ${
-                          isHighestInRound
-                            ? 'font-bold text-primary-600'
-                            : 'text-gray-900'
-                        }`}
+                        className="px-6 py-4 whitespace-nowrap text-sm"
                       >
-                        {score || '-'}
+                        <div className="flex items-center space-x-1.5">
+                          {isHighestInRound && (
+                            <span className="text-xs font-medium text-primary-600">Best</span>
+                          )}
+                          <span className={isHighestInRound ? 'font-bold text-primary-600' : 'text-gray-900'}>
+                            {score || '-'}
+                          </span>
+                          {score && (
+                            <span
+                              className={`inline-flex items-center text-xs font-medium ${
+                                relativeScore >= 0
+                                  ? 'text-green-600'
+                                  : 'text-red-600'
+                              }`}
+                            >
+                              {relativeScore >= 0 ? '+' : ''}{relativeScore}
+                            </span>
+                          )}
+                        </div>
                       </td>
                     );
                   })}
                 </tr>
               ))}
               {/* Summary rows */}
-              <tr className="bg-gray-50 font-medium">
+              <tr className="bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   Average
                 </td>
                 {playerStats.map((player) => (
                   <td
                     key={player.playerId}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                    className="px-6 py-4 whitespace-nowrap text-sm"
                   >
-                    {player.averageScore}
+                    <div className="flex items-center space-x-1.5">
+                      {player.isNewBestAverage && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 animate-pulse">
+                          New Best!
+                        </span>
+                      )}
+                      <span className="text-gray-900">{player.averageScore}</span>
+                      <span
+                        className={`inline-flex items-center text-xs font-medium ${
+                          player.relativeAverage >= 0
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`}
+                      >
+                        {player.relativeAverage >= 0 ? '+' : ''}{player.relativeAverage}
+                      </span>
+                    </div>
                   </td>
                 ))}
               </tr>
@@ -235,7 +327,7 @@ export function GameSummary({ game }: GameSummaryProps) {
               className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"
             >
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-4">
                   <UserCircleIcon className="h-6 w-6 text-gray-400" />
                   <Link
                     href={`/players/${player.playerId}`}
@@ -244,35 +336,42 @@ export function GameSummary({ game }: GameSummaryProps) {
                     <h3 className="font-medium text-gray-900 truncate">{player.displayName}</h3>
                   </Link>
                 </div>
-                <dl className="mt-3 space-y-2">
-                  <div className="flex justify-between items-center gap-2">
-                    <dt className="text-sm text-gray-500 truncate">Best Round</dt>
-                    <dd className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                <dl className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <dt className="text-sm text-gray-500">Best Round</dt>
+                    <dd className="flex items-center space-x-1.5">
                       {isBestRound && (
-                        <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700 border border-primary-100">
-                          Best
-                        </span>
+                        <span className="text-xs font-medium text-primary-600">Best</span>
                       )}
-                      {player.bestRound}
+                      <span className="text-sm font-medium text-gray-900">{player.bestRound}</span>
                     </dd>
                   </div>
-                  <div className="flex justify-between items-center gap-2">
-                    <dt className="text-sm text-gray-500 truncate">Average</dt>
-                    <dd className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                      {isBestAverage && (
-                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-100">
-                          Best
+                  <div className="flex items-center justify-between">
+                    <dt className="text-sm text-gray-500">Average</dt>
+                    <dd className="flex items-center space-x-1.5">
+                      {player.isNewBestAverage && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 animate-pulse">
+                          New Best!
                         </span>
                       )}
-                      {player.averageScore}
+                      <span className="text-sm font-medium text-gray-900">{player.averageScore}</span>
+                      <span
+                        className={`text-xs font-medium ${
+                          player.relativeAverage >= 0
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`}
+                      >
+                        {player.relativeAverage >= 0 ? '+' : ''}{player.relativeAverage}
+                      </span>
                     </dd>
                   </div>
-                  <div className="flex justify-between items-center gap-2">
-                    <dt className="text-sm text-gray-500 truncate">Worst Round</dt>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-sm text-gray-500">Worst Round</dt>
                     <dd className="text-sm font-medium text-gray-900">{player.worstRound}</dd>
                   </div>
-                  <div className="flex justify-between items-center gap-2 pt-2 border-t border-gray-100">
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Score</dt>
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <dt className="text-sm font-medium text-gray-500">Total Score</dt>
                     <dd className="text-sm font-bold text-primary-600">{player.totalScore}</dd>
                   </div>
                 </dl>

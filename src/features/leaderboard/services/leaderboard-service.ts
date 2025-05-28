@@ -15,6 +15,7 @@ interface GameScore {
 interface ScoreWithTimestamp {
   score: number;
   timestamp: Date;
+  relativeScore: number;
 }
 
 interface Game {
@@ -51,6 +52,7 @@ export interface LeaderboardEntry {
   bestScore: number;
   bestGameId: string;
   lastPlayed: Date;
+  bestAverageInGame: number;
   scoreHistory: ScoreWithTimestamp[];  // Add score history with timestamps
 }
 
@@ -69,6 +71,11 @@ export class LeaderboardService {
       console.error('Error converting timestamp:', error);
       return new Date();
     }
+  }
+
+  private static getBestAverageScore(leaderboard: LeaderboardEntry[]): number {
+    if (leaderboard.length === 0) return 0;
+    return Math.max(...leaderboard.map(entry => entry.averageScore));
   }
 
   static async getLeaderboard(): Promise<LeaderboardEntry[]> {
@@ -160,7 +167,8 @@ export class LeaderboardService {
                     roundTime.setMinutes(roundTime.getMinutes() + (parseInt(roundNum) - 1) * 5);
                     return {
                       score,
-                      timestamp: roundTime
+                      timestamp: roundTime,
+                      relativeScore: 0 // This will be updated later when we have the best average
                     };
                   });
 
@@ -218,13 +226,27 @@ export class LeaderboardService {
         bestScore: stats.bestScore,
         bestGameId: stats.bestGameId,
         lastPlayed: stats.lastPlayed,
+        bestAverageInGame: 0, // This will be updated after we find the best average
         scoreHistory: stats.scores.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
       }));
 
       console.log('Final leaderboard entries:', leaderboard);
 
       // Sort by best score descending
-      return leaderboard.sort((a, b) => b.bestScore - a.bestScore);
+      const sortedLeaderboard = leaderboard.sort((a, b) => b.bestScore - a.bestScore);
+      
+      // Calculate best average score
+      const bestAverageScore = this.getBestAverageScore(sortedLeaderboard);
+
+      // Add relative scores to each player's score history
+      return sortedLeaderboard.map(entry => ({
+        ...entry,
+        bestAverageInGame: bestAverageScore,
+        scoreHistory: entry.scoreHistory.map(score => ({
+          ...score,
+          relativeScore: score.score - bestAverageScore
+        }))
+      }));
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
       throw error;
