@@ -14,7 +14,8 @@ import {
   ArrowRightOnRectangleIcon,
   HomeIcon,
   TrophyIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 
 export function Navigation() {
@@ -85,6 +86,12 @@ export function Navigation() {
                 >
                   Leaderboard
                 </Link>
+                <Link
+                  href="/friends"
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
+                >
+                  Friends
+                </Link>
               </div>
             )}
           </div>
@@ -100,7 +107,7 @@ export function Navigation() {
                       aria-label="Account menu"
                     >
                       <span className="block text-sm font-medium text-gray-700">
-                        {user?.email?.split('@')[0]}
+                        {user?.displayName}
                       </span>
                       <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden ring-2 ring-white transition-all group-hover:ring-primary-100 group-hover:scale-105">
                         {user?.photoURL ? (
@@ -126,8 +133,11 @@ export function Navigation() {
                           className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 py-1"
                         >
                           <div className="px-4 py-2 border-b border-gray-100">
-                            <p className="text-sm text-gray-500">
-                              {user?.email?.split('@')[0]}
+                            <p className="text-sm font-medium text-gray-900">
+                              {user?.displayName}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {user?.email}
                             </p>
                           </div>
 
@@ -147,6 +157,14 @@ export function Navigation() {
                             >
                               <ChartBarIcon className="h-5 w-5 mr-2" />
                               Your Stats
+                            </Link>
+                            <Link
+                              href="/friends"
+                              onClick={() => setIsProfileOpen(false)}
+                              className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <UserGroupIcon className="h-5 w-5 mr-2" />
+                              Friends
                             </Link>
                             <Link
                               href="/leaderboard"

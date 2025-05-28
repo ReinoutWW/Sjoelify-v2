@@ -43,6 +43,38 @@ service cloud.firestore {
       allow delete: if false;  // No deletion allowed
     }
 
+    // Friends collection rules
+    match /friendRequests/{requestId} {
+      allow read: if isAuthenticated() && 
+        (request.auth.uid == resource.data.senderId || 
+         request.auth.uid == resource.data.receiverId);
+      allow create: if isAuthenticated() && 
+        request.auth.uid == request.resource.data.senderId &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp;
+      allow update: if isAuthenticated() && 
+        request.auth.uid == resource.data.receiverId &&
+        (request.resource.data.status == 'accepted' || request.resource.data.status == 'rejected') &&
+        request.resource.data.updatedAt is timestamp;
+      allow delete: if isAuthenticated() && 
+        (request.auth.uid == resource.data.senderId || 
+         request.auth.uid == resource.data.receiverId);
+    }
+
+    match /friends/{friendshipId} {
+      allow read: if isAuthenticated() && 
+        (request.auth.uid == resource.data.user1Id || 
+         request.auth.uid == resource.data.user2Id);
+      allow create: if isAuthenticated() && 
+        (request.auth.uid == request.resource.data.user1Id || 
+         request.auth.uid == request.resource.data.user2Id) &&
+        request.resource.data.createdAt is timestamp;
+      allow delete: if isAuthenticated() && 
+        (request.auth.uid == resource.data.user1Id || 
+         request.auth.uid == resource.data.user2Id);
+    }
+
     // Games collection rules
     match /games/{gameId} {
       // Allow create if user is authenticated

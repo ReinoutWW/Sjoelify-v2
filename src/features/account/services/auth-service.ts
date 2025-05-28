@@ -7,7 +7,7 @@ import {
   onAuthStateChanged as firebaseOnAuthStateChanged,
   User
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { LoginCredentials, RegisterCredentials } from '../types';
 
@@ -32,6 +32,39 @@ export class AuthService {
     }
   }
 
+  private static validateDisplayName(displayName: string): string | null {
+    // Must be between 3 and 20 characters
+    if (displayName.length < 3 || displayName.length > 20) {
+      return 'Display name must be between 3 and 20 characters';
+    }
+
+    // Must be lowercase
+    if (displayName !== displayName.toLowerCase()) {
+      return 'Display name must be lowercase';
+    }
+
+    // Only allow lowercase letters, numbers, and hyphens
+    const validPattern = /^[a-z0-9-]+$/;
+    if (!validPattern.test(displayName)) {
+      return 'Display name can only contain lowercase letters, numbers, and hyphens';
+    }
+
+    // Must contain at least 2 letters
+    const letterCount = (displayName.match(/[a-z]/g) || []).length;
+    if (letterCount < 2) {
+      return 'Display name must contain at least 2 letters';
+    }
+
+    return null;
+  }
+
+  private static async isDisplayNameUnique(displayName: string): Promise<boolean> {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('displayName', '==', displayName));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.empty;
+  }
+
   static async signIn({ email, password }: LoginCredentials): Promise<void> {
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -42,6 +75,18 @@ export class AuthService {
 
   static async signUp({ email, password, displayName }: RegisterCredentials): Promise<void> {
     try {
+      // Validate display name format
+      const validationError = this.validateDisplayName(displayName);
+      if (validationError) {
+        throw new Error(validationError);
+      }
+
+      // Check if display name is unique
+      const isUnique = await this.isDisplayNameUnique(displayName);
+      if (!isUnique) {
+        throw new Error('This display name is already taken. Please choose another one.');
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const { user } = userCredential;
 
@@ -58,6 +103,9 @@ export class AuthService {
         updatedAt: new Date(),
       });
     } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
       throw new Error(this.getErrorMessage(error as AuthError));
     }
   }

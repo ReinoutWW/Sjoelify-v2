@@ -134,7 +134,7 @@ export default function Home() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
               Modern Scoring for{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">
-                Dutch Shuffleboard
+                Dutch Sjoelen
               </span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">

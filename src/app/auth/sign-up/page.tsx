@@ -19,14 +19,53 @@ export default function SignUpPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [displayNameError, setDisplayNameError] = useState<string | null>(null);
+
+  const validateDisplayName = (name: string): string | null => {
+    if (name.length === 0) return null; // Don't show error for empty field
+
+    if (name.length < 3 || name.length > 20) {
+      return 'Display name must be between 3 and 20 characters';
+    }
+
+    if (name !== name.toLowerCase()) {
+      return 'Display name must be lowercase';
+    }
+
+    const validPattern = /^[a-z0-9-]+$/;
+    if (!validPattern.test(name)) {
+      return 'Only lowercase letters, numbers, and hyphens are allowed';
+    }
+
+    // Must contain at least 2 letters
+    const letterCount = (name.match(/[a-z]/g) || []).length;
+    if (letterCount < 2) {
+      return 'Display name must contain at least 2 letters';
+    }
+
+    return null;
+  };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Real-time validation for display name
+    if (name === 'displayName') {
+      setDisplayNameError(validateDisplayName(value));
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    
+    // Final validation check
+    const nameError = validateDisplayName(formData.displayName);
+    if (nameError) {
+      setDisplayNameError(nameError);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -43,7 +82,7 @@ export default function SignUpPage() {
       });
       router.push('/');
     } catch (err) {
-      setError('Failed to create account. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.');
       console.error('Sign up error:', err);
     } finally {
       setLoading(false);
@@ -97,12 +136,21 @@ export default function SignUpPage() {
                   id="displayName"
                   name="displayName"
                   type="text"
-                  autoComplete="name"
+                  autoComplete="username"
                   required
                   value={formData.displayName}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-gray-900"
+                  className={`appearance-none block w-full px-3 py-2 border ${
+                    displayNameError ? 'border-red-300' : 'border-gray-300'
+                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-gray-900`}
+                  placeholder="e.g. player-123"
                 />
+                {displayNameError && (
+                  <p className="mt-2 text-sm text-red-600">{displayNameError}</p>
+                )}
+                <p className="mt-2 text-sm text-gray-500">
+                  Use only lowercase letters, numbers, and hyphens. Must be 3-20 characters long and contain at least 2 letters.
+                </p>
               </div>
             </div>
 
@@ -145,7 +193,7 @@ export default function SignUpPage() {
             <div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !!displayNameError}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Creating account...' : 'Create account'}
