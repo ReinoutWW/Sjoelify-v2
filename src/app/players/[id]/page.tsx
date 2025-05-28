@@ -226,28 +226,28 @@ export default function PlayerProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-6 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={staggerChildren}
-          className="space-y-8"
+          className="space-y-6 sm:space-y-8"
         >
           {/* Player Header */}
           <motion.div variants={fadeIn} className="text-center">
-            <div className="flex justify-center mb-4">
-              <UserCircleIcon className="h-20 w-20 text-gray-400" />
+            <div className="flex justify-center mb-3 sm:mb-4">
+              <UserCircleIcon className="h-16 w-16 sm:h-20 sm:w-20 text-gray-400" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900">{playerName}</h1>
-            <div className="mt-4 flex justify-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <ChartBarIcon className="h-5 w-5" />
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">{playerName}</h1>
+            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:justify-center gap-2 sm:gap-4 text-sm text-gray-600">
+              <div className="flex items-center justify-center gap-1">
+                <ChartBarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span>{stats.gamesPlayed} games played</span>
               </div>
               {lastPlayed && (
-                <div className="flex items-center gap-1">
-                  <CalendarIcon className="h-5 w-5" />
+                <div className="flex items-center justify-center gap-1">
+                  <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Last played {lastPlayed.toLocaleDateString()}</span>
                 </div>
               )}
@@ -255,18 +255,18 @@ export default function PlayerProfilePage() {
           </motion.div>
 
           {/* Stats Overview */}
-          <motion.div variants={fadeIn} className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <motion.div variants={fadeIn} className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
             {/* Average Score */}
             <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl hover:shadow-md transition-all duration-200">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500">Average Score</p>
-                    <p className="mt-2 text-3xl font-semibold text-gray-900">{stats.averageScore}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-gray-500">Average</p>
+                    <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-semibold text-gray-900">{stats.averageScore}</p>
                   </div>
-                  <div className="flex-shrink-0">
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <ChartBarIcon className="h-6 w-6 text-blue-500" />
+                  <div className="flex-shrink-0 ml-2">
+                    <div className="p-2 sm:p-3 bg-blue-50 rounded-lg">
+                      <ChartBarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
                     </div>
                   </div>
                 </div>
@@ -275,15 +275,15 @@ export default function PlayerProfilePage() {
 
             {/* Best Average */}
             <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl hover:shadow-md transition-all duration-200">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500">Best Average</p>
-                    <p className="mt-2 text-3xl font-semibold text-gray-900">{stats.bestAverage}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-gray-500">Best Avg</p>
+                    <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-semibold text-gray-900">{stats.bestAverage}</p>
                   </div>
-                  <div className="flex-shrink-0">
-                    <div className="p-3 bg-emerald-50 rounded-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6 text-emerald-500">
+                  <div className="flex-shrink-0 ml-2">
+                    <div className="p-2 sm:p-3 bg-emerald-50 rounded-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" />
                       </svg>
                     </div>
@@ -294,15 +294,15 @@ export default function PlayerProfilePage() {
 
             {/* Personal Best */}
             <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl hover:shadow-md transition-all duration-200">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500">Personal Best</p>
-                    <p className="mt-2 text-3xl font-semibold text-gray-900">{stats.personalBest}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-gray-500">Best</p>
+                    <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-semibold text-gray-900">{stats.personalBest}</p>
                   </div>
-                  <div className="flex-shrink-0">
-                    <div className="p-3 bg-amber-50 rounded-lg">
-                      <TrophyIcon className="h-6 w-6 text-amber-500" />
+                  <div className="flex-shrink-0 ml-2">
+                    <div className="p-2 sm:p-3 bg-amber-50 rounded-lg">
+                      <TrophyIcon className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500" />
                     </div>
                   </div>
                 </div>
@@ -311,15 +311,15 @@ export default function PlayerProfilePage() {
 
             {/* Games Played */}
             <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl hover:shadow-md transition-all duration-200">
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500">Games Played</p>
-                    <p className="mt-2 text-3xl font-semibold text-gray-900">{stats.gamesPlayed}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-gray-500">Games</p>
+                    <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-semibold text-gray-900">{stats.gamesPlayed}</p>
                   </div>
-                  <div className="flex-shrink-0">
-                    <div className="p-3 bg-purple-50 rounded-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6 text-purple-500">
+                  <div className="flex-shrink-0 ml-2">
+                    <div className="p-2 sm:p-3 bg-purple-50 rounded-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 sm:h-6 sm:w-6 text-purple-500">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
                       </svg>
                     </div>
@@ -333,21 +333,21 @@ export default function PlayerProfilePage() {
           <motion.div variants={fadeIn} className="space-y-6">
             {/* Performance Indicator */}
             {stats.scoreHistory.length > 0 && (
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Recent Performance</h3>
-                    <p className="text-sm text-gray-600">
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex-1">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">Recent Performance</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
                       {(() => {
                         const recentScores = stats.scoreHistory.slice(-5);
                         const avgRecent = Math.round(recentScores.reduce((sum, s) => sum + s.score, 0) / recentScores.length);
                         const diff = avgRecent - stats.averageScore;
                         return (
                           <>
-                            Last 5 games average: <span className="font-semibold">{avgRecent}</span>
+                            Last 5 games: <span className="font-semibold">{avgRecent}</span>
                             {diff !== 0 && (
-                              <span className={`ml-2 font-medium ${diff > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                ({diff > 0 ? '+' : ''}{diff} vs overall)
+                              <span className={`ml-1 font-medium ${diff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                ({diff > 0 ? '+' : ''}{diff})
                               </span>
                             )}
                           </>
@@ -355,32 +355,32 @@ export default function PlayerProfilePage() {
                       })()}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="flex-shrink-0">
                     {(() => {
                       const recentScores = stats.scoreHistory.slice(-5);
                       const avgRecent = Math.round(recentScores.reduce((sum, s) => sum + s.score, 0) / recentScores.length);
                       const diff = avgRecent - stats.averageScore;
                       return (
-                        <div className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium ${
+                        <div className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs sm:text-sm font-medium ${
                           diff > 0 ? 'bg-green-50 text-green-700' : diff < 0 ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-700'
                         }`}>
                           {diff > 0 ? (
                             <>
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                               </svg>
                               Improving
                             </>
                           ) : diff < 0 ? (
                             <>
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
                               </svg>
                               Declining
                             </>
                           ) : (
                             <>
-                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
                               </svg>
                               Stable
@@ -395,17 +395,17 @@ export default function PlayerProfilePage() {
             )}
 
             {/* Score History Chart */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Score History</h3>
-                <div className="flex items-center text-sm text-gray-500">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">Score History</h3>
+                <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                   Individual scores over time
                 </div>
               </div>
-              <div className="h-[300px] sm:h-[400px]">
+              <div className="h-[250px] sm:h-[300px] lg:h-[400px]">
                 <Line
                   data={{
                     datasets: [
@@ -450,17 +450,17 @@ export default function PlayerProfilePage() {
             </div>
 
             {/* Relative Score Chart */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Performance vs Best Average</h3>
-                <div className="flex items-center text-sm text-gray-500">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">Performance vs Best Average</h3>
+                <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
                   Relative to {stats.bestAverage} points
                 </div>
               </div>
-              <div className="h-[300px] sm:h-[400px]">
+              <div className="h-[250px] sm:h-[300px] lg:h-[400px]">
                 <Line
                   data={{
                     datasets: [
@@ -544,23 +544,23 @@ export default function PlayerProfilePage() {
             </div>
 
             {/* Score History Table */}
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-2 sm:mb-0">Round History</h3>
-                <span className="text-sm text-gray-500">
+            <div className="bg-white p-3 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">Round History</h3>
+                <span className="text-xs sm:text-sm text-gray-500">
                   {stats.scoreHistory.length} total rounds
                 </span>
               </div>
               
               {stats.scoreHistory.length > 0 ? (
                 <>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto -mx-3 sm:mx-0">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead>
                         <tr>
-                          <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                          <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                          <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">vs Best Avg ({stats.bestAverage})</th>
+                          <th className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                          <th className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                          <th className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">vs Best</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -570,19 +570,19 @@ export default function PlayerProfilePage() {
                           .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                           .map((entry, index) => (
                           <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
                               <div className="flex flex-col">
                                 <span className="font-medium">{entry.date.toLocaleDateString()}</span>
                                 <span className="text-xs text-gray-400">{entry.date.toLocaleTimeString()}</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
                               <span className="text-sm font-semibold text-gray-900">{entry.score}</span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <span
-                                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  className={`inline-flex items-center px-1.5 sm:px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                     entry.relativeScore >= 0
                                       ? 'bg-green-100 text-green-800'
                                       : 'bg-red-100 text-red-800'
@@ -591,14 +591,14 @@ export default function PlayerProfilePage() {
                                 >
                                   {entry.relativeScore >= 0 ? (
                                     <>
-                                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                                       </svg>
                                       +{entry.relativeScore}
                                     </>
                                   ) : (
                                     <>
-                                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                                       </svg>
                                       {entry.relativeScore}
@@ -695,17 +695,17 @@ export default function PlayerProfilePage() {
             </div>
 
             {/* Average Score Trend */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Score Progression</h3>
-                <div className="flex items-center text-sm text-gray-500">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                <h3 className="text-base sm:text-lg font-medium text-gray-900">Score Progression</h3>
+                <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                   </svg>
                   Running average over time
                 </div>
               </div>
-              <div className="h-[300px] sm:h-[400px]">
+              <div className="h-[250px] sm:h-[300px] lg:h-[400px]">
                 <Line
                   data={{
                     datasets: [
