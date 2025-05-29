@@ -36,6 +36,10 @@ export const logEvent = (eventName: string, parameters?: Record<string, any>) =>
   if (isAnalyticsAvailable() && analytics) {
     try {
       firebaseLogEvent(analytics, eventName, parameters);
+      // Debug logging - remove this after confirming analytics works
+      if (process.env.NODE_ENV === 'production') {
+        console.log('[Analytics] Event logged:', eventName, parameters);
+      }
     } catch (error) {
       console.error('Failed to log analytics event:', error);
     }
