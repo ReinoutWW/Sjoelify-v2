@@ -175,6 +175,85 @@ export class GameService {
     });
   }
 
+  static async revertRoundSubmission(
+    gameId: string,
+    playerId: string,
+    roundNumber: number
+  ): Promise<void> {
+    const gameRef = doc(db, this.gamesCollection, gameId);
+
+    await runTransaction(db, async (transaction) => {
+      const gameDoc = await transaction.get(gameRef);
+      if (!gameDoc.exists()) throw new Error('Game not found');
+
+      const gameData = gameDoc.data() as Game;
+      if (!gameData.playerIds.includes(playerId)) throw new Error('Player not in game');
+
+      // Find and delete the round document
+      const roundQuery = query(
+        collection(db, this.gamesCollection, gameId, this.roundsCollection),
+        where('playerId', '==', playerId),
+        where('roundNumber', '==', roundNumber)
+      );
+      const roundDocs = await getDocs(roundQuery);
+      
+      if (roundDocs.empty) {
+        throw new Error('Round submission not found');
+      }
+
+      // Get the round score before deleting
+      const roundDoc = roundDocs.docs[0];
+      const roundData = roundDoc.data() as Round;
+      const roundScore = roundData.totalScore;
+
+      // Delete the round document
+      transaction.delete(roundDoc.ref);
+
+      // Update the player's score in the game document
+      const playerScores = gameData.scores || {};
+      const currentPlayerScore = playerScores[playerId] || { total: 0, rounds: {} };
+      
+      // Remove the round score
+      const updatedRounds = { ...currentPlayerScore.rounds };
+      delete updatedRounds[roundNumber];
+      
+      const updatedPlayerScore = {
+        total: currentPlayerScore.total - roundScore,
+        rounds: updatedRounds
+      };
+
+      // Check if we need to adjust the current round
+      // If the game had advanced to the next round, we might need to revert it
+      let newCurrentRound = gameData.currentRound;
+      let newIsClosed = gameData.isClosed;
+
+      // Check how many players have submitted for the current round after this deletion
+      const currentRoundQuery = query(
+        collection(db, this.gamesCollection, gameId, this.roundsCollection),
+        where('roundNumber', '==', roundNumber)
+      );
+      const currentRoundDocs = await getDocs(currentRoundQuery);
+      const remainingSubmissions = currentRoundDocs.docs.filter(doc => doc.id !== roundDoc.id);
+
+      // If this was the last submission that caused the round to advance, revert it
+      if (gameData.currentRound > roundNumber || gameData.isClosed) {
+        // The round had advanced, so we need to check if we should revert
+        if (remainingSubmissions.length < gameData.playerIds.length - 1) {
+          // Not all other players have submitted, so revert to this round
+          newCurrentRound = roundNumber;
+          newIsClosed = false;
+        }
+      }
+
+      transaction.update(gameRef, {
+        [`scores.${playerId}`]: updatedPlayerScore,
+        currentRound: newCurrentRound,
+        isClosed: newIsClosed,
+        updatedAt: new Date()
+      });
+    });
+  }
+
   static async getActiveGames(userId: string): Promise<Game[]> {
     const q = query(
       collection(db, this.gamesCollection),

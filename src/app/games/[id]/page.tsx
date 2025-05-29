@@ -10,7 +10,7 @@ import { ScoreEntry } from '@/features/games/components/ScoreEntry';
 import { GameSummary } from '@/features/games/components/GameSummary';
 import { useGame } from '@/features/games/hooks/use-game';
 import { fadeIn } from '@/shared/styles/animations';
-import { TrophyIcon, ClockIcon, UserCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { TrophyIcon, ClockIcon, UserCircleIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 // Add helper functions for safe date handling
 const toISOStringOrUndefined = (dateString: string | number | Date | undefined | null): string | undefined => {
@@ -70,6 +70,7 @@ export default function GamePage() {
   const [submitting, setSubmitting] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const [abandoning, setAbandoning] = useState(false);
+  const [reverting, setReverting] = useState<string | null>(null);
   const router = useRouter();
 
   const handleScoreSubmit = async (scores: number[]) => {
@@ -118,6 +119,34 @@ export default function GamePage() {
     }
   };
 
+  const handleRevertScore = async (playerId: string) => {
+    if (!game || !user) return;
+    
+    // Check if user can revert this score
+    if (!canRevertScore(playerId)) {
+      console.error('Not authorized to revert this score');
+      return;
+    }
+    
+    if (!confirm('Are you sure you want to revert this score? The player will need to resubmit.')) {
+      return;
+    }
+    
+    setReverting(playerId);
+    try {
+      await GameService.revertRoundSubmission(game.id, playerId, game.currentRound);
+      // If we reverted our own score or a selected player's score, reset selection
+      if (playerId === user.uid || playerId === selectedPlayerId) {
+        setSelectedPlayerId(null);
+      }
+    } catch (err) {
+      console.error('Failed to revert score:', err);
+      alert('Failed to revert score. Please try again.');
+    } finally {
+      setReverting(null);
+    }
+  };
+
   const getPlayerScore = (playerId: string) => {
     if (!game?.scores) return 0;
     return game.scores[playerId]?.total || 0;
@@ -152,6 +181,20 @@ export default function GamePage() {
     if (playerId === user.uid) return true;
     // Can submit for others if you're a participant and they haven't submitted
     return game.playerIds.includes(playerId);
+  };
+
+  const canRevertScore = (playerId: string) => {
+    if (!user || !game) return false;
+    // Game must not be closed
+    if (game.isClosed) return false;
+    // Must be a participant in the game
+    if (!game.playerIds.includes(user.uid)) return false;
+    // Can only revert if score exists for current round
+    if (!hasSubmittedCurrentRound(playerId)) return false;
+    // Can revert your own score
+    if (playerId === user.uid) return true;
+    // Can revert others' scores if you're a participant
+    return true;
   };
 
   if (loading) {
@@ -381,11 +424,26 @@ export default function GamePage() {
                                 </div>
                               )}
                               {hasSubmittedCurrentRound(player.id) && (
-                                <div className="flex-shrink-0">
-                                  <div className="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center">
-                                    <svg className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 001.414-1.414L8 12.586l7.293-7.293a1 1 0 001.414 0z" clipRule="evenodd" />
-                                    </svg>
+                                <div className="flex items-center gap-2">
+                                  {canRevertScore(player.id) && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRevertScore(player.id);
+                                      }}
+                                      disabled={reverting === player.id}
+                                      className="inline-flex items-center justify-center w-6 h-6 rounded-full text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                                      title="Revert score submission"
+                                    >
+                                      <XCircleIcon className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                  <div className="flex-shrink-0">
+                                    <div className="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center">
+                                      <svg className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 001.414 0z" clipRule="evenodd" />
+                                      </svg>
+                                    </div>
                                   </div>
                                 </div>
                               )}

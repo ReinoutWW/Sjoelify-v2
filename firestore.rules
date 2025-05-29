@@ -85,10 +85,10 @@ service cloud.firestore {
       // 2. Authenticated users (for game listing)
       allow read: if true;
       
-      // Allow update if user is a participant and game is not closed
+      // Allow update if user is a participant
+      // Note: When reverting a score, the game might need to be reopened if it was closed
       allow update: if isAuthenticated() && 
-                   isGameParticipant(resource.data) && 
-                   !resource.data.isClosed;
+                   isGameParticipant(resource.data);
       
       // Allow delete if user is the game creator
       allow delete: if isAuthenticated() && 
@@ -110,7 +110,12 @@ service cloud.firestore {
                     request.resource.data.roundNumber == get(/databases/$(database)/documents/games/$(gameId)).data.currentRound && 
                     request.resource.data.playerId in get(/databases/$(database)/documents/games/$(gameId)).data.playerIds;
         
-        allow delete: if false;
+        // Allow delete if:
+        // 1. User is a participant in the game
+        // 2. Game is not closed
+        allow delete: if isAuthenticated() && 
+                     isGameParticipant(get(/databases/$(database)/documents/games/$(gameId)).data) && 
+                     !get(/databases/$(database)/documents/games/$(gameId)).data.isClosed;
       }
     }
   }
