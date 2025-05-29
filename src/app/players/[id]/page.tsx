@@ -411,9 +411,10 @@ export default function PlayerProfilePage() {
                     datasets: [
                       {
                         label: 'Score',
-                        data: stats.scoreHistory.map(entry => ({
-                          x: entry.date,
-                          y: entry.score
+                        data: stats.scoreHistory.map((entry, index) => ({
+                          x: index,
+                          y: entry.score,
+                          date: entry.date
                         })),
                         borderColor: 'rgb(59, 130, 246)',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -429,18 +430,66 @@ export default function PlayerProfilePage() {
                     scales: {
                       ...chartOptions.scales,
                       x: {
-                        type: 'time',
-                        time: {
-                          unit: 'minute',
-                          displayFormats: {
-                            minute: 'HH:mm',
-                            hour: 'HH:mm',
-                            day: 'MMM D'
-                          }
+                        type: 'linear',
+                        ticks: {
+                          callback: function(value: any) {
+                            const index = Math.floor(value);
+                            if (index !== value || index < 0 || index >= stats.scoreHistory.length) return '';
+                            
+                            // Show every nth label to avoid crowding
+                            const totalPoints = stats.scoreHistory.length;
+                            let showEvery = 1;
+                            if (totalPoints > 50) showEvery = 10;
+                            else if (totalPoints > 20) showEvery = 5;
+                            else if (totalPoints > 10) showEvery = 2;
+                            
+                            if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
+                            
+                            return `Game ${index + 1}`;
+                          },
+                          maxRotation: 45,
+                          minRotation: 45
                         },
                         title: {
                           display: true,
-                          text: 'Time'
+                          text: 'Game Number'
+                        },
+                        grid: {
+                          display: true
+                        }
+                      },
+                      y: {
+                        beginAtZero: true,
+                        title: {
+                          display: true,
+                          text: 'Score'
+                        }
+                      }
+                    },
+                    plugins: {
+                      ...chartOptions.plugins,
+                      tooltip: {
+                        ...chartOptions.plugins.tooltip,
+                        callbacks: {
+                          title: (context: any) => {
+                            const point = context[0];
+                            if (!point) return '';
+                            const index = point.parsed.x;
+                            const dateData = point.raw.date;
+                            return [
+                              `Game ${index + 1}`,
+                              dateData ? new Date(dateData).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : ''
+                            ];
+                          },
+                          label: (context: any) => {
+                            return `Score: ${context.parsed.y}`;
+                          }
                         }
                       }
                     }
@@ -466,9 +515,10 @@ export default function PlayerProfilePage() {
                     datasets: [
                       {
                         label: 'Points vs Best Average',
-                        data: stats.scoreHistory.map(entry => ({
-                          x: entry.date,
-                          y: entry.relativeScore
+                        data: stats.scoreHistory.map((entry, index) => ({
+                          x: index,
+                          y: entry.relativeScore,
+                          date: entry.date
                         })),
                         segment: {
                           borderColor: ctx => {
@@ -494,22 +544,36 @@ export default function PlayerProfilePage() {
                     scales: {
                       ...chartOptions.scales,
                       x: {
-                        type: 'time',
-                        time: {
-                          unit: 'minute',
-                          displayFormats: {
-                            minute: 'HH:mm',
-                            hour: 'HH:mm',
-                            day: 'MMM D'
-                          }
+                        type: 'linear',
+                        ticks: {
+                          callback: function(value: any) {
+                            const index = Math.floor(value);
+                            if (index !== value || index < 0 || index >= stats.scoreHistory.length) return '';
+                            
+                            // Show every nth label to avoid crowding
+                            const totalPoints = stats.scoreHistory.length;
+                            let showEvery = 1;
+                            if (totalPoints > 50) showEvery = 10;
+                            else if (totalPoints > 20) showEvery = 5;
+                            else if (totalPoints > 10) showEvery = 2;
+                            
+                            if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
+                            
+                            return `Game ${index + 1}`;
+                          },
+                          maxRotation: 45,
+                          minRotation: 45
                         },
                         title: {
                           display: true,
-                          text: 'Time'
+                          text: 'Game Number'
+                        },
+                        grid: {
+                          display: true
                         }
                       },
                       y: {
-                        beginAtZero: true,
+                        beginAtZero: false,
                         title: {
                           display: true,
                           text: `Points Relative to Best Average (${stats.bestAverage})`
@@ -529,11 +593,26 @@ export default function PlayerProfilePage() {
                       tooltip: {
                         ...chartOptions.plugins.tooltip,
                         callbacks: {
-                          label: (context) => {
-                            if (!context?.parsed?.y) return '';
-                            const score = context.parsed.y;
-                            const rawData = context.raw as { x: Date; y: number };
-                            return `Score: ${score >= 0 ? '+' : ''}${score} (${rawData.y} vs ${stats.bestAverage})`;
+                          title: (context: any) => {
+                            const point = context[0];
+                            if (!point) return '';
+                            const index = point.parsed.x;
+                            const dateData = point.raw.date;
+                            return [
+                              `Game ${index + 1}`,
+                              dateData ? new Date(dateData).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : ''
+                            ];
+                          },
+                          label: (context: any) => {
+                            const relativeScore = context.parsed.y;
+                            const actualScore = relativeScore + stats.bestAverage;
+                            return `Score: ${relativeScore >= 0 ? '+' : ''}${relativeScore} (${actualScore} vs ${stats.bestAverage})`;
                           }
                         }
                       }
@@ -711,9 +790,10 @@ export default function PlayerProfilePage() {
                     datasets: [
                       {
                         label: 'Average Score',
-                        data: stats.averageScoreHistory.map(entry => ({
-                          x: entry.date,
-                          y: entry.average
+                        data: stats.averageScoreHistory.map((entry, index) => ({
+                          x: index,
+                          y: entry.average,
+                          date: entry.date
                         })),
                         borderColor: 'rgb(16, 185, 129)',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -729,18 +809,66 @@ export default function PlayerProfilePage() {
                     scales: {
                       ...chartOptions.scales,
                       x: {
-                        type: 'time',
-                        time: {
-                          unit: 'minute',
-                          displayFormats: {
-                            minute: 'HH:mm',
-                            hour: 'HH:mm',
-                            day: 'MMM D'
-                          }
+                        type: 'linear',
+                        ticks: {
+                          callback: function(value: any) {
+                            const index = Math.floor(value);
+                            if (index !== value || index < 0 || index >= stats.averageScoreHistory.length) return '';
+                            
+                            // Show every nth label to avoid crowding
+                            const totalPoints = stats.averageScoreHistory.length;
+                            let showEvery = 1;
+                            if (totalPoints > 50) showEvery = 10;
+                            else if (totalPoints > 20) showEvery = 5;
+                            else if (totalPoints > 10) showEvery = 2;
+                            
+                            if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
+                            
+                            return `Game ${index + 1}`;
+                          },
+                          maxRotation: 45,
+                          minRotation: 45
                         },
                         title: {
                           display: true,
-                          text: 'Time'
+                          text: 'Game Number'
+                        },
+                        grid: {
+                          display: true
+                        }
+                      },
+                      y: {
+                        beginAtZero: true,
+                        title: {
+                          display: true,
+                          text: 'Average Score'
+                        }
+                      }
+                    },
+                    plugins: {
+                      ...chartOptions.plugins,
+                      tooltip: {
+                        ...chartOptions.plugins.tooltip,
+                        callbacks: {
+                          title: (context: any) => {
+                            const point = context[0];
+                            if (!point) return '';
+                            const index = point.parsed.x;
+                            const dateData = point.raw.date;
+                            return [
+                              `After Game ${index + 1}`,
+                              dateData ? new Date(dateData).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : ''
+                            ];
+                          },
+                          label: (context: any) => {
+                            return `Average: ${context.parsed.y}`;
+                          }
                         }
                       }
                     }

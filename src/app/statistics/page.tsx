@@ -307,34 +307,15 @@ export default function StatisticsPage() {
       },
       tooltip: {
         mode: 'index' as const,
-        intersect: false,
-        callbacks: {
-          title: (context: any) => {
-            if (!context[0]?.parsed?.x) return '';
-            return new Date(context[0].parsed.x).toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-          }
-        }
+        intersect: false
       }
     },
     scales: {
       x: {
-        type: 'time' as const,
-        time: {
-          unit: 'day' as const,
-          displayFormats: {
-            day: 'MMM d'
-          },
-          tooltipFormat: 'PP'
-        },
+        type: 'linear' as const,
         title: {
           display: true,
-          text: 'Date'
+          text: 'Game Number'
         },
         ticks: {
           maxRotation: 45,
@@ -640,9 +621,10 @@ export default function StatisticsPage() {
                     datasets: [
                       {
                         label: 'Score',
-                        data: filteredStats?.scoreHistory.map(entry => ({
-                          x: entry.date.getTime(),
-                          y: entry.score
+                        data: filteredStats?.scoreHistory.map((entry, index) => ({
+                          x: index,
+                          y: entry.score,
+                          date: entry.date
                         })) || [],
                         borderColor: 'rgb(59, 130, 246)',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -653,7 +635,60 @@ export default function StatisticsPage() {
                       }
                     ]
                   }}
-                  options={chartOptions}
+                  options={{
+                    ...chartOptions,
+                    scales: {
+                      ...chartOptions.scales,
+                      x: {
+                        ...chartOptions.scales.x,
+                        ticks: {
+                          ...chartOptions.scales.x.ticks,
+                          callback: function(value: any) {
+                            const index = Math.floor(value);
+                            if (index !== value || !filteredStats || index < 0 || index >= filteredStats.scoreHistory.length) return '';
+                            
+                            // Show every nth label to avoid crowding
+                            const totalPoints = filteredStats.scoreHistory.length;
+                            let showEvery = 1;
+                            if (totalPoints > 50) showEvery = 10;
+                            else if (totalPoints > 20) showEvery = 5;
+                            else if (totalPoints > 10) showEvery = 2;
+                            
+                            if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
+                            
+                            return `Game ${index + 1}`;
+                          }
+                        }
+                      }
+                    },
+                    plugins: {
+                      ...chartOptions.plugins,
+                      tooltip: {
+                        ...chartOptions.plugins.tooltip,
+                        callbacks: {
+                          title: (context: any) => {
+                            const point = context[0];
+                            if (!point) return '';
+                            const index = point.parsed.x;
+                            const dateData = point.raw.date;
+                            return [
+                              `Game ${index + 1}`,
+                              dateData ? new Date(dateData).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : ''
+                            ];
+                          },
+                          label: (context: any) => {
+                            return `Score: ${context.parsed.y}`;
+                          }
+                        }
+                      }
+                    }
+                  }}
                 />
               </div>
             </div>
@@ -667,9 +702,10 @@ export default function StatisticsPage() {
                     datasets: [
                       {
                         label: 'Relative Score',
-                        data: filteredStats?.relativeScoreHistory.map(entry => ({
-                          x: entry.date.getTime(),
-                          y: entry.relativeScore
+                        data: filteredStats?.relativeScoreHistory.map((entry, index) => ({
+                          x: index,
+                          y: entry.relativeScore,
+                          date: entry.date
                         })) || [],
                         borderColor: 'rgb(34, 197, 94)',
                         backgroundColor: 'rgba(34, 197, 94, 0.1)',
@@ -696,6 +732,27 @@ export default function StatisticsPage() {
                     ...chartOptions,
                     scales: {
                       ...chartOptions.scales,
+                      x: {
+                        ...chartOptions.scales.x,
+                        ticks: {
+                          ...chartOptions.scales.x.ticks,
+                          callback: function(value: any) {
+                            const index = Math.floor(value);
+                            if (index !== value || !filteredStats || index < 0 || index >= filteredStats.relativeScoreHistory.length) return '';
+                            
+                            // Show every nth label to avoid crowding
+                            const totalPoints = filteredStats.relativeScoreHistory.length;
+                            let showEvery = 1;
+                            if (totalPoints > 50) showEvery = 10;
+                            else if (totalPoints > 20) showEvery = 5;
+                            else if (totalPoints > 10) showEvery = 2;
+                            
+                            if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
+                            
+                            return `Game ${index + 1}`;
+                          }
+                        }
+                      },
                       y: {
                         beginAtZero: false,
                         title: {
@@ -704,6 +761,34 @@ export default function StatisticsPage() {
                         },
                         grid: {
                           color: (ctx) => ctx.tick.value === 0 ? 'rgba(0, 0, 0, 0.2)' : 'rgba(0, 0, 0, 0.1)'
+                        }
+                      }
+                    },
+                    plugins: {
+                      ...chartOptions.plugins,
+                      tooltip: {
+                        ...chartOptions.plugins.tooltip,
+                        callbacks: {
+                          title: (context: any) => {
+                            const point = context[0];
+                            if (!point) return '';
+                            const index = point.parsed.x;
+                            const dateData = point.raw.date;
+                            return [
+                              `Game ${index + 1}`,
+                              dateData ? new Date(dateData).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : ''
+                            ];
+                          },
+                          label: (context: any) => {
+                            const relativeScore = context.parsed.y;
+                            return `Relative Score: ${relativeScore >= 0 ? '+' : ''}${relativeScore}`;
+                          }
                         }
                       }
                     }
@@ -721,9 +806,10 @@ export default function StatisticsPage() {
                     datasets: [
                       {
                         label: 'Average Score',
-                        data: filteredStats?.averageScoreHistory.map(entry => ({
-                          x: entry.date.getTime(),
-                          y: entry.average
+                        data: filteredStats?.averageScoreHistory.map((entry, index) => ({
+                          x: index,
+                          y: entry.average,
+                          date: entry.date
                         })) || [],
                         borderColor: 'rgb(16, 185, 129)',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -734,7 +820,60 @@ export default function StatisticsPage() {
                       }
                     ]
                   }}
-                  options={chartOptions}
+                  options={{
+                    ...chartOptions,
+                    scales: {
+                      ...chartOptions.scales,
+                      x: {
+                        ...chartOptions.scales.x,
+                        ticks: {
+                          ...chartOptions.scales.x.ticks,
+                          callback: function(value: any) {
+                            const index = Math.floor(value);
+                            if (index !== value || !filteredStats || index < 0 || index >= filteredStats.averageScoreHistory.length) return '';
+                            
+                            // Show every nth label to avoid crowding
+                            const totalPoints = filteredStats.averageScoreHistory.length;
+                            let showEvery = 1;
+                            if (totalPoints > 50) showEvery = 10;
+                            else if (totalPoints > 20) showEvery = 5;
+                            else if (totalPoints > 10) showEvery = 2;
+                            
+                            if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
+                            
+                            return `Game ${index + 1}`;
+                          }
+                        }
+                      }
+                    },
+                    plugins: {
+                      ...chartOptions.plugins,
+                      tooltip: {
+                        ...chartOptions.plugins.tooltip,
+                        callbacks: {
+                          title: (context: any) => {
+                            const point = context[0];
+                            if (!point) return '';
+                            const index = point.parsed.x;
+                            const dateData = point.raw.date;
+                            return [
+                              `After Game ${index + 1}`,
+                              dateData ? new Date(dateData).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : ''
+                            ];
+                          },
+                          label: (context: any) => {
+                            return `Average: ${context.parsed.y}`;
+                          }
+                        }
+                      }
+                    }
+                  }}
                 />
               </div>
             </div>
