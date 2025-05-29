@@ -1,0 +1,79 @@
+runtime: nodejs20
+service: default
+
+# Environment variables
+env_variables:
+  NODE_ENV: "production"
+  NEXT_PUBLIC_FIREBASE_API_KEY: "AIzaSyAmKdvi5_KKPQjnl5fZIXAZII5AGN4yX3U"
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "sjoelify.firebaseapp.com"
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: "sjoelify"
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "sjoelify.firebasestorage.app"
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "434481685264"
+  NEXT_PUBLIC_FIREBASE_APP_ID: "1:434481685264:web:9e94b20bd5d200136d3b95"
+
+# Request handling
+handlers:
+  # Serve Next.js static files with long cache
+  - url: /_next/static
+    static_dir: .next/static
+    secure: always
+    expiration: "30d"
+    http_headers:
+      Cache-Control: "public, max-age=2592000, immutable"
+
+  # Serve public files
+  - url: /(.*)
+    static_files: public/\1
+    upload: public/(.*)
+    secure: always
+    expiration: "1d"
+    
+  # Handle all other routes
+  - url: /.*
+    script: auto
+    secure: always
+
+# COST-OPTIMIZED automatic scaling configuration
+automatic_scaling:
+  min_instances: 0  # IMPORTANT: Scale to zero when no traffic
+  max_instances: 1  # LIMIT: Max 1 instance to control costs
+  min_idle_instances: 0  # Don't keep idle instances
+  max_idle_instances: 1  # Minimal idle instances
+  min_pending_latency: 1000ms  # Higher latency tolerance = lower cost
+  max_pending_latency: 5000ms
+  max_concurrent_requests: 80
+  target_cpu_utilization: 0.85  # Higher CPU utilization = fewer instances
+  target_throughput_utilization: 0.85
+
+# COST-OPTIMIZED Instance configuration
+instance_class: F1  # Smallest instance (cheaper than F2)
+
+# Basic health checks (less frequent = lower cost)
+readiness_check:
+  path: "/"
+  check_interval_sec: 30  # Less frequent checks
+  timeout_sec: 10
+  failure_threshold: 3
+  success_threshold: 2
+  app_start_timeout_sec: 300
+
+liveness_check:
+  path: "/"
+  check_interval_sec: 60  # Less frequent checks
+  timeout_sec: 10
+  failure_threshold: 3
+  success_threshold: 2
+
+# Network settings
+network:
+  session_affinity: true  # Reduces instance switching
+
+# Resource limits to prevent cost overruns
+resources:
+  cpu: 1
+  memory_gb: 0.5  # Minimum memory for F1 instance
+  disk_size_gb: 10  # Minimum disk size
+
+# VPC connector (if using private resources)
+# vpc_access_connector:
+#   name: projects/YOUR_PROJECT/locations/YOUR_REGION/connectors/YOUR_CONNECTOR 

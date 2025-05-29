@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { AuthService } from '@/features/account/services/auth-service';
 import { fadeIn } from '@/shared/styles/animations';
+import { RateLimiter } from '@/lib/security/rate-limiter';
+import { RATE_LIMITS } from '@/lib/security/config';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -13,15 +15,38 @@ export default function SignInPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rateLimitError, setRateLimitError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setRateLimitError(null);
+
+    // Check rate limit
+    if (!RateLimiter.checkAuthLimit('signIn', email)) {
+      const { remaining, resetTime } = RateLimiter.getRemainingAttempts(
+        `auth:signIn:${email}`,
+        RATE_LIMITS.auth.signIn
+      );
+      const minutesUntilReset = Math.ceil((resetTime - Date.now()) / 60000);
+      setRateLimitError(
+        `Too many login attempts. Please try again in ${minutesUntilReset} minute${
+          minutesUntilReset === 1 ? '' : 's'
+        }.`
+      );
+      setLoading(false);
+      return;
+    }
 
     try {
       await AuthService.signIn({ email, password });
-      router.push('/dashboard');
+      
+      // Check for redirect parameter
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirect = searchParams.get('redirect') || '/dashboard';
+      
+      router.push(redirect);
     } catch (err) {
       setError('Invalid email or password');
       console.error('Sign in error:', err);
@@ -51,12 +76,14 @@ export default function SignInPage() {
           variants={fadeIn}
           className="bg-white py-6 px-4 shadow sm:rounded-lg sm:px-10 sm:py-8"
         >
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+            {(error || rateLimitError) && (
               <div className="rounded-md bg-red-50 p-4">
                 <div className="flex">
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                    <h3 className="text-sm font-medium text-red-800">
+                      {rateLimitError || error}
+                    </h3>
                   </div>
                 </div>
               </div>
@@ -100,7 +127,10 @@ export default function SignInPage() {
 
             <div className="flex items-center justify-between">
               <div className="text-sm">
-                <Link href="/auth/reset-password" className="font-medium text-primary-600 hover:text-primary-500">
+                <Link
+                  href="/auth/reset-password"
+                  className="font-medium text-primary-600 hover:text-primary-500"
+                >
                   Forgot your password?
                 </Link>
               </div>
