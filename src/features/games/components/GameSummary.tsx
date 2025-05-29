@@ -197,20 +197,20 @@ export function GameSummary({ game }: GameSummaryProps) {
       >
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50/80">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">
                   Round
                 </th>
                 {playerStats.map((player) => (
                   <th
                     key={player.playerId}
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[180px]"
+                    className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[180px]"
                   >
                     <Link
                       href={`/players/${player.playerId}`}
-                      className="hover:text-primary-600 transition-colors"
+                      className="hover:text-primary-600 transition-colors block"
                     >
                       <div className="truncate">{player.displayName}</div>
                     </Link>
@@ -218,12 +218,12 @@ export function GameSummary({ game }: GameSummaryProps) {
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-100">
               {Array.from({ length: 5 }, (_, roundIndex) => (
-                <tr key={roundIndex + 1} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
+                <tr key={roundIndex + 1} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-600">
                     <div className="flex items-center">
-                      <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-gray-100 text-gray-600">
+                      <span className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-gray-100 text-gray-700 font-semibold">
                         {roundIndex + 1}
                       </span>
                     </div>
@@ -240,11 +240,8 @@ export function GameSummary({ game }: GameSummaryProps) {
                         key={player.playerId}
                         className="px-6 py-4 whitespace-nowrap text-sm"
                       >
-                        <div className="flex items-center space-x-1.5">
-                          {isHighestInRound && (
-                            <span className="text-xs font-medium text-primary-600">Best</span>
-                          )}
-                          <span className={isHighestInRound ? 'font-bold text-primary-600' : 'text-gray-900'}>
+                        <div className="flex items-center space-x-2">
+                          <span className={`${isHighestInRound ? 'font-bold text-primary-600 text-base' : 'text-gray-900'}`}>
                             {score || '-'}
                           </span>
                           {score && (
@@ -265,8 +262,8 @@ export function GameSummary({ game }: GameSummaryProps) {
                 </tr>
               ))}
               {/* Summary rows */}
-              <tr className="bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <tr className="bg-gray-50/70 border-t-2 border-gray-200">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-600">
                   Average
                 </td>
                 {playerStats.map((player) => (
@@ -297,7 +294,7 @@ export function GameSummary({ game }: GameSummaryProps) {
                 ))}
               </tr>
               <tr className="bg-gray-50/50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-600">
                   Best Average
                 </td>
                 {playerStats.map((player) => (
@@ -316,17 +313,17 @@ export function GameSummary({ game }: GameSummaryProps) {
                   </td>
                 ))}
               </tr>
-              <tr className="bg-gray-50/25">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <tr className="bg-primary-50/30 border-t-2 border-primary-100">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-700">
                   Total
                 </td>
                 {playerStats.map((player) => (
                   <td
                     key={player.playerId}
-                    className={`px-6 py-4 whitespace-nowrap text-sm ${
+                    className={`px-6 py-4 whitespace-nowrap text-base ${
                       player.totalScore === gameStats.winner.totalScore
                         ? 'font-bold text-primary-600'
-                        : 'text-gray-900'
+                        : 'font-semibold text-gray-900'
                     }`}
                   >
                     {player.totalScore}
@@ -362,10 +359,7 @@ export function GameSummary({ game }: GameSummaryProps) {
                     <div className="flex items-center justify-between">
                       <dt className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">Best Round</dt>
                       <dd className="flex items-center space-x-1.5">
-                        {isBestRound && (
-                          <span className="text-xs font-medium text-primary-600">Best</span>
-                        )}
-                        <span className="text-sm font-medium text-gray-900 group-hover:text-gray-950 transition-colors">{player.bestRound}</span>
+                        <span className={`text-sm font-medium ${isBestRound ? 'text-primary-600 font-bold' : 'text-gray-900'} group-hover:text-gray-950 transition-colors`}>{player.bestRound}</span>
                       </dd>
                     </div>
                     <div className="flex items-center justify-between">
