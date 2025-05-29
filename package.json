@@ -14,7 +14,8 @@
     "test:coverage": "jest --coverage",
     "gcp-build": "npm run build",
     "deploy": "gcloud app deploy",
-    "deploy:preview": "gcloud app deploy --no-promote --version=preview"
+    "deploy:preview": "gcloud app deploy --no-promote --version=preview",
+    "postinstall": "node -e \"console.log('Build environment:', process.env.FIREBASE_WEBAPP_CONFIG ? 'Firebase App Hosting' : 'Standard')\""
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

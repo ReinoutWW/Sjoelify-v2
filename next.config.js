@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone', // Important for App Engine
   eslint: {
     // Disable ESLint during production builds
     ignoreDuringBuilds: true,
