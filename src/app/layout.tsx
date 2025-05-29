@@ -1,6 +1,7 @@
 import { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/lib/context/auth-context';
+import { AnalyticsProvider } from '@/lib/context/analytics-provider';
 import { Navigation } from '@/shared/components/Navigation';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import './globals.css';
@@ -53,9 +54,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-gradient-to-b from-white to-gray-50`}>
         <AuthProvider>
-          <Navigation />
-          <main>{children}</main>
-          <PWAInstallPrompt />
+          <AnalyticsProvider>
+            <Navigation />
+            <main>{children}</main>
+            <PWAInstallPrompt />
+          </AnalyticsProvider>
         </AuthProvider>
       </body>
     </html>

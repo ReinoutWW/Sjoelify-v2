@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getFirebaseConfig } from './get-config';
 
 // Get Firebase config from the centralized utility
@@ -10,6 +11,7 @@ const firebaseConfig = getFirebaseConfig();
 let app: any;
 let auth: any;
 let db: any;
+let analytics: any;
 
 if (firebaseConfig && firebaseConfig.apiKey) {
   app = initializeApp(firebaseConfig);
@@ -42,10 +44,20 @@ if (firebaseConfig && firebaseConfig.apiKey) {
         console.log('Persistence not supported by browser');
       }
     });
+    
+    // Initialize Analytics only in production and in the browser
+    if (process.env.NODE_ENV === 'production') {
+      isSupported().then((supported) => {
+        if (supported) {
+          analytics = getAnalytics(app);
+          console.log('Firebase Analytics initialized');
+        }
+      });
+    }
   }
 } else {
   console.warn('Firebase config not available, some features may not work');
 }
 
-export { auth, db };
+export { auth, db, analytics };
 export default app; 
