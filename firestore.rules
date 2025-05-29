@@ -38,8 +38,18 @@ service cloud.firestore {
     match /users/{userId} {
       // Allow public read access to user profiles for leaderboard
       allow read: if true;
-      allow create: if isOwner(userId);  // Only create your own profile
-      allow update: if isOwner(userId);  // Only update your own profile
+      
+      // Allow create - but exclude verified field (should be false by default)
+      allow create: if isOwner(userId) &&
+                   (!request.resource.data.keys().hasAny(['verified']) || 
+                    request.resource.data.verified == false);
+      
+      // Allow update only if:
+      // 1. User owns the document
+      // 2. They're not trying to change the verified field
+      allow update: if isOwner(userId) &&
+                   (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['verified']));
+                   
       allow delete: if false;  // No deletion allowed
     }
 
