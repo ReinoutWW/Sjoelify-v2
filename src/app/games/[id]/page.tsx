@@ -11,6 +11,7 @@ import { GameSummary } from '@/features/games/components/GameSummary';
 import { useGame } from '@/features/games/hooks/use-game';
 import { fadeIn } from '@/shared/styles/animations';
 import { TrophyIcon, ClockIcon, UserCircleIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
 
 // Add helper functions for safe date handling
 const toISOStringOrUndefined = (dateString: string | number | Date | undefined | null): string | undefined => {
@@ -320,12 +321,25 @@ export default function GamePage() {
                             <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                             </svg>
-                            <p className="text-sm font-medium text-blue-700">
-                              {selectedPlayerId 
-                                ? `Entering score for ${game.players.find(p => p.id === selectedPlayerId)?.displayName}`
-                                : `Entering score for ${game.players.find(p => p.id === user?.uid)?.displayName} (You)`
-                              }
-                            </p>
+                            <div className="flex items-center gap-1 text-sm font-medium text-blue-700">
+                              <span>Entering score for</span>
+                              {selectedPlayerId ? (
+                                <>
+                                  <span>{game.players.find(p => p.id === selectedPlayerId)?.displayName}</span>
+                                  {game.players.find(p => p.id === selectedPlayerId)?.verified && (
+                                    <VerifiedBadge size="xs" />
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  <span>{game.players.find(p => p.id === user?.uid)?.displayName}</span>
+                                  {game.players.find(p => p.id === user?.uid)?.verified && (
+                                    <VerifiedBadge size="xs" />
+                                  )}
+                                  <span>(You)</span>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </motion.div>
                       )}
@@ -378,6 +392,9 @@ export default function GamePage() {
                                 >
                                   {player.displayName}
                                 </Link>
+                                {player.verified && (
+                                  <VerifiedBadge size="sm" />
+                                )}
                                 {isCurrentUser && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
                                     You

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { LeaderboardService, LeaderboardEntry } from '@/features/leaderboard/services/leaderboard-service';
 import { TrophyIcon, ChartBarIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
 
 const LoadingCard = () => (
   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 animate-pulse">
@@ -70,9 +71,12 @@ const LeaderboardCard = ({ entry, rank }: { entry: LeaderboardEntry; rank: numbe
                   href={`/players/${entry.playerId}`}
                   className="hover:text-primary-600 transition-colors"
                 >
-                  <h2 className="text-lg font-semibold text-gray-900 truncate">
-                    {entry.displayName}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-gray-900 truncate">
+                      {entry.displayName}
+                    </h2>
+                    <VerifiedBadge size="sm" />
+                  </div>
                 </Link>
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
                   <div className="flex items-center gap-1.5">
@@ -159,6 +163,10 @@ export default function LeaderboardPage() {
         <div className="text-center mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Leaderboard</h1>
           <p className="mt-2 text-base sm:text-lg text-gray-600">Top Sjoelen players ranked by best game average</p>
+          <p className="mt-1 text-sm text-gray-500 flex items-center justify-center gap-1">
+            <VerifiedBadge size="xs" showTooltip={false} />
+            Only verified players are shown
+          </p>
         </div>
 
         <div className="space-y-3 sm:space-y-4">

@@ -5,6 +5,7 @@ export interface UserProfile extends BaseEntity {
   displayName: string;
   avatarUrl?: string;
   emailVerified: boolean;
+  verified?: boolean; // Blue checkmark verification status
 }
 
 export interface AuthState {

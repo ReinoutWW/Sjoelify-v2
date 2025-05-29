@@ -22,6 +22,7 @@ import { GameService } from '@/features/games/services/game-service';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
 import { LeaderboardService } from '@/features/leaderboard/services/leaderboard-service';
 import Link from 'next/link';
+import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
 
 // Register ChartJS components
 ChartJS.register(
@@ -50,6 +51,7 @@ export default function PlayerProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState<string>('');
+  const [isVerified, setIsVerified] = useState<boolean>(false);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [lastPlayed, setLastPlayed] = useState<Date | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,8 +65,18 @@ export default function PlayerProfilePage() {
         setLoading(true);
         setError(null);
 
+        // Fetch player data from users collection to get verified status
+        const { doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase/config');
+        
+        const userDoc = await getDoc(doc(db, 'users', id as string));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setIsVerified(userData.verified || false);
+        }
+
         // Fetch player data
-        const leaderboardData = await LeaderboardService.getLeaderboard();
+        const leaderboardData = await LeaderboardService.getAllPlayers();
         
         const playerData = leaderboardData.find(player => player.playerId === id);
 
@@ -239,7 +251,10 @@ export default function PlayerProfilePage() {
             <div className="flex justify-center mb-3 sm:mb-4">
               <UserCircleIcon className="h-16 w-16 sm:h-20 sm:w-20 text-gray-400" />
             </div>
-            <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">{playerName}</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">{playerName}</h1>
+              {isVerified && <VerifiedBadge size="lg" />}
+            </div>
             <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:justify-center gap-2 sm:gap-4 text-sm text-gray-600">
               <div className="flex items-center justify-center gap-1">
                 <ChartBarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
