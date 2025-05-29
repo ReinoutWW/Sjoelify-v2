@@ -149,83 +149,171 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                   className="block cursor-pointer"
                 >
                   <div className="px-4 sm:px-6 py-4 sm:py-5">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-3">
-                      <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                        <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center flex-shrink-0">
+                    {/* Mobile-optimized layout */}
+                    <div className="flex flex-col gap-3 sm:hidden">
+                      {/* Header row with icon, title and status */}
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center flex-shrink-0">
                           {game.isClosed ? (
-                            <TrophyIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600" />
+                            <TrophyIcon className="h-5 w-5 text-primary-600" />
                           ) : (
-                            <ChartBarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary-600" />
+                            <ChartBarIcon className="h-5 w-5 text-primary-600" />
                           )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-base sm:text-lg font-medium text-gray-900 truncate pr-4">
-                            {game.title}
-                          </h3>
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-gray-500">
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="text-base font-medium text-gray-900 truncate flex-1">
+                              {game.title}
+                            </h3>
+                            {!game.isClosed && (
+                              <span className="relative flex h-3 w-3 flex-shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-sky-400"></span>
+                              </span>
+                            )}
+                          </div>
+                          
+                          {/* Meta information */}
+                          <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
                             <div className="flex items-center gap-1">
                               <UsersIcon className="h-4 w-4 text-gray-400" />
                               <span>{game.players.length} players</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <CalendarIcon className="h-4 w-4 text-gray-400" />
-                              <time dateTime={toISOStringOrUndefined(game.updatedAt)} className="whitespace-nowrap">
+                              <time dateTime={toISOStringOrUndefined(game.updatedAt)}>
                                 {formatDate(game.updatedAt)}
                               </time>
                             </div>
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center">
+
+                      {/* Status and result row */}
+                      <div className="flex items-center justify-between gap-2">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${
                           game.isClosed 
-                            ? 'bg-gray-100/75 text-gray-600'
+                            ? 'bg-gray-100 text-gray-600'
                             : 'bg-primary-50 text-primary-700'
                         }`}>
                           {game.isClosed ? 'Completed' : `Round ${game.currentRound}/5`}
                         </span>
+
+                        {/* Winner/Leader info */}
+                        {leader && (
+                          <div className="flex items-center gap-1.5 text-sm">
+                            {game.isClosed ? (
+                              <>
+                                <TrophyIcon className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                                <span className="text-gray-600 truncate max-w-[120px]">{leader.displayName}</span>
+                                <span className="font-semibold text-amber-600">{leader.totalScore}</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-gray-500">Leading:</span>
+                                <span className="font-medium text-gray-700 truncate max-w-[100px]">{leader.displayName}</span>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
+
+                      {/* Player avatars - only show if 3 or fewer players */}
+                      {game.players.length <= 3 && (
+                        <div className="flex -space-x-2 overflow-hidden">
+                          {game.players.map((player) => (
+                            <div
+                              key={player.id}
+                              className="inline-block h-6 w-6 rounded-full ring-2 ring-white"
+                            >
+                              <UserCircleIcon className="h-full w-full text-gray-300" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                      <div className="flex -space-x-2 overflow-hidden">
-                        {game.players.map((player) => (
-                          <div
-                            key={player.id}
-                            className="inline-block h-7 w-7 sm:h-8 sm:w-8 rounded-full ring-2 ring-white"
-                          >
-                            <UserCircleIcon className="h-full w-full text-gray-300" />
+                    {/* Desktop layout - hidden on mobile */}
+                    <div className="hidden sm:flex sm:flex-col sm:gap-3">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center flex-shrink-0">
+                            {game.isClosed ? (
+                              <TrophyIcon className="h-5 w-5 text-primary-600" />
+                            ) : (
+                              <ChartBarIcon className="h-5 w-5 text-primary-600" />
+                            )}
                           </div>
-                        ))}
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-lg font-medium text-gray-900 truncate pr-4">
+                              {game.title}
+                            </h3>
+                            <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                              <div className="flex items-center gap-1">
+                                <UsersIcon className="h-4 w-4 text-gray-400" />
+                                <span>{game.players.length} players</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <CalendarIcon className="h-4 w-4 text-gray-400" />
+                                <time dateTime={toISOStringOrUndefined(game.updatedAt)}>
+                                  {formatDate(game.updatedAt)}
+                                </time>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${
+                            game.isClosed 
+                              ? 'bg-gray-100/75 text-gray-600'
+                              : 'bg-primary-50 text-primary-700'
+                          }`}>
+                            {game.isClosed ? 'Completed' : `Round ${game.currentRound}/5`}
+                          </span>
+                        </div>
                       </div>
 
-                      {game.isClosed && leader && (
-                        <div className="flex items-center gap-2 overflow-hidden flex-1">
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 text-sm">
-                            <TrophyIcon className="h-4 w-4 flex-shrink-0" />
-                            <span className="truncate">{leader.displayName}</span>
-                            <span className="font-semibold">{leader.totalScore}</span>
-                          </div>
-                          {isClose && (
-                            <span className="text-xs text-gray-500 italic whitespace-nowrap">Close game!</span>
-                          )}
+                      <div className="flex items-center gap-4">
+                        <div className="flex -space-x-2 overflow-hidden">
+                          {game.players.map((player) => (
+                            <div
+                              key={player.id}
+                              className="inline-block h-8 w-8 rounded-full ring-2 ring-white"
+                            >
+                              <UserCircleIcon className="h-full w-full text-gray-300" />
+                            </div>
+                          ))}
                         </div>
-                      )}
-                      
-                      {!game.isClosed && leader && (
-                        <div className="flex items-center gap-2 overflow-hidden flex-1">
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary-50 text-primary-700 text-sm">
-                            <ChartBarIcon className="h-4 w-4 flex-shrink-0" />
-                            <span>Leading:</span>
-                            <span className="font-medium truncate">{leader.displayName}</span>
-                            <span className="font-semibold">{leader.totalScore}</span>
+
+                        {game.isClosed && leader && (
+                          <div className="flex items-center gap-2 overflow-hidden flex-1">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 text-sm">
+                              <TrophyIcon className="h-4 w-4 flex-shrink-0" />
+                              <span className="truncate">{leader.displayName}</span>
+                              <span className="font-semibold">{leader.totalScore}</span>
+                            </div>
+                            {isClose && (
+                              <span className="text-xs text-gray-500 italic whitespace-nowrap">Close game!</span>
+                            )}
                           </div>
-                          {isClose && (
-                            <span className="text-xs text-gray-500 italic whitespace-nowrap">Neck and neck!</span>
-                          )}
-                        </div>
-                      )}
+                        )}
+                        
+                        {!game.isClosed && leader && (
+                          <div className="flex items-center gap-2 overflow-hidden flex-1">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary-50 text-primary-700 text-sm">
+                              <ChartBarIcon className="h-4 w-4 flex-shrink-0" />
+                              <span>Leading:</span>
+                              <span className="font-medium truncate">{leader.displayName}</span>
+                              <span className="font-semibold">{leader.totalScore}</span>
+                            </div>
+                            {isClose && (
+                              <span className="text-xs text-gray-500 italic whitespace-nowrap">Neck and neck!</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Link>

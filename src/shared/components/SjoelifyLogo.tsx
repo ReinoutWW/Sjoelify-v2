@@ -1,5 +1,8 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useAuth } from '@/lib/context/auth-context';
 
 interface SjoelifyLogoProps {
   className?: string;
@@ -7,6 +10,8 @@ interface SjoelifyLogoProps {
 }
 
 export function SjoelifyLogo({ className = '', size = 'medium' }: SjoelifyLogoProps) {
+  const { user } = useAuth();
+  
   // Define sizes for different variants
   const sizes = {
     small: { width: 100, height: 34 },
@@ -15,9 +20,12 @@ export function SjoelifyLogo({ className = '', size = 'medium' }: SjoelifyLogoPr
   };
 
   const { width, height } = sizes[size];
+  
+  // Link to dashboard if logged in, otherwise to home
+  const href = user ? '/dashboard' : '/';
 
   return (
-    <Link href="/" className={`flex-shrink-0 flex items-center group ${className}`}>
+    <Link href={href} className={`flex-shrink-0 flex items-center group ${className}`}>
       <Image
         src="/images/SjoelifyLogo.png"
         alt="Sjoelify"

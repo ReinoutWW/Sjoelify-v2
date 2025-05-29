@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/context/auth-context';
 import { redirect } from 'next/navigation';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
@@ -83,12 +84,24 @@ const steps = [
 export default function Home() {
   const { user, loading } = useAuth();
 
+  useEffect(() => {
+    // Redirect logged-in users to dashboard
+    if (!loading && user) {
+      redirect('/dashboard');
+    }
+  }, [user, loading]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-200 border-t-primary-600" />
       </div>
     );
+  }
+
+  // Only show home page content if user is not logged in
+  if (user) {
+    return null; // Will redirect
   }
 
   return (
@@ -142,40 +155,19 @@ export default function Home() {
               skills with our modern scoring system.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 px-4 sm:px-0">
-              {user ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 transition-colors"
-                  >
-                    Go to Dashboard
-                    <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5" />
-                  </Link>
-                  <Link
-                    href={`/players/${user.uid}`}
-                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                  >
-                    Your Stats
-                    <ChartBarIcon className="ml-2 -mr-1 h-5 w-5" />
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/auth/sign-up"
-                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 transition-colors"
-                  >
-                    Get Started
-                    <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5" />
-                  </Link>
-                  <Link
-                    href="/auth/sign-in"
-                    className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                </>
-              )}
+              <Link
+                href="/auth/sign-up"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+              >
+                Get Started
+                <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5" />
+              </Link>
+              <Link
+                href="/auth/sign-in"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              >
+                Sign In
+              </Link>
             </div>
           </motion.div>
         </div>
@@ -439,48 +431,21 @@ export default function Home() {
             <div>
               <h3 className="text-white text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2">
-                {user ? (
-                  <>
-                    <li>
-                      <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
-                        Dashboard
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href={`/players/${user.uid}`} className="text-gray-400 hover:text-white transition-colors">
-                        Your Stats
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/leaderboard" className="text-gray-400 hover:text-white transition-colors">
-                        Leaderboard
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/games/new" className="text-gray-400 hover:text-white transition-colors">
-                        New Game
-                      </Link>
-                    </li>
-                  </>
-                ) : (
-                  <>
-                    <li>
-                      <Link href="/auth/sign-up" className="text-gray-400 hover:text-white transition-colors">
-                        Get Started
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/auth/sign-in" className="text-gray-400 hover:text-white transition-colors">
-                        Sign In
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/leaderboard" className="text-gray-400 hover:text-white transition-colors">
-                        Leaderboard
-                      </Link>
-                    </li>
-                  </>
-                )}
+                <li>
+                  <Link href="/auth/sign-up" className="text-gray-400 hover:text-white transition-colors">
+                    Get Started
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/auth/sign-in" className="text-gray-400 hover:text-white transition-colors">
+                    Sign In
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/leaderboard" className="text-gray-400 hover:text-white transition-colors">
+                    Leaderboard
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>
