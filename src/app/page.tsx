@@ -17,6 +17,7 @@ import {
   ChartPieIcon, 
   ArrowPathIcon 
 } from '@heroicons/react/24/outline';
+import { DonationButton } from '@/shared/components/DonationButton';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -388,6 +389,14 @@ export default function Home() {
               >
                 {t.home.ourStory.readFullStory} →
               </Link>
+              
+              {/* Subtle donation option */}
+              <div className="mt-8 pt-8 border-t border-gray-200">
+                <p className="text-sm text-gray-600 mb-3">
+                  Vind je Sjoelify leuk? We maken het met liefde en houden het gratis voor iedereen.
+                </p>
+                <DonationButton variant="small" />
+              </div>
             </motion.div>
             
             <motion.div
@@ -704,6 +713,16 @@ export default function Home() {
             <p className="text-gray-400 text-sm text-center">
               © {new Date().getFullYear()} Sjoelify. {t.home.footer.madeWith} ❤️ {t.home.footer.by} {t.home.footer.byFamily}
             </p>
+            <div className="mt-3 text-center">
+              <a 
+                href="https://www.paypal.com/donate/?hosted_button_id=UEE7BDUYN7AUS"
+                target="_blank"
+                rel="noopener noreferrer" 
+                className="text-amber-400 hover:text-amber-300 text-sm inline-flex items-center gap-1"
+              >
+                ☕ Steun ons werk
+              </a>
+            </div>
           </div>
         </div>
       </footer>

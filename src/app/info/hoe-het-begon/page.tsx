@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeftIcon, HeartIcon, CodeBracketIcon } from '@heroicons/react/24/outline';
+import { DonationButton } from '@/shared/components/DonationButton';
 
 export const metadata: Metadata = {
   title: 'Hoe Het Begon - Het Verhaal achter Sjoelify',
@@ -140,6 +141,22 @@ export default function HoeHetBegonPage() {
             <p className="text-center text-gray-600 mb-0">
               <strong>PS:</strong> Nog steeds sjoelen we regelmatig met de familie Wijnholds. 
               En ja, we gebruiken natuurlijk Sjoelify! 🎯
+            </p>
+          </div>
+
+          <p className="text-gray-600">
+            Dus de volgende keer als je Sjoelify gebruikt, weet je dat het meer is dan een app. Het is een stukje 
+            familie traditie dat we graag met heel Nederland delen. Want sjoelen brengt mensen samen, en dat 
+            is waar het uiteindelijk om draait.
+          </p>
+
+          <div className="mt-12 p-6 bg-amber-50 rounded-lg text-center">
+            <p className="text-gray-700 mb-4">
+              Sjoelify blijft altijd gratis! Maar vind je het leuk wat we maken?
+            </p>
+            <DonationButton />
+            <p className="text-sm text-gray-600 mt-3">
+              Elke bijdrage helpt ons om Sjoelify nog beter te maken 💙
             </p>
           </div>
         </article>

@@ -196,7 +196,7 @@ export const en = {
       title: 'The Story of Sjoelify',
       subtitle: 'From family tradition to digital innovation',
       intro: 'The Wijnholds family has been playing sjoelen for generations. It\'s more than a game - it\'s a tradition that brings families together.',
-      idea: 'During a cozy sjoelen afternoon, the idea arose: "Why don\'t we have an app that automatically keeps track of everything?" As the software engineer in the family, I, Reinout Wijnholds, happily took on this challenge.',
+      idea: 'During a cozy sjoelen afternoon, the idea arose: "Why don\'t we have an app that automatically keeps track of everything?" As the software engineer in the family, I happily took on this challenge.',
       growth: 'What started as a solution for our family grew into Sjoelify - a free app for all sjoelen enthusiasts in the Netherlands. Because the joy of sjoelen should be accessible to everyone.',
       readFullStory: 'Read the full story',
       familyName: 'Wijnholds Family',
