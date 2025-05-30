@@ -23,7 +23,8 @@ export function middleware(request: NextRequest) {
       "'unsafe-eval'",
       "'unsafe-inline'",
       'https://*.firebaseapp.com',
-      'https://*.googleapis.com'
+      'https://*.googleapis.com',
+      'https://apis.google.com'
     ],
     'style-src': [
       "'self'",
@@ -46,6 +47,10 @@ export function middleware(request: NextRequest) {
       'https://*.googleapis.com',
       'https://*.firebase.com',
       'wss://*.firebaseio.com',
+      // Google Analytics domains
+      'https://www.google-analytics.com',
+      'https://analytics.google.com',
+      'https://www.googletagmanager.com',
       // Add localhost for development
       ...(isDevelopment ? [
         'http://localhost:8081',

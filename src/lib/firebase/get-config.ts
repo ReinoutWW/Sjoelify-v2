@@ -17,6 +17,7 @@ export function getFirebaseConfig() {
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
   };
 
   // 3. If we're in production and don't have config, try hardcoded values as last resort
@@ -28,7 +29,8 @@ export function getFirebaseConfig() {
       projectId: "sjoelify",
       storageBucket: "sjoelify.firebasestorage.app",
       messagingSenderId: "434481685264",
-      appId: "1:434481685264:web:9e94b20bd5d200136d3b95"
+      appId: "1:434481685264:web:9e94b20bd5d200136d3b95",
+      measurementId: "G-FMLGYXTB30"
     };
   }
 
