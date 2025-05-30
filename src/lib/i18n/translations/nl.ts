@@ -204,6 +204,19 @@ export const nl = {
       quote: 'Met Sjoelify willen we die ervaring nog leuker en makkelijker maken voor iedereen.',
       quoteAuthor: 'Reinout Wijnholds, Maker van Sjoelify',
     },
+    scoreExample: {
+      title: 'Volg Je Voortgang in Detail',
+      description: 'Met Sjoelify krijg je direct inzicht in je prestaties. Bekijk je gemiddelde score, beste worpen en zie je vooruitgang over tijd in duidelijke grafieken.',
+      featuresIntro: 'Elk profiel toont gedetailleerde statistieken zoals:',
+      features: {
+        averageScore: 'Gemiddelde score per spel',
+        bestPerformance: 'Beste prestaties en records',
+        scoreHistory: 'Score geschiedenis met trends',
+        gamesPlayed: 'Aantal gespeelde spellen',
+      },
+      createProfile: 'Maak je profiel aan',
+      viewExample: 'Bekijk voorbeeld',
+    },
     faq: {
       title: 'Veelgestelde Vragen',
       subtitle: 'Alles wat je wilt weten over Sjoelify',
