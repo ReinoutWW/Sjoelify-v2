@@ -45,24 +45,6 @@ export default function Home() {
     },
   ];
 
-  const testimonials = [
-    {
-      name: t.home.testimonials.testimonial1.name,
-      role: t.home.testimonials.testimonial1.role,
-      content: t.home.testimonials.testimonial1.content,
-    },
-    {
-      name: t.home.testimonials.testimonial2.name,
-      role: t.home.testimonials.testimonial2.role,
-      content: t.home.testimonials.testimonial2.content,
-    },
-    {
-      name: t.home.testimonials.testimonial3.name,
-      role: t.home.testimonials.testimonial3.role,
-      content: t.home.testimonials.testimonial3.content,
-    },
-  ];
-
   const steps = [
     {
       title: t.home.howItWorks.createAccount.title,
@@ -288,49 +270,160 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-24 bg-white" id="testimonials">
+      {/* Articles/Info Section */}
+      <section className="py-24 bg-white" id="articles">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              {t.home.testimonials.title}
+              {t.home.articles.title}
             </h2>
             <p className="mt-4 text-lg text-gray-600">
-              {t.home.testimonials.subtitle}
+              {t.home.articles.subtitle}
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={testimonial.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-gray-50 p-8 rounded-2xl shadow-sm"
-              >
-                <div className="flex items-center mb-6">
-                  <div className="flex-shrink-0 mr-4">
-                    <div className="h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center">
-                      <UserGroupIcon className="h-6 w-6 text-primary-600" />
-                    </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <Link href="/info/sjoelen-regels" className="group block h-full">
+                <div className="bg-gray-50 rounded-2xl p-8 h-full hover:bg-gray-100 transition-all hover:shadow-lg group-hover:scale-[1.02]">
+                  <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
+                    <span className="text-2xl">📋</span>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900">
-                      {testimonial.name}
-                    </h3>
-                    <p className="text-sm text-gray-600">{testimonial.role}</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors">
+                    {t.home.articles.rules.title}
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    {t.home.articles.rules.description}
+                  </p>
+                  <span className="text-primary-600 font-medium group-hover:underline">
+                    {t.home.articles.rules.readMore} →
+                  </span>
+                </div>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <Link href="/info/sjoelen-puntentelling" className="group block h-full">
+                <div className="bg-gray-50 rounded-2xl p-8 h-full hover:bg-gray-100 transition-all hover:shadow-lg group-hover:scale-[1.02]">
+                  <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
+                    <span className="text-2xl">🧮</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors">
+                    {t.home.articles.scoring.title}
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    {t.home.articles.scoring.description}
+                  </p>
+                  <span className="text-primary-600 font-medium group-hover:underline">
+                    {t.home.articles.scoring.readMore} →
+                  </span>
+                </div>
+              </Link>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Link href="/info/hoe-het-begon" className="group block h-full">
+                <div className="bg-gray-50 rounded-2xl p-8 h-full hover:bg-gray-100 transition-all hover:shadow-lg group-hover:scale-[1.02]">
+                  <div className="w-14 h-14 bg-primary-100 rounded-xl flex items-center justify-center mb-6">
+                    <span className="text-2xl">💙</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary-600 transition-colors">
+                    {t.home.articles.ourStory.title}
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    {t.home.articles.ourStory.description}
+                  </p>
+                  <span className="text-primary-600 font-medium group-hover:underline">
+                    {t.home.articles.ourStory.readMore} →
+                  </span>
+                </div>
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Our Story Section */}
+      <section className="py-24 bg-gray-50" id="our-story">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+            >
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+                {t.home.ourStory.title}
+              </h2>
+              <div className="space-y-4 text-gray-600">
+                <p>
+                  {t.home.ourStory.intro}
+                </p>
+                <p>
+                  {t.home.ourStory.idea}
+                </p>
+                <p>
+                  {t.home.ourStory.growth}
+                </p>
+              </div>
+              <Link
+                href="/info/hoe-het-begon"
+                className="inline-flex items-center mt-6 px-6 py-3 text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors font-medium"
+              >
+                {t.home.ourStory.readFullStory} →
+              </Link>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="relative"
+            >
+              <div className="bg-white p-8 rounded-2xl shadow-xl">
+                <div className="flex items-center mb-6">
+                  <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
+                    <span className="text-2xl">🎯</span>
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-xl font-bold text-gray-900">{t.home.ourStory.familyName}</h3>
+                    <p className="text-gray-600">{t.home.ourStory.familyTagline}</p>
                   </div>
                 </div>
-                <p className="text-gray-600 italic">"{testimonial.content}"</p>
-              </motion.div>
-            ))}
+                <blockquote className="text-gray-700 italic">
+                  "{t.home.ourStory.quote}"
+                </blockquote>
+                <cite className="block mt-4 text-sm text-gray-600 not-italic">
+                  - {t.home.ourStory.quoteAuthor}
+                </cite>
+              </div>
+              
+              {/* Decorative element */}
+              <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-primary-100 rounded-full opacity-20 blur-2xl" />
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* Leaderboard Section */}
-      <section className="py-24 bg-gradient-to-b from-gray-50 to-white" id="leaderboard">
+      <section className="py-24 bg-white" id="leaderboard">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -361,7 +454,7 @@ export default function Home() {
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-3 bg-gradient-to-b from-gray-50 to-white text-lg font-medium text-gray-900">
+              <span className="px-3 bg-white text-lg font-medium text-gray-900">
                 Features
               </span>
             </div>
@@ -418,19 +511,140 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FAQ Section for SEO */}
+      <section className="py-24 bg-white" id="faq">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+              {t.home.faq.title}
+            </h2>
+            <p className="mt-4 text-lg text-gray-600">
+              {t.home.faq.subtitle}
+            </p>
+          </div>
+          
+          <div className="max-w-3xl mx-auto">
+            <div className="space-y-8">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="bg-gray-50 rounded-lg p-6 shadow-sm"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {t.home.faq.questions.whatIsSjoelify.question}
+                </h3>
+                <p className="text-gray-600">
+                  {t.home.faq.questions.whatIsSjoelify.answer}
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="bg-gray-50 rounded-lg p-6 shadow-sm"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {t.home.faq.questions.howScoring.question}
+                </h3>
+                <p className="text-gray-600">
+                  {t.home.faq.questions.howScoring.answer}
+                  <Link href="/info/sjoelen-puntentelling" className="text-primary-600 hover:underline ml-1">
+                    {t.home.faq.questions.howScoring.linkText} →
+                  </Link>
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="bg-gray-50 rounded-lg p-6 shadow-sm"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {t.home.faq.questions.isFree.question}
+                </h3>
+                <p className="text-gray-600">
+                  {t.home.faq.questions.isFree.answer}
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 }}
+                className="bg-gray-50 rounded-lg p-6 shadow-sm"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {t.home.faq.questions.needAccount.question}
+                </h3>
+                <p className="text-gray-600">
+                  {t.home.faq.questions.needAccount.answer}
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
+                className="bg-gray-50 rounded-lg p-6 shadow-sm"
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {t.home.faq.questions.allDevices.question}
+                </h3>
+                <p className="text-gray-600">
+                  {t.home.faq.questions.allDevices.answer}
+                </p>
+              </motion.div>
+            </div>
+
+            <div className="mt-12 text-center">
+              <p className="text-gray-600 mb-4">
+                {t.home.faq.moreQuestions}
+              </p>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Link
+                  href="/info/sjoelen-regels"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  {t.home.faq.links.rules} →
+                </Link>
+                <Link
+                  href="/info/hoe-het-begon"
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  {t.home.faq.links.story} →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-gray-900" id="footer">
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
               <h3 className="text-white text-lg font-semibold mb-4">Sjoelify</h3>
               <p className="text-gray-400 text-sm">
                 {t.home.subtitle}
               </p>
+              <Link 
+                href="/info/hoe-het-begon" 
+                className="text-primary-400 hover:text-primary-300 text-sm inline-block mt-2"
+              >
+                {t.home.articles.ourStory.title} →
+              </Link>
             </div>
             <div>
-              <h3 className="text-white text-lg font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2">
+              <h3 className="text-white text-lg font-semibold mb-4">{t.home.footer.quickStart}</h3>
+              <ul className="space-y-2 text-sm">
                 <li>
                   <Link href="/auth/sign-up" className="text-gray-400 hover:text-white transition-colors">
                     {t.home.hero.cta}
@@ -449,31 +663,38 @@ export default function Home() {
               </ul>
             </div>
             <div>
-              <h3 className="text-white text-lg font-semibold mb-4">Contact</h3>
-              <ul className="space-y-2">
+              <h3 className="text-white text-lg font-semibold mb-4">{t.home.footer.information}</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link href="/info/sjoelen-regels" className="text-gray-400 hover:text-white transition-colors">
+                    {t.home.articles.rules.title}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/info/sjoelen-puntentelling" className="text-gray-400 hover:text-white transition-colors">
+                    {t.home.articles.scoring.title}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/info/hoe-het-begon" className="text-gray-400 hover:text-white transition-colors">
+                    {t.home.articles.ourStory.title}
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-white text-lg font-semibold mb-4">{t.home.footer.contact}</h3>
+              <ul className="space-y-2 text-sm">
                 <li>
                   <a 
-                    href="mailto:info@sjoelify.com" 
+                    href="mailto:info@sjoelify.nl" 
                     className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                       <path d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z" />
                       <path d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z" />
                     </svg>
-                    info@sjoelify.com
-                  </a>
-                </li>
-                <li>
-                  <a 
-                    href="https://github.com/ReinoutWW/Sjoelify-v2" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-gray-400 hover:text-white transition-colors flex items-center gap-2"
-                  >
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.463 2 11.97c0 4.404 2.865 8.14 6.839 9.458.5.092.682-.216.682-.48 0-.236-.008-.864-.013-1.695-2.782.602-3.369-1.337-3.369-1.337-.454-1.151-1.11-1.458-1.11-1.458-.908-.618.069-.606.069-.606 1.003.07 1.531 1.027 1.531 1.027.892 1.524 2.341 1.084 2.91.828.092-.643.35-1.083.636-1.332-2.22-.251-4.555-1.107-4.555-4.927 0-1.088.39-1.979 1.029-2.675-.103-.252-.446-1.266.098-2.638 0 0 .84-.268 2.75 1.022A9.607 9.607 0 0112 6.82c.85.004 1.705.114 2.504.336 1.909-1.29 2.747-1.022 2.747-1.022.546 1.372.202 2.386.1 2.638.64.696 1.028 1.587 1.028 2.675 0 3.83-2.339 4.673-4.566 4.92.359.307.678.915.678 1.846 0 1.332-.012 2.407-.012 2.734 0 .267.18.577.688.48 3.97-1.32 6.833-5.054 6.833-9.458C22 6.463 17.522 2 12 2z" />
-                    </svg>
-                    GitHub
+                    info@sjoelify.nl
                   </a>
                 </li>
               </ul>
@@ -481,7 +702,7 @@ export default function Home() {
           </div>
           <div className="mt-8 pt-8 border-t border-gray-800">
             <p className="text-gray-400 text-sm text-center">
-              © {new Date().getFullYear()} Sjoelify. {t.home.footer.madeWith} ❤️ {t.home.footer.by}
+              © {new Date().getFullYear()} Sjoelify. {t.home.footer.madeWith} ❤️ {t.home.footer.by} {t.home.footer.byFamily}
             </p>
           </div>
         </div>

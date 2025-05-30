@@ -173,9 +173,76 @@ export const nl = {
         description: 'Word lid van een bloeiende gemeenschap van Sjoelen liefhebbers en speel vriendschappelijke wedstrijden.',
       },
     },
+    articles: {
+      title: 'Alles over Sjoelen',
+      subtitle: 'Leer de regels, begrijp de puntentelling en ontdek alles over sjoelen',
+      rules: {
+        title: 'Sjoelen Regels',
+        description: 'Complete spelregels uitleg voor beginners en gevorderden. Leer sjoelen in 5 minuten!',
+        readMore: 'Lees meer',
+      },
+      scoring: {
+        title: 'Puntentelling',
+        description: 'Hoe werkt de puntentelling? Met voorbeelden, tips en de maximale score uitgelegd.',
+        readMore: 'Lees meer',
+      },
+      ourStory: {
+        title: 'Ons Verhaal',
+        description: 'Het verhaal achter Sjoelify: van familie traditie tot de #1 sjoelen app van Nederland.',
+        readMore: 'Lees meer',
+      },
+    },
+    ourStory: {
+      title: 'Het Verhaal van Sjoelify',
+      subtitle: 'Van familie traditie tot digitale innovatie',
+      intro: 'Bij de familie Wijnholds wordt al generaties lang gesjoeld. Het is meer dan een spel - het is een traditie die families samenbrengt.',
+      idea: 'Tijdens een gezellige sjoelmiddag ontstond het idee: "Waarom hebben we geen app die alles automatisch bijhoudt?" Als software engineer in de familie nam ik deze uitdaging graag aan.',
+      growth: 'Wat begon als een oplossing voor onze familie, groeide uit tot Sjoelify - een gratis app voor alle sjoelliefhebbers in Nederland. Want het plezier van sjoelen moet voor iedereen toegankelijk zijn.',
+      readFullStory: 'Lees het hele verhaal',
+      familyName: 'Familie Wijnholds',
+      familyTagline: 'Van generatie op generatie',
+      quote: 'Met Sjoelify willen we die ervaring nog leuker en makkelijker maken voor iedereen.',
+      quoteAuthor: 'Reinout Wijnholds, Maker van Sjoelify',
+    },
+    faq: {
+      title: 'Veelgestelde Vragen',
+      subtitle: 'Alles wat je wilt weten over Sjoelify',
+      questions: {
+        whatIsSjoelify: {
+          question: 'Wat is Sjoelify?',
+          answer: 'Sjoelify is een gratis app voor het bijhouden van sjoelen scores. De app berekent automatisch je punten inclusief bonuspunten, houdt statistieken bij en laat je spelen met vrienden. Perfect voor elke sjoelliefhebber!',
+        },
+        howScoring: {
+          question: 'Hoe werkt de puntentelling?',
+          answer: 'Je voert alleen het aantal stenen per vak in. Sjoelify berekent automatisch je totale score inclusief bonuspunten voor complete sets. Geen rekenwerk meer nodig!',
+          linkText: 'Lees meer over puntentelling',
+        },
+        isFree: {
+          question: 'Is Sjoelify echt gratis?',
+          answer: 'Ja, Sjoelify is 100% gratis. Geen verborgen kosten, geen advertenties, geen premium versie. We hebben de app gemaakt omdat we zelf van sjoelen houden en willen dat iedereen ervan kan genieten.',
+        },
+        needAccount: {
+          question: 'Kan ik zonder account spelen?',
+          answer: 'Voor het bijhouden van scores en statistieken is een gratis account handig. Aanmelden duurt minder dan 30 seconden en dan kun je al je scores opslaan en je voortgang volgen.',
+        },
+        allDevices: {
+          question: 'Werkt Sjoelify op alle apparaten?',
+          answer: 'Ja! Sjoelify werkt op smartphones, tablets en computers. De app past zich automatisch aan je schermgrootte aan. Je hebt alleen een internetverbinding en een moderne browser nodig.',
+        },
+      },
+      moreQuestions: 'Nog vragen? Bekijk onze uitgebreide informatie pagina\'s:',
+      links: {
+        rules: 'Sjoelen Regels',
+        story: 'Ons Verhaal',
+      },
+    },
     footer: {
       madeWith: 'Gemaakt met',
-      by: 'door het Sjoelify team',
+      by: 'door',
+      byFamily: 'de familie Wijnholds',
+      quickStart: 'Snel Starten',
+      information: 'Informatie',
+      contact: 'Contact',
     },
   },
   dashboard: {

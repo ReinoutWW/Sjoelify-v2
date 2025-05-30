@@ -173,9 +173,76 @@ export const en = {
         description: 'Join a thriving community of Sjoelen enthusiasts and compete in friendly matches.',
       },
     },
+    articles: {
+      title: 'Everything about Sjoelen',
+      subtitle: 'Learn the rules, understand the scoring, and discover everything about sjoelen',
+      rules: {
+        title: 'Sjoelen Rules',
+        description: 'Complete game rules explained for beginners and advanced players. Learn sjoelen in 5 minutes!',
+        readMore: 'Read more',
+      },
+      scoring: {
+        title: 'Scoring System',
+        description: 'How does scoring work? With examples, tips and the maximum score explained.',
+        readMore: 'Read more',
+      },
+      ourStory: {
+        title: 'Our Story',
+        description: 'The story behind Sjoelify: from family tradition to the #1 sjoelen app in the Netherlands.',
+        readMore: 'Read more',
+      },
+    },
+    ourStory: {
+      title: 'The Story of Sjoelify',
+      subtitle: 'From family tradition to digital innovation',
+      intro: 'The Wijnholds family has been playing sjoelen for generations. It\'s more than a game - it\'s a tradition that brings families together.',
+      idea: 'During a cozy sjoelen afternoon, the idea arose: "Why don\'t we have an app that automatically keeps track of everything?" As the software engineer in the family, I, Reinout Wijnholds, happily took on this challenge.',
+      growth: 'What started as a solution for our family grew into Sjoelify - a free app for all sjoelen enthusiasts in the Netherlands. Because the joy of sjoelen should be accessible to everyone.',
+      readFullStory: 'Read the full story',
+      familyName: 'Wijnholds Family',
+      familyTagline: 'From generation to generation',
+      quote: 'Sjoelen brings people together. With Sjoelify we want to make that experience even more fun and easier for everyone.',
+      quoteAuthor: 'Reinout Wijnholds, Creator of Sjoelify',
+    },
+    faq: {
+      title: 'Frequently Asked Questions',
+      subtitle: 'Everything you want to know about Sjoelify',
+      questions: {
+        whatIsSjoelify: {
+          question: 'What is Sjoelify?',
+          answer: 'Sjoelify is a free app for tracking sjoelen scores. The app automatically calculates your points including bonus points, keeps statistics and lets you play with friends. Perfect for every sjoelen enthusiast!',
+        },
+        howScoring: {
+          question: 'How does the scoring work?',
+          answer: 'You only enter the number of discs per slot. Sjoelify automatically calculates your total score including bonus points for complete sets. No more math needed!',
+          linkText: 'Learn more about scoring',
+        },
+        isFree: {
+          question: 'Is Sjoelify really free?',
+          answer: 'Yes, Sjoelify is 100% free. No hidden costs, no ads, no premium version. We made the app because we love sjoelen ourselves and want everyone to enjoy it.',
+        },
+        needAccount: {
+          question: 'Can I play without an account?',
+          answer: 'For tracking scores and statistics, a free account is useful. Signing up takes less than 30 seconds and then you can save all your scores and track your progress.',
+        },
+        allDevices: {
+          question: 'Does Sjoelify work on all devices?',
+          answer: 'Yes! Sjoelify works on smartphones, tablets and computers. The app automatically adapts to your screen size. You only need an internet connection and a modern browser.',
+        },
+      },
+      moreQuestions: 'More questions? Check out our comprehensive information pages:',
+      links: {
+        rules: 'Sjoelen Rules',
+        story: 'Our Story',
+      },
+    },
     footer: {
       madeWith: 'Made with',
-      by: 'by the Sjoelify team',
+      by: 'by',
+      byFamily: 'the Wijnholds family',
+      quickStart: 'Quick Start',
+      information: 'Information',
+      contact: 'Contact',
     },
   },
   dashboard: {

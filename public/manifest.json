@@ -1,13 +1,22 @@
 {
-  "name": "Sjoelify",
+  "name": "Sjoelify™ - Gratis Sjoelen Score App Nederland",
   "short_name": "Sjoelify",
-  "description": "Track and analyze your sjoelen games with friends",
+  "description": "Sjoelify is dé gratis sjoelen app! ✅ Automatische puntentelling ✅ Live scores ✅ Ranglijsten ✅ Statistieken. Download nu!",
+  "lang": "nl-NL",
+  "dir": "ltr",
   "theme_color": "#3b82f6",
-  "background_color": "#0f172a",
+  "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
-  "start_url": "/",
+  "start_url": "/?utm_source=pwa&utm_medium=homescreen",
+  "id": "/?homescreen=1",
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
+  "handle_links": "preferred",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "icons": [
     {
       "src": "/icon-72x72.png",
@@ -41,7 +50,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-192x192.png",
+      "src": "/icon-192x192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
@@ -58,7 +67,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-512x512.png",
+      "src": "/icon-512x512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -69,14 +78,61 @@
       "src": "/screenshot-1.png",
       "type": "image/png",
       "sizes": "540x720",
-      "form_factor": "narrow"
+      "form_factor": "narrow",
+      "label": "Sjoelify dashboard - overzicht scores"
     },
     {
       "src": "/screenshot-2.png",
       "type": "image/png",
       "sizes": "720x540",
-      "form_factor": "wide"
+      "form_factor": "wide",
+      "label": "Sjoelify statistieken - vooruitgang"
+    },
+    {
+      "src": "/screenshot-3.png",
+      "type": "image/png",
+      "sizes": "540x720",
+      "form_factor": "narrow",
+      "label": "Sjoelify puntentelling - automatisch"
+    },
+    {
+      "src": "/screenshot-4.png",
+      "type": "image/png",
+      "sizes": "720x540",
+      "form_factor": "wide",
+      "label": "Sjoelify ranglijst Nederland"
     }
   ],
-  "categories": ["games", "sports", "entertainment"]
+  "categories": ["games", "sports", "entertainment", "lifestyle"],
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "shortcuts": [
+    {
+      "name": "Nieuw sjoelen spel",
+      "short_name": "Nieuw spel",
+      "description": "Start direct een nieuw sjoelen spel",
+      "url": "/games/new?utm_source=pwa_shortcut",
+      "icons": [{ "src": "/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Sjoelen ranglijst",
+      "short_name": "Ranglijst",
+      "description": "Bekijk de Nederlandse sjoelen ranglijst",
+      "url": "/leaderboard?utm_source=pwa_shortcut",
+      "icons": [{ "src": "/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mijn statistieken",
+      "short_name": "Stats",
+      "description": "Bekijk je sjoelen statistieken",
+      "url": "/statistics?utm_source=pwa_shortcut",
+      "icons": [{ "src": "/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "protocol_handlers": [
+    {
+      "protocol": "web+sjoelify",
+      "url": "/?game=%s"
+    }
+  ]
 } 

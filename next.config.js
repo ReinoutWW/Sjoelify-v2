@@ -156,6 +156,143 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone', // Important for App Engine
+  compress: true, // Enable gzip compression
+  poweredByHeader: false, // Remove X-Powered-By header
+  
+  // SEO optimizations for Dutch market
+  i18n: {
+    locales: ['nl'],
+    defaultLocale: 'nl',
+    localeDetection: false,
+  },
+  
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          },
+          {
+            key: 'Content-Language',
+            value: 'nl'
+          },
+          {
+            key: 'X-Robots-Tag',
+            value: 'index, follow'
+          }
+        ]
+      },
+      {
+        source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
+      },
+      {
+        source: '/:all*(js|css)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
+      },
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate'
+          }
+        ]
+      }
+    ]
+  },
+  
+  async redirects() {
+    return [
+      // Redirect common Dutch search terms to correct pages
+      {
+        source: '/sjoelen-regels',
+        destination: '/info/sjoelen-regels',
+        permanent: true,
+      },
+      {
+        source: '/sjoelen-spelregels',
+        destination: '/info/sjoelen-regels',
+        permanent: true,
+      },
+      {
+        source: '/puntentelling',
+        destination: '/info/sjoelen-puntentelling',
+        permanent: true,
+      },
+      {
+        source: '/sjoelen-punten',
+        destination: '/info/sjoelen-puntentelling',
+        permanent: true,
+      },
+      {
+        source: '/score',
+        destination: '/info/sjoelen-puntentelling',
+        permanent: true,
+      },
+      {
+        source: '/verhaal',
+        destination: '/info/hoe-het-begon',
+        permanent: true,
+      },
+    ]
+  },
+  
+  async rewrites() {
+    return [
+      // Clean URLs for SEO
+      {
+        source: '/registreren',
+        destination: '/auth/sign-up',
+      },
+      {
+        source: '/inloggen',
+        destination: '/auth/sign-in',
+      },
+      {
+        source: '/nieuw-spel',
+        destination: '/games/new',
+      },
+    ]
+  },
+  
+  images: {
+    domains: ['sjoelify.com'],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+  
   eslint: {
     // Disable ESLint during production builds
     ignoreDuringBuilds: true,
