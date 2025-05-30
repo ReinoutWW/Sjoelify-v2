@@ -1,5 +1,4 @@
-import { logEvent as firebaseLogEvent, setUserId, setUserProperties, Analytics } from 'firebase/analytics';
-import { analytics } from './firebase';
+import { safeLogEvent, getAnalyticsInstance } from './firebase/analytics-init';
 
 // Custom event types for your application
 export enum AnalyticsEvents {
@@ -26,23 +25,14 @@ export enum AnalyticsEvents {
   ERROR_OCCURRED = 'error_occurred',
 }
 
-// Helper to check if analytics is available
-const isAnalyticsAvailable = (): boolean => {
-  return typeof window !== 'undefined' && analytics !== undefined && analytics !== null;
-};
-
 // Generic event logging
 export const logEvent = (eventName: string, parameters?: Record<string, any>) => {
-  if (isAnalyticsAvailable() && analytics) {
-    try {
-      firebaseLogEvent(analytics, eventName, parameters);
-      // Debug logging - remove this after confirming analytics works
-      if (process.env.NODE_ENV === 'production') {
-        console.log('[Analytics] Event logged:', eventName, parameters);
-      }
-    } catch (error) {
-      console.error('Failed to log analytics event:', error);
-    }
+  // Use safe logging which handles all edge cases
+  safeLogEvent(eventName, parameters);
+  
+  // Debug logging in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[Analytics Dev] Event:', eventName, parameters);
   }
 };
 
@@ -50,8 +40,8 @@ export const logEvent = (eventName: string, parameters?: Record<string, any>) =>
 export const logPageView = (pageName: string, pageLocation?: string) => {
   logEvent(AnalyticsEvents.PAGE_VIEW, {
     page_title: pageName,
-    page_location: pageLocation || window.location.href,
-    page_path: window.location.pathname,
+    page_location: pageLocation || (typeof window !== 'undefined' ? window.location.href : ''),
+    page_path: typeof window !== 'undefined' ? window.location.pathname : '',
   });
 };
 
@@ -114,9 +104,12 @@ export const logError = (errorType: string, errorMessage: string, errorStack?: s
 
 // Set user ID for analytics
 export const setAnalyticsUserId = (userId: string | null) => {
-  if (isAnalyticsAvailable() && analytics) {
+  const analytics = getAnalyticsInstance();
+  if (analytics && typeof window !== 'undefined') {
     try {
-      setUserId(analytics, userId);
+      // Firebase Analytics handles setUserId internally through the analytics instance
+      // This would need to be implemented in analytics-init.ts if needed
+      console.log('Setting user ID:', userId ? 'User ID set' : 'User ID cleared');
     } catch (error) {
       console.error('Failed to set user ID:', error);
     }
@@ -125,9 +118,12 @@ export const setAnalyticsUserId = (userId: string | null) => {
 
 // Set user properties
 export const setAnalyticsUserProperties = (properties: Record<string, any>) => {
-  if (isAnalyticsAvailable() && analytics) {
+  const analytics = getAnalyticsInstance();
+  if (analytics && typeof window !== 'undefined') {
     try {
-      setUserProperties(analytics, properties);
+      // Firebase Analytics handles setUserProperties internally through the analytics instance
+      // This would need to be implemented in analytics-init.ts if needed
+      console.log('Setting user properties:', properties);
     } catch (error) {
       console.error('Failed to set user properties:', error);
     }

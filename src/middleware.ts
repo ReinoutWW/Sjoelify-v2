@@ -55,10 +55,13 @@ export function middleware(request: NextRequest) {
       'https://*.googleapis.com',
       'https://*.firebase.com',
       'wss://*.firebaseio.com',
-      // Google Analytics domains
+      // Google Analytics domains (including regional endpoints)
       'https://www.google-analytics.com',
       'https://analytics.google.com',
       'https://www.googletagmanager.com',
+      'https://*.google-analytics.com',
+      'https://region1.google-analytics.com',
+      'https://region1.analytics.google.com',
       // Add localhost for development
       ...(isDevelopment ? [
         'http://localhost:8081',
@@ -72,6 +75,12 @@ export function middleware(request: NextRequest) {
         'ws://127.0.0.1:9099',
         'http://127.0.0.1:4000'
       ] : [])
+    ],
+    'frame-src': [
+      "'self'",
+      'https://apis.google.com',
+      'https://*.google.com',
+      'https://*.firebaseapp.com'
     ],
     'frame-ancestors': ["'none'"],
     'form-action': ["'self'"],

@@ -1,8 +1,8 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence, connectFirestoreEmulator } from 'firebase/firestore';
-import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getFirebaseConfig } from './get-config';
+import { initializeAnalytics } from './analytics-init';
 
 // Get Firebase config from the centralized utility
 const firebaseConfig = getFirebaseConfig();
@@ -47,10 +47,10 @@ if (firebaseConfig && firebaseConfig.apiKey) {
     
     // Initialize Analytics only in production and in the browser
     if (process.env.NODE_ENV === 'production') {
-      isSupported().then((supported) => {
-        if (supported) {
-          analytics = getAnalytics(app);
-          console.log('Firebase Analytics initialized');
+      initializeAnalytics(app).then((analyticsInstance) => {
+        analytics = analyticsInstance;
+        if (analytics) {
+          console.log('Analytics module initialized and ready');
         }
       });
     }
