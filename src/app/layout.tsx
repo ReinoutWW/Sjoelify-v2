@@ -4,6 +4,7 @@ import { AuthProvider } from '@/lib/context/auth-context';
 import { LocaleProvider } from '@/lib/context/locale-context';
 import { AnalyticsProvider } from '@/lib/context/analytics-provider';
 import { Navigation } from '@/shared/components/Navigation';
+import { UsernameEnforcer } from '@/features/account/components/UsernameEnforcer';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import './globals.css';
 
@@ -199,6 +200,7 @@ export default function RootLayout({
             <AnalyticsProvider>
               <Navigation />
               <main>{children}</main>
+              <UsernameEnforcer />
               <PWAInstallPrompt />
             </AnalyticsProvider>
           </LocaleProvider>

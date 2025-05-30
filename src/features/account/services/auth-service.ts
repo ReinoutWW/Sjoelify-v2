@@ -6,9 +6,14 @@ import {
   AuthError,
   onAuthStateChanged as firebaseOnAuthStateChanged,
   User,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  OAuthProvider
 } from 'firebase/auth';
-import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, collection, query, where, getDocs, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { LoginCredentials, RegisterCredentials } from '../types';
 
@@ -61,11 +66,146 @@ export class AuthService {
     return null;
   }
 
-  private static async isDisplayNameUnique(displayName: string): Promise<boolean> {
+  static async isDisplayNameUnique(displayName: string): Promise<boolean> {
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('displayName', '==', displayName));
     const querySnapshot = await getDocs(q);
     return querySnapshot.empty;
+  }
+
+  private static isEmulator(): boolean {
+    return auth.emulatorConfig !== null;
+  }
+
+  static async signInWithGoogle(): Promise<void> {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
+      // For emulator, create a test user directly
+      if (this.isEmulator()) {
+        // Create a mock Google user for testing
+        const mockEmail = `test-${Date.now()}@example.com`;
+        const mockDisplayName = `test-user-${Math.floor(Math.random() * 1000)}`;
+        
+        const userCredential = await createUserWithEmailAndPassword(auth, mockEmail, 'test123456');
+        const { user } = userCredential;
+        
+        await updateProfile(user, { 
+          displayName: mockDisplayName,
+          photoURL: `https://ui-avatars.com/api/?name=${mockDisplayName}&background=4285F4&color=fff`
+        });
+        
+        // Create user document
+        await setDoc(doc(db, 'users', user.uid), {
+          id: user.uid,
+          email: mockEmail,
+          displayName: mockDisplayName,
+          emailVerified: true,
+          photoURL: user.photoURL,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          provider: 'google.com'
+        });
+        
+        return;
+      }
+      
+      // For production, use normal popup flow
+      const result = await signInWithPopup(auth, provider);
+      const { user } = result;
+      
+      // Check if user document exists
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        // Create user document for new Google users WITHOUT displayName
+        await setDoc(userRef, {
+          id: user.uid,
+          email: user.email,
+          displayName: null, // Will be set by username selection modal
+          needsUsername: true, // Flag to show username selection
+          emailVerified: true,
+          photoURL: user.photoURL,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          provider: 'google.com'
+        });
+      }
+    } catch (error) {
+      if ((error as any).code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign in cancelled');
+      }
+      throw new Error(this.getErrorMessage(error as AuthError));
+    }
+  }
+
+  static async signInWithApple(): Promise<void> {
+    try {
+      const provider = new OAuthProvider('apple.com');
+      provider.addScope('email');
+      provider.addScope('name');
+      
+      // For emulator, create a test user directly
+      if (this.isEmulator()) {
+        // Create a mock Apple user for testing
+        const mockEmail = `apple-test-${Date.now()}@example.com`;
+        const mockDisplayName = `apple-user-${Math.floor(Math.random() * 1000)}`;
+        
+        const userCredential = await createUserWithEmailAndPassword(auth, mockEmail, 'test123456');
+        const { user } = userCredential;
+        
+        await updateProfile(user, { 
+          displayName: mockDisplayName,
+          photoURL: `https://ui-avatars.com/api/?name=${mockDisplayName}&background=000000&color=fff`
+        });
+        
+        // Create user document
+        await setDoc(doc(db, 'users', user.uid), {
+          id: user.uid,
+          email: mockEmail,
+          displayName: mockDisplayName,
+          emailVerified: true,
+          photoURL: user.photoURL,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          provider: 'apple.com'
+        });
+        
+        return;
+      }
+      
+      // For production, use normal popup flow
+      const result = await signInWithPopup(auth, provider);
+      const { user } = result;
+      
+      // Check if user document exists
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        // Create user document for new Apple users WITHOUT displayName
+        await setDoc(userRef, {
+          id: user.uid,
+          email: user.email,
+          displayName: null, // Will be set by username selection modal
+          needsUsername: true, // Flag to show username selection
+          emailVerified: true,
+          photoURL: user.photoURL || `https://ui-avatars.com/api/?name=${user.email?.split('@')[0] || 'User'}&background=000000&color=fff`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          provider: 'apple.com'
+        });
+      }
+    } catch (error) {
+      if ((error as any).code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign in cancelled');
+      }
+      throw new Error(this.getErrorMessage(error as AuthError));
+    }
   }
 
   static async signIn({ email, password }: LoginCredentials): Promise<void> {

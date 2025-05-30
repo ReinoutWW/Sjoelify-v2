@@ -9,6 +9,8 @@ import { fadeIn } from '@/shared/styles/animations';
 import { useAuth } from '@/lib/context/auth-context';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { User } from 'firebase/auth';
+import { GoogleSignInButton } from '@/shared/components/GoogleSignInButton';
+import { AppleSignInButton } from '@/shared/components/AppleSignInButton';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -20,6 +22,8 @@ export default function SignUpPage() {
     displayName: '',
   });
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [displayNameError, setDisplayNameError] = useState<string | null>(null);
 
@@ -82,12 +86,44 @@ export default function SignUpPage() {
           }
         });
       });
-      router.push('/');
+      router.push('/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : t.auth.failedToCreateAccount);
       console.error('Sign up error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setGoogleLoading(true);
+
+    try {
+      await AuthService.signInWithGoogle();
+      // Always redirect to dashboard, UsernameEnforcer will handle the modal if needed
+      router.push('/dashboard');
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'Sign in cancelled') {
+        setError(err.message);
+      }
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setError(null);
+    setAppleLoading(true);
+
+    try {
+      await AuthService.signInWithApple();
+      // Always redirect to dashboard, UsernameEnforcer will handle the modal if needed
+      router.push('/dashboard');
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'Sign in cancelled') {
+        setError(err.message);
+      }
+      setAppleLoading(false);
     }
   };
 
@@ -130,6 +166,32 @@ export default function SignUpPage() {
                 </div>
               </div>
             )}
+
+            {/* Google Sign In */}
+            <GoogleSignInButton
+              onClick={handleGoogleSignIn}
+              loading={googleLoading}
+              text={t.auth.signUpWithGoogle || 'Registreren met Google'}
+            />
+
+            {/* Apple Sign In */}
+            <AppleSignInButton
+              onClick={handleAppleSignIn}
+              loading={appleLoading}
+              text={t.auth.signUpWithApple || 'Registreren met Apple'}
+            />
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-3 bg-white text-gray-400 uppercase tracking-wide font-medium">
+                  {t.common.or || 'Of'}
+                </span>
+              </div>
+            </div>
 
             <div>
               <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">

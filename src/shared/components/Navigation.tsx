@@ -109,7 +109,7 @@ export function Navigation() {
                       <span className="block text-sm font-medium text-gray-700">
                         {user?.displayName}
                       </span>
-                      <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden ring-2 ring-white transition-all group-hover:ring-primary-100 group-hover:scale-105">
+                      <div className="relative w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden ring-2 ring-white transition-all group-hover:ring-primary-100 group-hover:scale-105">
                         {user?.photoURL ? (
                           <Image
                             src={user.photoURL}

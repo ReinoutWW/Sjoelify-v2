@@ -286,7 +286,7 @@ const nextConfig = {
   },
   
   images: {
-    domains: ['sjoelify.com'],
+    domains: ['sjoelify.com', 'ui-avatars.com', 'lh3.googleusercontent.com', 'firebasestorage.googleapis.com'],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

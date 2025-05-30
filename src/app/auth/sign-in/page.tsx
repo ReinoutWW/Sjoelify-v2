@@ -9,6 +9,8 @@ import { useTranslation } from '@/lib/hooks/useTranslation';
 import { fadeIn } from '@/shared/styles/animations';
 import { RateLimiter } from '@/lib/security/rate-limiter';
 import { RATE_LIMITS } from '@/lib/security/config';
+import { GoogleSignInButton } from '@/shared/components/GoogleSignInButton';
+import { AppleSignInButton } from '@/shared/components/AppleSignInButton';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -16,8 +18,42 @@ export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setGoogleLoading(true);
+
+    try {
+      await AuthService.signInWithGoogle();
+      // Always redirect to dashboard, UsernameEnforcer will handle the modal if needed
+      router.push('/dashboard');
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'Sign in cancelled') {
+        setError(err.message);
+      }
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setError(null);
+    setAppleLoading(true);
+
+    try {
+      await AuthService.signInWithApple();
+      // Always redirect to dashboard, UsernameEnforcer will handle the modal if needed
+      router.push('/dashboard');
+    } catch (err) {
+      if (err instanceof Error && err.message !== 'Sign in cancelled') {
+        setError(err.message);
+      }
+      setAppleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -80,19 +116,50 @@ export default function SignInPage() {
           variants={fadeIn}
           className="bg-white py-6 px-4 shadow sm:rounded-lg sm:px-10 sm:py-8"
         >
-          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
-            {(error || rateLimitError) && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">
-                      {rateLimitError || error}
-                    </h3>
-                  </div>
+          {/* Error display */}
+          {(error || rateLimitError) && (
+            <div className="rounded-md bg-red-50 p-4 mb-6">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    {rateLimitError || error}
+                  </h3>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
+          {/* Social login buttons - outside form */}
+          <div className="space-y-3">
+            {/* Google Sign In */}
+            <GoogleSignInButton
+              onClick={handleGoogleSignIn}
+              loading={googleLoading}
+              text={t.auth.signInWithGoogle || 'Inloggen met Google'}
+            />
+
+            {/* Apple Sign In */}
+            <AppleSignInButton
+              onClick={handleAppleSignIn}
+              loading={appleLoading}
+              text={t.auth.signInWithApple || 'Inloggen met Apple'}
+            />
+          </div>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-3 bg-white text-gray-400 uppercase tracking-wide font-medium">
+                {t.common.or || 'Of'}
+              </span>
+            </div>
+          </div>
+
+          {/* Email/password form */}
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 {t.auth.email}
