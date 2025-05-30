@@ -24,7 +24,11 @@ export function middleware(request: NextRequest) {
       "'unsafe-inline'",
       'https://*.firebaseapp.com',
       'https://*.googleapis.com',
-      'https://apis.google.com'
+      'https://apis.google.com',
+      'https://www.googletagmanager.com',
+      'https://*.googletagmanager.com',
+      'https://www.google-analytics.com',
+      'https://ssl.google-analytics.com'
     ],
     'style-src': [
       "'self'",
@@ -38,7 +42,11 @@ export function middleware(request: NextRequest) {
     'img-src': [
       "'self'",
       'data:',
-      'https:'
+      'https:',
+      'https://www.google-analytics.com',
+      'https://www.googletagmanager.com',
+      'https://ssl.gstatic.com',
+      'https://www.gstatic.com'
     ],
     'connect-src': [
       "'self'",
