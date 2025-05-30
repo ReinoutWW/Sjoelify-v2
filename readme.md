@@ -78,6 +78,3 @@ A modern web platform for tracking Sjoelen games and statistics. Built with Next
 - Prettier for code formatting
 - Strict TypeScript mode enabled
 
-## License
-
-MIT License - See LICENSE file for details
