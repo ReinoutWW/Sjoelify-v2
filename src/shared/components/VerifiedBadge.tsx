@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface VerifiedBadgeProps {
   size?: 'xs' | 'sm' | 'md' | 'lg';
@@ -11,6 +12,7 @@ interface VerifiedBadgeProps {
 
 export function VerifiedBadge({ size = 'sm', className = '', showTooltip = true }: VerifiedBadgeProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const { t } = useTranslation();
   
   const sizeClasses = {
     xs: 'h-3 w-3',
@@ -60,7 +62,7 @@ export function VerifiedBadge({ size = 'sm', className = '', showTooltip = true 
             transition={{ duration: 0.2 }}
             className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded pointer-events-none whitespace-nowrap z-10"
           >
-            Verified account
+            {t.common.verified}
             <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
               <div className="border-4 border-transparent border-t-gray-900"></div>
             </div>

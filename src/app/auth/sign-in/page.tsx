@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { AuthService } from '@/features/account/services/auth-service';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 import { fadeIn } from '@/shared/styles/animations';
 import { RateLimiter } from '@/lib/security/rate-limiter';
 import { RATE_LIMITS } from '@/lib/security/config';
 
 export default function SignInPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -48,7 +50,7 @@ export default function SignInPage() {
       
       router.push(redirect);
     } catch (err) {
-      setError('Invalid email or password');
+      setError(t.auth.signInError);
       console.error('Sign in error:', err);
     } finally {
       setLoading(false);
@@ -58,13 +60,15 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col py-8 px-4 sm:py-16 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
-          Sign in to your account
+        <h2 className="text-center text-2xl sm:text-3xl font-extrabold">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">
+            {t.auth.signIn}
+          </span>
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
+          {t.common.or}{' '}
           <Link href="/auth/sign-up" className="font-medium text-primary-600 hover:text-primary-500">
-            create a new account
+            {t.auth.createAccount}
           </Link>
         </p>
       </div>
@@ -91,7 +95,7 @@ export default function SignInPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+                {t.auth.email}
               </label>
               <div className="mt-1">
                 <input
@@ -109,7 +113,7 @@ export default function SignInPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                {t.auth.password}
               </label>
               <div className="mt-1">
                 <input
@@ -131,7 +135,7 @@ export default function SignInPage() {
                   href="/auth/reset-password"
                   className="font-medium text-primary-600 hover:text-primary-500"
                 >
-                  Forgot your password?
+                  {t.auth.forgotPassword}
                 </Link>
               </div>
             </div>
@@ -142,7 +146,7 @@ export default function SignInPage() {
                 disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? t.common.loading : t.auth.signIn}
               </button>
             </div>
           </form>

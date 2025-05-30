@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/lib/context/auth-context';
+import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useDateFormatter } from '@/lib/hooks/useDateFormatter';
 import { GameService } from '@/features/games/services/game-service';
 import { ScoreEntry } from '@/features/games/components/ScoreEntry';
 import { GameSummary } from '@/features/games/components/GameSummary';
@@ -67,6 +69,8 @@ const formatDate = (dateString: string | number | Date | undefined | null): stri
 export default function GamePage() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { t } = useTranslation();
+  const { formatDate } = useDateFormatter();
   const { game, loading, error } = useGame(id as string);
   const [submitting, setSubmitting] = useState(false);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
@@ -231,7 +235,7 @@ export default function GamePage() {
             </div>
             <div className="ml-3">
               <h3 className="text-sm font-medium text-red-800">
-                {error || 'Game not found'}
+                {error || t.games.gameNotFound}
               </h3>
             </div>
           </div>
@@ -284,14 +288,14 @@ export default function GamePage() {
                         </div>
                         <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                            Round {game.currentRound}/5
+                            {t.games.round} {game.currentRound}/5
                           </span>
                           {game.createdBy === user?.uid && (
                             <button
                               onClick={handleAbandonGame}
                               disabled={abandoning}
                               className="inline-flex items-center justify-center w-8 h-8 sm:w-7 sm:h-7 rounded-full text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                              title="Abandon game (deletes permanently)"
+                              title={t.games.abandonGameTitle}
                             >
                               <TrashIcon className="h-3.5 w-3.5 sm:h-3 sm:w-3 flex-shrink-0" />
                             </button>
@@ -305,7 +309,7 @@ export default function GamePage() {
                         </div>
                         <div className="relative flex justify-start">
                           <span className="pr-3 bg-white text-sm font-medium text-gray-500">
-                            Current Standings
+                            {t.games.currentStandings}
                           </span>
                         </div>
                       </div>
@@ -322,7 +326,7 @@ export default function GamePage() {
                               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                             </svg>
                             <div className="flex items-center gap-1 text-sm font-medium text-blue-700">
-                              <span>Entering score for</span>
+                              <span>{t.games.enteringScoreFor}</span>
                               {selectedPlayerId ? (
                                 <>
                                   <span>{game.players.find(p => p.id === selectedPlayerId)?.displayName}</span>
@@ -336,7 +340,7 @@ export default function GamePage() {
                                   {game.players.find(p => p.id === user?.uid)?.verified && (
                                     <VerifiedBadge size="xs" />
                                   )}
-                                  <span>(You)</span>
+                                  <span>{t.games.you}</span>
                                 </>
                               )}
                             </div>
@@ -397,7 +401,7 @@ export default function GamePage() {
                                 )}
                                 {isCurrentUser && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                                    You
+                                    {t.games.you.replace('(', '').replace(')', '')}
                                   </span>
                                 )}
                                 {isSelected && (
@@ -409,20 +413,20 @@ export default function GamePage() {
                                     <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                     </svg>
-                                    Selected
+                                    {t.games.selected}
                                   </motion.span>
                                 )}
                               </div>
                               <div className="mt-1 flex items-center gap-4">
                                 <p className="text-sm text-gray-500">
-                                  Total: <span className="font-medium text-gray-700">{getPlayerScore(player.id)}</span>
+                                  {t.games.total}: <span className="font-medium text-gray-700">{getPlayerScore(player.id)}</span>
                                 </p>
                                 {hasSubmittedCurrentRound(player.id) && (
                                   <span className="inline-flex items-center gap-1 text-sm text-green-600">
                                     <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 001.414 0z" clipRule="evenodd" />
                                     </svg>
-                                    Round {game.currentRound}: +{getCurrentRoundScore(player.id)}
+                                    {t.games.round} {game.currentRound}: +{getCurrentRoundScore(player.id)}
                                   </span>
                                 )}
                               </div>
@@ -430,14 +434,14 @@ export default function GamePage() {
                             <div className="flex items-center gap-3">
                               {canSelect && !isSelected && !(isCurrentUser && selectedPlayerId !== null) && (
                                 <div className="text-right">
-                                  <p className="text-xs text-gray-500">Click to</p>
-                                  <p className="text-xs font-medium text-blue-600">enter score</p>
+                                  <p className="text-xs text-gray-500">{t.common.clickTo}</p>
+                                  <p className="text-xs font-medium text-blue-600">{t.games.clickToEnterScore.replace(t.common.clickTo + ' ', '')}</p>
                                 </div>
                               )}
                               {isCurrentUser && selectedPlayerId !== null && (
                                 <div className="text-right">
-                                  <p className="text-xs text-gray-500">Click to</p>
-                                  <p className="text-xs font-medium text-blue-600">enter your score</p>
+                                  <p className="text-xs text-gray-500">{t.common.clickTo}</p>
+                                  <p className="text-xs font-medium text-blue-600">{t.games.clickToEnterYourScore.replace(t.common.clickTo + ' ', '')}</p>
                                 </div>
                               )}
                               {hasSubmittedCurrentRound(player.id) && (
@@ -450,7 +454,7 @@ export default function GamePage() {
                                       }}
                                       disabled={reverting === player.id}
                                       className="inline-flex items-center justify-center w-6 h-6 rounded-full text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                                      title="Revert score submission"
+                                      title={t.games.revertScoreTitle}
                                     >
                                       <XCircleIcon className="h-3.5 w-3.5" />
                                     </button>
@@ -489,8 +493,8 @@ export default function GamePage() {
                 >
                   <p className="text-gray-500">
                     {hasSubmittedCurrentRound(user?.uid || '') 
-                      ? 'Waiting for other players to submit their scores...'
-                      : 'You are not a participant in this game.'}
+                      ? t.games.waitingForOthers
+                      : t.games.notParticipant}
                   </p>
                 </motion.div>
               )}

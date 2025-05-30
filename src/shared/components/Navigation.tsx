@@ -6,21 +6,25 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/context/auth-context';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 import { AuthService } from '@/features/account/services/auth-service';
 import { fadeIn } from '@/shared/styles/animations';
 import { SjoelifyLogo } from './SjoelifyLogo';
+import { CompactLanguageSwitcher } from '@/components/CompactLanguageSwitcher';
 import { 
   UserCircleIcon, 
   ArrowRightOnRectangleIcon,
   HomeIcon,
   TrophyIcon,
   ChartBarIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  CogIcon
 } from '@heroicons/react/24/outline';
 
 export function Navigation() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -74,19 +78,19 @@ export function Navigation() {
                   href="/games/new"
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
                 >
-                  New Game
+                  {t.navigation.newGame}
                 </Link>
                 <Link
                   href="/leaderboard"
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
                 >
-                  Leaderboard
+                  {t.navigation.leaderboard}
                 </Link>
                 <Link
                   href="/friends"
                   className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
                 >
-                  Friends
+                  {t.navigation.friends}
                 </Link>
               </div>
             )}
@@ -144,7 +148,7 @@ export function Navigation() {
                               className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                               <HomeIcon className="h-5 w-5 mr-2" />
-                              Dashboard
+                              {t.navigation.dashboard}
                             </Link>
                             <Link
                               href={`/players/${user?.uid}`}
@@ -152,7 +156,7 @@ export function Navigation() {
                               className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                               <ChartBarIcon className="h-5 w-5 mr-2" />
-                              Your Stats
+                              {t.navigation.yourStats}
                             </Link>
                             <Link
                               href="/friends"
@@ -160,7 +164,7 @@ export function Navigation() {
                               className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                               <UserGroupIcon className="h-5 w-5 mr-2" />
-                              Friends
+                              {t.navigation.friends}
                             </Link>
                             <Link
                               href="/leaderboard"
@@ -168,7 +172,15 @@ export function Navigation() {
                               className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                               <TrophyIcon className="h-5 w-5 mr-2" />
-                              Leaderboard
+                              {t.navigation.leaderboard}
+                            </Link>
+                            <Link
+                              href="/settings"
+                              onClick={() => setIsProfileOpen(false)}
+                              className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <CogIcon className="h-5 w-5 mr-2" />
+                              {t.navigation.settings}
                             </Link>
                           </div>
 
@@ -178,7 +190,7 @@ export function Navigation() {
                               className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             >
                               <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" />
-                              Sign out
+                              {t.auth.signOut}
                             </button>
                           </div>
                         </motion.div>
@@ -186,19 +198,22 @@ export function Navigation() {
                     </AnimatePresence>
                   </div>
                 ) : (
-                  <div className="space-x-4">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <Link
                       href="/auth/sign-in"
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      className="inline-flex items-center px-2.5 sm:px-4 py-1.5 sm:py-2 border border-gray-300 text-xs sm:text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
                     >
-                      Sign in
+                      {t.auth.signIn}
                     </Link>
                     <Link
                       href="/auth/sign-up"
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                      className="inline-flex items-center px-2.5 sm:px-4 py-1.5 sm:py-2 border border-transparent text-xs sm:text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
                     >
-                      Sign up
+                      {t.auth.signUp}
                     </Link>
+                    <div className="ml-1 sm:ml-2">
+                      <CompactLanguageSwitcher />
+                    </div>
                   </div>
                 )}
               </>

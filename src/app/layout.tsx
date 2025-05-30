@@ -1,6 +1,7 @@
 import { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/lib/context/auth-context';
+import { LocaleProvider } from '@/lib/context/locale-context';
 import { AnalyticsProvider } from '@/lib/context/analytics-provider';
 import { Navigation } from '@/shared/components/Navigation';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -9,8 +10,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Sjoelify - Track Your Sjoelen Games',
-  description: 'Track and analyze your sjoelen games with friends',
+  title: 'Sjoelify - Volg je Sjoelen Spellen',
+  description: 'Volg en analyseer je sjoelen spellen met vrienden',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -51,14 +52,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="nl">
       <body className={`${inter.className} bg-gradient-to-b from-white to-gray-50`}>
         <AuthProvider>
-          <AnalyticsProvider>
-            <Navigation />
-            <main>{children}</main>
-            <PWAInstallPrompt />
-          </AnalyticsProvider>
+          <LocaleProvider>
+            <AnalyticsProvider>
+              <Navigation />
+              <main>{children}</main>
+              <PWAInstallPrompt />
+            </AnalyticsProvider>
+          </LocaleProvider>
         </AuthProvider>
       </body>
     </html>

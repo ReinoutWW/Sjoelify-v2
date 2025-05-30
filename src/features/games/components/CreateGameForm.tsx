@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/context/auth-context';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 import { GameService } from '../services/game-service';
 import { useFriends } from '@/features/friends/hooks/use-friends';
 import { UserProfile } from '@/features/account/types';
@@ -33,6 +34,7 @@ const generateDefaultTitle = (): string => {
 export function CreateGameForm() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { friends: availablePlayers, loading: playersLoading } = useFriends(user?.uid);
   const [title, setTitle] = useState(generateDefaultTitle());
   const [titleError, setTitleError] = useState<string | null>(null);
@@ -98,7 +100,7 @@ export function CreateGameForm() {
       }
 
       if (selectedPlayerIds.length < 1 || selectedPlayerIds.length > 10) {
-        throw new Error('Please select between 1 and 10 players (including yourself)');
+        throw new Error(t.errors.minLength.replace('{min}', '1') + ' - ' + t.errors.maxLength.replace('{max}', '10'));
       }
 
       const gameId = await GameService.createGame(
@@ -158,7 +160,7 @@ export function CreateGameForm() {
       <motion.div variants={fadeIn}>
         <div className="flex justify-between items-center">
           <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-            Game Title
+            {t.games.gameTitle}
           </label>
           <span className="text-sm text-gray-500">
             {title.length}/{TITLE_MAX_LENGTH}
@@ -189,13 +191,13 @@ export function CreateGameForm() {
           <p className="mt-2 text-sm text-red-600">{titleError}</p>
         )}
         <p className="mt-2 text-sm text-gray-500">
-          Use letters, numbers, spaces, and hyphens only
+          {t.games.useLettersNumbersSpacesHyphens}
         </p>
       </motion.div>
 
       <motion.div variants={fadeIn} className="space-y-4">
         <label className="block text-sm font-medium text-gray-700">
-          Select Friends to Play With
+          {t.games.selectFriendsToPlayWith}
         </label>
         {players.length === 0 ? (
           <div className="text-center py-8 px-4 rounded-lg border-2 border-dashed border-gray-300">
@@ -212,9 +214,9 @@ export function CreateGameForm() {
                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
               />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No friends yet</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">{t.games.noFriendsYet}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Add some friends first to start playing with them!
+              {t.games.addFriendsFirst}
             </p>
             <div className="mt-6">
               <Link
@@ -222,7 +224,7 @@ export function CreateGameForm() {
                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
               >
                 <UserPlusIcon className="-ml-1 mr-2 h-5 w-5" />
-                Go to Friends Page
+                {t.games.goToFriendsPage}
               </Link>
             </div>
           </div>
@@ -233,7 +235,7 @@ export function CreateGameForm() {
                 type="text"
                 value={searchTerm}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                placeholder="Search friends..."
+                placeholder={t.friends.searchFriends}
                 className="block w-full px-4 py-3 rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder-gray-400 bg-white transition-shadow duration-200 mb-4"
               />
               {searchTerm && (
@@ -289,7 +291,7 @@ export function CreateGameForm() {
                   className="text-center py-8 px-4 rounded-lg border-2 border-dashed border-gray-300"
                 >
                   <p className="text-sm text-gray-500">
-                    No friends found matching your search
+                    {t.friends.noResults}
                   </p>
                 </motion.div>
               )}
@@ -312,10 +314,10 @@ export function CreateGameForm() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span>Creating...</span>
+            <span>{t.games.creatingGame}</span>
           </div>
         ) : (
-          'Create Game'
+          t.games.createGame
         )}
       </motion.button>
     </motion.form>

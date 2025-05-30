@@ -18,6 +18,7 @@
     "postinstall": "node -e \"console.log('Build environment:', process.env.FIREBASE_WEBAPP_CONFIG ? 'Firebase App Hosting' : 'Standard')\""
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-hover-card": "^1.1.14",

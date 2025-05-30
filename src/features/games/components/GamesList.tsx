@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/context/auth-context';
+import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useDateFormatter } from '@/lib/hooks/useDateFormatter';
 import { GameService } from '../services/game-service';
 import { Game } from '../types';
 import { fadeIn, staggerChildren, slideIn } from '@/shared/styles/animations';
@@ -29,38 +31,6 @@ const toISOStringOrUndefined = (dateString: string | number | Date | undefined |
   }
 };
 
-const formatDate = (dateString: string | number | Date | undefined | null) => {
-  if (!dateString) return 'Unknown date';
-  
-  try {
-    // Handle Firestore Timestamp
-    if (typeof dateString === 'object' && dateString !== null && 'seconds' in dateString && typeof dateString.seconds === 'number') {
-      const date = new Date(dateString.seconds * 1000);
-      if (isNaN(date.getTime())) return 'Invalid date';
-      
-      return new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date);
-    }
-    
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Invalid date';
-    
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date);
-  } catch (error) {
-    console.error('Error formatting date:', error);
-    return 'Invalid date';
-  }
-};
-
 interface GameListSectionProps {
   title: string;
   games: Game[];
@@ -81,6 +51,9 @@ const LoadingCard = () => (
 );
 
 function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
+  const { t } = useTranslation();
+  const { formatDate } = useDateFormatter();
+  
   if (games.length === 0) {
     return (
       <motion.div
@@ -178,12 +151,12 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                           <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
                             <div className="flex items-center gap-1">
                               <UsersIcon className="h-4 w-4 text-gray-400" />
-                              <span>{game.players.length} players</span>
+                              <span>{game.players.length} {t.games.players.toLowerCase()}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <CalendarIcon className="h-4 w-4 text-gray-400" />
                               <time dateTime={toISOStringOrUndefined(game.updatedAt)}>
-                                {formatDate(game.updatedAt)}
+                                {formatDate(game.updatedAt) || t.games.unknownDate}
                               </time>
                             </div>
                           </div>
@@ -197,7 +170,7 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                             ? 'bg-gray-100 text-gray-600'
                             : 'bg-primary-50 text-primary-700'
                         }`}>
-                          {game.isClosed ? 'Completed' : `Round ${game.currentRound}/5`}
+                          {game.isClosed ? t.games.completed : `${t.games.round} ${game.currentRound}/5`}
                         </span>
 
                         {/* Winner/Leader info */}
@@ -211,7 +184,7 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                               </>
                             ) : (
                               <>
-                                <span className="text-gray-500">Leading:</span>
+                                <span className="text-gray-500">{t.games.leading}:</span>
                                 <span className="font-medium text-gray-700 truncate max-w-[100px]">{leader.displayName}</span>
                               </>
                             )}
@@ -252,12 +225,12 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                             <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
                               <div className="flex items-center gap-1">
                                 <UsersIcon className="h-4 w-4 text-gray-400" />
-                                <span>{game.players.length} players</span>
+                                <span>{game.players.length} {t.games.players.toLowerCase()}</span>
                               </div>
                               <div className="flex items-center gap-1">
                                 <CalendarIcon className="h-4 w-4 text-gray-400" />
                                 <time dateTime={toISOStringOrUndefined(game.updatedAt)}>
-                                  {formatDate(game.updatedAt)}
+                                  {formatDate(game.updatedAt) || t.games.unknownDate}
                                 </time>
                               </div>
                             </div>
@@ -270,7 +243,7 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                               ? 'bg-gray-100/75 text-gray-600'
                               : 'bg-primary-50 text-primary-700'
                           }`}>
-                            {game.isClosed ? 'Completed' : `Round ${game.currentRound}/5`}
+                            {game.isClosed ? t.games.completed : `${t.games.round} ${game.currentRound}/5`}
                           </span>
                         </div>
                       </div>
@@ -295,7 +268,7 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                               <span className="font-semibold">{leader.totalScore}</span>
                             </div>
                             {isClose && (
-                              <span className="text-xs text-gray-500 italic whitespace-nowrap">Close game!</span>
+                              <span className="text-xs text-gray-500 italic whitespace-nowrap">{t.games.closeGame}</span>
                             )}
                           </div>
                         )}
@@ -304,12 +277,12 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
                           <div className="flex items-center gap-2 overflow-hidden flex-1">
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary-50 text-primary-700 text-sm">
                               <ChartBarIcon className="h-4 w-4 flex-shrink-0" />
-                              <span>Leading:</span>
+                              <span>{t.games.leading}:</span>
                               <span className="font-medium truncate">{leader.displayName}</span>
                               <span className="font-semibold">{leader.totalScore}</span>
                             </div>
                             {isClose && (
-                              <span className="text-xs text-gray-500 italic whitespace-nowrap">Neck and neck!</span>
+                              <span className="text-xs text-gray-500 italic whitespace-nowrap">{t.games.neckAndNeck}</span>
                             )}
                           </div>
                         )}
@@ -328,6 +301,7 @@ function GameListSection({ title, games, emptyMessage }: GameListSectionProps) {
 
 export function GamesList() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [activeGames, setActiveGames] = useState<Game[]>([]);
   const [finishedGames, setFinishedGames] = useState<Game[]>([]);
   const [filteredFinishedGames, setFilteredFinishedGames] = useState<Game[]>([]);
@@ -347,7 +321,7 @@ export function GamesList() {
         setFinishedGames(finished);
         setFilteredFinishedGames(finished);
       } catch (err) {
-        setError('Failed to load games');
+        setError(t.games.failedToLoadGames);
         console.error('Error loading games:', err);
       } finally {
         setLoading(false);
@@ -355,7 +329,7 @@ export function GamesList() {
     };
 
     fetchGames();
-  }, [user?.uid]);
+  }, [user?.uid, t.games.failedToLoadGames]);
 
   const handleFinishedGamesFilters = useCallback((filteredGames: Game[]) => {
     setFilteredFinishedGames(filteredGames);
@@ -400,9 +374,9 @@ export function GamesList() {
         variants={fadeIn}
         className="text-center py-8 sm:py-12"
       >
-        <h3 className="text-lg font-medium text-gray-900">No games yet</h3>
+        <h3 className="text-lg font-medium text-gray-900">{t.games.noGamesYet}</h3>
         <p className="mt-2 text-sm text-gray-500">
-          Get started by creating a new game
+          {t.games.getStartedMessage}
         </p>
         <motion.div
           className="mt-6"
@@ -413,7 +387,7 @@ export function GamesList() {
             href="/games/new"
             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200"
           >
-            Create New Game
+            {t.games.createNewGame}
           </Link>
         </motion.div>
       </motion.div>
@@ -438,25 +412,25 @@ export function GamesList() {
             href="/games/new"
             className="inline-flex w-full sm:w-auto items-center justify-center px-4 sm:px-6 py-2 sm:py-3 border border-transparent text-sm sm:text-base font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200 shadow-sm"
           >
-            New Game
+            {t.games.newGame}
           </Link>
         </motion.div>
       </div>
 
       {activeGames.length > 0 && (
         <div className="space-y-3 sm:space-y-4">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Active Games</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{t.games.activeGames}</h2>
           <GameListSection
             title=""
             games={activeGames}
-            emptyMessage="No active games match your filters"
+            emptyMessage={t.games.noActiveGamesMessage}
           />
         </div>
       )}
 
       {finishedGames.length > 0 && (
         <div className="space-y-3 sm:space-y-4">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Finished Games</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{t.games.finishedGames}</h2>
           <GameFilters
             games={finishedGames}
             onFiltersChange={handleFinishedGamesFilters}
@@ -464,7 +438,7 @@ export function GamesList() {
           <GameListSection
             title=""
             games={filteredFinishedGames}
-            emptyMessage="No finished games match your filters"
+            emptyMessage={t.games.noFinishedGamesMessage}
           />
         </div>
       )}

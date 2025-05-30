@@ -17,12 +17,17 @@ import {
   TimeScale
 } from 'chart.js';
 import 'chartjs-adapter-date-fns';
-import { UserCircleIcon, TrophyIcon, ChartBarIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, TrophyIcon, ChartBarIcon, CalendarIcon, ChevronLeftIcon, ChevronRightIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { GameService } from '@/features/games/services/game-service';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
 import { LeaderboardService } from '@/features/leaderboard/services/leaderboard-service';
 import Link from 'next/link';
 import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
+import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useDateFormatter } from '@/lib/hooks/useDateFormatter';
+import { useAuth } from '@/lib/context/auth-context';
+import { UserSettingsService } from '@/features/account/services/user-settings-service';
+import { FriendsService } from '@/features/friends/services/friends-service';
 
 // Register ChartJS components
 ChartJS.register(
@@ -48,6 +53,7 @@ interface PlayerStats {
 
 export default function PlayerProfilePage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [playerName, setPlayerName] = useState<string>('');
@@ -55,16 +61,71 @@ export default function PlayerProfilePage() {
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [lastPlayed, setLastPlayed] = useState<Date | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [canViewProfile, setCanViewProfile] = useState(true);
+  const [profilePrivacyLevel, setProfilePrivacyLevel] = useState<'public' | 'friends' | 'private'>('public');
   const itemsPerPage = 10;
+  const { t } = useTranslation();
+  const { formatDate } = useDateFormatter();
 
   useEffect(() => {
-    const fetchPlayerData = async () => {
+    const checkPrivacyAndFetchData = async () => {
       if (!id) return;
 
       try {
         setLoading(true);
         setError(null);
 
+        // Check if viewing own profile
+        const isOwnProfile = user?.uid === id;
+
+        // Fetch privacy settings for the profile being viewed
+        let profileIsPrivate = false;
+        let profilePrivacyLevel: 'public' | 'friends' | 'private' = 'public';
+        try {
+          const profileSettings = await UserSettingsService.getUserSettings(id as string);
+          profilePrivacyLevel = profileSettings?.privacy || 'public';
+          profileIsPrivate = profilePrivacyLevel !== 'public';
+          console.log(`Privacy settings for user ${id}:`, profileSettings);
+        } catch (error) {
+          console.error('Error fetching privacy settings:', error);
+          // Default to public if we can't fetch settings
+          profileIsPrivate = false;
+          profilePrivacyLevel = 'public';
+        }
+        setIsPrivate(profileIsPrivate);
+        setProfilePrivacyLevel(profilePrivacyLevel);
+
+        // Check if can view profile
+        let canView = true;
+        if (profileIsPrivate && !isOwnProfile) {
+          if (profilePrivacyLevel === 'private') {
+            // Full private - only the owner can view
+            canView = false;
+            console.log('Profile is fully private, only owner can view');
+          } else if (profilePrivacyLevel === 'friends') {
+            // Friends only - check if they are friends
+            if (user?.uid) {
+              const areFriends = await FriendsService.checkIfFriends(user.uid, id as string);
+              canView = areFriends;
+              console.log(`User ${user.uid} is friends with ${id}:`, areFriends);
+            } else {
+              // Not logged in, can't view friends-only profiles
+              canView = false;
+              console.log('User not logged in, cannot view friends-only profile');
+            }
+          }
+        }
+        setCanViewProfile(canView);
+        console.log(`Can view profile ${id}:`, canView);
+
+        // If can't view, don't fetch data
+        if (!canView) {
+          setLoading(false);
+          return;
+        }
+
+        // Original data fetching logic
         // Fetch player data from users collection to get verified status
         const { doc, getDoc } = await import('firebase/firestore');
         const { db } = await import('@/lib/firebase/config');
@@ -81,7 +142,7 @@ export default function PlayerProfilePage() {
         const playerData = leaderboardData.find(player => player.playerId === id);
 
         if (!playerData) {
-          setPlayerName('New Player');
+          setPlayerName(t.games.newPlayer);
           setLastPlayed(null);
           setStats({
             gamesPlayed: 0,
@@ -138,15 +199,15 @@ export default function PlayerProfilePage() {
         setStats(stats);
 
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load player statistics');
+        setError(err instanceof Error ? err.message : t.statistics.failedToLoad);
         console.error('Error loading player statistics:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPlayerData();
-  }, [id]);
+    checkPrivacyAndFetchData();
+  }, [id, user?.uid, t.statistics.failedToLoad, t.games.newPlayer]);
 
   const chartOptions = {
     responsive: true,
@@ -182,14 +243,14 @@ export default function PlayerProfilePage() {
         },
         title: {
           display: true,
-          text: 'Date'
+          text: t.games.date
         }
       },
       y: {
         beginAtZero: true,
         title: {
           display: true,
-          text: 'Score'
+          text: t.games.score
         }
       }
     }
@@ -220,6 +281,81 @@ export default function PlayerProfilePage() {
     );
   }
 
+  // Private profile overlay - check this BEFORE error state
+  if (!canViewProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-6 sm:py-12 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Blurred background preview */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="filter blur-xl opacity-50">
+              {/* Player Header Preview */}
+              <div className="text-center mt-12">
+                <div className="flex justify-center mb-3 sm:mb-4">
+                  <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gray-300 animate-pulse" />
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="h-8 w-48 bg-gray-300 rounded animate-pulse" />
+                </div>
+                <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:justify-center gap-2 sm:gap-4">
+                  <div className="h-4 w-32 bg-gray-300 rounded animate-pulse mx-auto" />
+                  <div className="h-4 w-32 bg-gray-300 rounded animate-pulse mx-auto" />
+                </div>
+              </div>
+
+              {/* Stats Preview */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4 mt-8 px-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-white/80 border border-gray-200 rounded-xl p-4 sm:p-6 animate-pulse">
+                    <div className="h-6 w-20 bg-gray-300 rounded mb-2" />
+                    <div className="h-10 w-16 bg-gray-300 rounded" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Chart Preview */}
+              <div className="mt-8 px-4 space-y-4">
+                <div className="bg-white/80 rounded-lg p-6 border border-gray-200 animate-pulse">
+                  <div className="h-6 w-40 bg-gray-300 rounded mb-4" />
+                  <div className="h-64 bg-gray-200 rounded" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lock overlay */}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeIn}
+            className="relative z-10 flex items-center justify-center min-h-[60vh]"
+          >
+            <div className="text-center bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl max-w-md mx-auto">
+              <div className="mb-6">
+                <LockClosedIcon className="h-16 w-16 sm:h-20 sm:w-20 text-gray-400 mx-auto" />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                {t.profile.privateProfile}
+              </h2>
+              <p className="text-gray-600">
+                {profilePrivacyLevel === 'private' ? t.profile.privateProfileMessageFull : t.profile.privateProfileMessage}
+              </p>
+              {!user && (
+                <Link
+                  href="/auth/sign-in"
+                  className="mt-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                >
+                  {t.auth.signIn}
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Only show error if it's not a privacy issue
   if (error || !stats) {
     return (
       <motion.div
@@ -230,15 +366,18 @@ export default function PlayerProfilePage() {
       >
         <div className="rounded-md bg-red-50 p-4">
           <h3 className="text-sm font-medium text-red-800">
-            {error || 'Failed to load player statistics'}
+            {error || t.statistics.failedToLoad}
           </h3>
         </div>
       </motion.div>
     );
   }
 
+  // TypeScript type guard - stats is definitely not null after this point
+  if (!stats) return null;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-6 sm:py-12">
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"
@@ -246,100 +385,101 @@ export default function PlayerProfilePage() {
           variants={staggerChildren}
           className="space-y-6 sm:space-y-8"
         >
-          {/* Player Header */}
-          <motion.div variants={fadeIn} className="text-center">
-            <div className="flex justify-center mb-3 sm:mb-4">
-              <UserCircleIcon className="h-16 w-16 sm:h-20 sm:w-20 text-gray-400" />
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">{playerName}</h1>
-              {isVerified && <VerifiedBadge size="lg" />}
-            </div>
-            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:justify-center gap-2 sm:gap-4 text-sm text-gray-600">
-              <div className="flex items-center justify-center gap-1">
-                <ChartBarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span>{stats.gamesPlayed} games played</span>
-              </div>
-              {lastPlayed && (
-                <div className="flex items-center justify-center gap-1">
-                  <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5" />
-                  <span>Last played {lastPlayed.toLocaleDateString()}</span>
+          {/* Player Header - Direct on background */}
+          <motion.div variants={fadeIn} className="mb-6">
+            <div className="flex flex-col items-center gap-4 py-4">
+              {/* Modern Avatar */}
+              <div className="relative">
+                <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 p-0.5">
+                  <div className="h-full w-full rounded-2xl bg-white p-0.5">
+                    <div className="h-full w-full rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center">
+                      <span className="text-3xl sm:text-4xl font-bold text-primary-600">
+                        {playerName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
+                {isVerified && (
+                  <div className="absolute -bottom-1 -right-1">
+                    <div className="bg-white rounded-full p-0.5">
+                      <VerifiedBadge size="md" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* User Info */}
+              <div className="text-center">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                  {playerName}
+                </h1>
+                <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+                  <div className="flex items-center gap-1.5 text-gray-600">
+                    <ChartBarIcon className="h-4 w-4" />
+                    <span className="font-medium">{stats.gamesPlayed}</span>
+                    <span className="text-gray-500">{t.profile.gamesPlayed}</span>
+                  </div>
+                  {lastPlayed && (
+                    <div className="flex items-center gap-1.5 text-gray-600">
+                      <CalendarIcon className="h-4 w-4" />
+                      <span className="text-gray-500">{t.profile.lastPlayed}</span>
+                      <span className="font-medium">{formatDate(lastPlayed)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </motion.div>
 
           {/* Stats Overview */}
-          <motion.div variants={fadeIn} className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+          <motion.div variants={fadeIn} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {/* Average Score */}
-            <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl hover:shadow-md transition-all duration-200">
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-500">Average</p>
-                    <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-semibold text-gray-900">{stats.averageScore}</p>
-                  </div>
-                  <div className="flex-shrink-0 ml-2">
-                    <div className="p-2 sm:p-3 bg-blue-50 rounded-lg">
-                      <ChartBarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
-                    </div>
-                  </div>
-                </div>
+            <div className="bg-white rounded-xl p-4 border border-gray-200/50 transition-all duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <ChartBarIcon className="h-4 w-4 text-blue-500" />
+                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">AVG</span>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">{t.games.average}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.averageScore}</p>
               </div>
             </div>
 
             {/* Best Average */}
-            <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl hover:shadow-md transition-all duration-200">
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-500">Best Avg</p>
-                    <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-semibold text-gray-900">{stats.bestAverage}</p>
-                  </div>
-                  <div className="flex-shrink-0 ml-2">
-                    <div className="p-2 sm:p-3 bg-emerald-50 rounded-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
+            <div className="bg-white rounded-xl p-4 border border-gray-200/50 transition-all duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 text-emerald-500">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">{t.profile.bestAvg}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.bestAverage}</p>
               </div>
             </div>
 
             {/* Personal Best */}
-            <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl hover:shadow-md transition-all duration-200">
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-500">Best</p>
-                    <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-semibold text-gray-900">{stats.personalBest}</p>
-                  </div>
-                  <div className="flex-shrink-0 ml-2">
-                    <div className="p-2 sm:p-3 bg-amber-50 rounded-lg">
-                      <TrophyIcon className="h-5 w-5 sm:h-6 sm:w-6 text-amber-500" />
-                    </div>
-                  </div>
-                </div>
+            <div className="bg-white rounded-xl p-4 border border-gray-200/50 transition-all duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <TrophyIcon className="h-4 w-4 text-amber-500" />
+                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">TOP</span>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">{t.profile.best}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.personalBest}</p>
               </div>
             </div>
 
             {/* Games Played */}
-            <div className="bg-white border border-gray-200 overflow-hidden shadow-sm rounded-xl hover:shadow-md transition-all duration-200">
-              <div className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-500">Games</p>
-                    <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-semibold text-gray-900">{stats.gamesPlayed}</p>
-                  </div>
-                  <div className="flex-shrink-0 ml-2">
-                    <div className="p-2 sm:p-3 bg-purple-50 rounded-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-5 w-5 sm:h-6 sm:w-6 text-purple-500">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
+            <div className="bg-white rounded-xl p-4 border border-gray-200/50 transition-all duration-200">
+              <div className="flex items-center justify-between mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4 text-purple-500">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[11px] text-gray-500 mb-1">{t.profile.games}</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.gamesPlayed}</p>
               </div>
             </div>
           </motion.div>
@@ -348,547 +488,568 @@ export default function PlayerProfilePage() {
           <motion.div variants={fadeIn} className="space-y-6">
             {/* Performance Indicator */}
             {stats.scoreHistory.length > 0 && (
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex-1">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900">Recent Performance</h3>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden">
+                <div className="p-6 sm:p-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-gray-900">{t.profile.recentPerformance}</h3>
+                      <p className="text-sm text-gray-500 mt-2">
+                        {(() => {
+                          const recentScores = stats.scoreHistory.slice(-5);
+                          const avgRecent = Math.round(recentScores.reduce((sum, s) => sum + s.score, 0) / recentScores.length);
+                          const diff = avgRecent - stats.averageScore;
+                          return (
+                            <>
+                              {t.profile.lastGames.replace('{count}', '5')}: <span className="font-semibold">{avgRecent}</span>
+                              {diff !== 0 && (
+                                <span className={`ml-1 font-medium ${diff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  ({diff > 0 ? '+' : ''}{diff})
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0">
                       {(() => {
                         const recentScores = stats.scoreHistory.slice(-5);
                         const avgRecent = Math.round(recentScores.reduce((sum, s) => sum + s.score, 0) / recentScores.length);
                         const diff = avgRecent - stats.averageScore;
                         return (
-                          <>
-                            Last 5 games: <span className="font-semibold">{avgRecent}</span>
-                            {diff !== 0 && (
-                              <span className={`ml-1 font-medium ${diff > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                ({diff > 0 ? '+' : ''}{diff})
-                              </span>
+                          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                            diff > 0 ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-sm' : 
+                            diff < 0 ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-sm' : 
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {diff > 0 ? (
+                              <>
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                {t.profile.improving}
+                              </>
+                            ) : diff < 0 ? (
+                              <>
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                                </svg>
+                                {t.profile.declining}
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
+                                </svg>
+                                {t.profile.stable}
+                              </>
                             )}
-                          </>
+                          </div>
                         );
                       })()}
-                    </p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    {(() => {
-                      const recentScores = stats.scoreHistory.slice(-5);
-                      const avgRecent = Math.round(recentScores.reduce((sum, s) => sum + s.score, 0) / recentScores.length);
-                      const diff = avgRecent - stats.averageScore;
-                      return (
-                        <div className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs sm:text-sm font-medium ${
-                          diff > 0 ? 'bg-green-50 text-green-700' : diff < 0 ? 'bg-red-50 text-red-700' : 'bg-gray-50 text-gray-700'
-                        }`}>
-                          {diff > 0 ? (
-                            <>
-                              <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                              </svg>
-                              Improving
-                            </>
-                          ) : diff < 0 ? (
-                            <>
-                              <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                              </svg>
-                              Declining
-                            </>
-                          ) : (
-                            <>
-                              <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
-                              </svg>
-                              Stable
-                            </>
-                          )}
-                        </div>
-                      );
-                    })()}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Score History Chart */}
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">Score History</h3>
-                <div className="flex items-center text-xs sm:text-sm text-gray-500">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  Individual scores over time
+            <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden">
+              <div className="p-6 sm:p-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">{t.profile.scoreHistory}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{t.profile.individualScoresOverTime}</p>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                    <span className="text-xs font-medium text-gray-600">Live</span>
+                  </div>
                 </div>
-              </div>
-              <div className="h-[250px] sm:h-[300px] lg:h-[400px]">
-                <Line
-                  data={{
-                    datasets: [
-                      {
-                        label: 'Score',
-                        data: stats.scoreHistory.map((entry, index) => ({
-                          x: index,
-                          y: entry.score,
-                          date: entry.date
-                        })),
-                        borderColor: 'rgb(59, 130, 246)',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: false,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                      }
-                    ]
-                  }}
-                  options={{
-                    ...chartOptions,
-                    scales: {
-                      ...chartOptions.scales,
-                      x: {
-                        type: 'linear',
-                        ticks: {
-                          callback: function(value: any) {
-                            const index = Math.floor(value);
-                            if (index !== value || index < 0 || index >= stats.scoreHistory.length) return '';
-                            
-                            // Show every nth label to avoid crowding
-                            const totalPoints = stats.scoreHistory.length;
-                            let showEvery = 1;
-                            if (totalPoints > 50) showEvery = 10;
-                            else if (totalPoints > 20) showEvery = 5;
-                            else if (totalPoints > 10) showEvery = 2;
-                            
-                            if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
-                            
-                            return `Game ${index + 1}`;
+                <div className="h-[250px] sm:h-[300px] lg:h-[400px]">
+                  <Line
+                    data={{
+                      datasets: [
+                        {
+                          label: t.games.score,
+                          data: stats.scoreHistory.map((entry, index) => ({
+                            x: index,
+                            y: entry.score,
+                            date: entry.date
+                          })),
+                          borderColor: 'rgb(59, 130, 246)',
+                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                          fill: false,
+                          tension: 0.4,
+                          pointRadius: 4,
+                          pointHoverRadius: 6
+                        }
+                      ]
+                    }}
+                    options={{
+                      ...chartOptions,
+                      scales: {
+                        ...chartOptions.scales,
+                        x: {
+                          type: 'linear',
+                          ticks: {
+                            callback: function(value: any) {
+                              const index = Math.floor(value);
+                              if (index !== value || index < 0 || index >= stats.scoreHistory.length) return '';
+                              
+                              // Show every nth label to avoid crowding
+                              const totalPoints = stats.scoreHistory.length;
+                              let showEvery = 1;
+                              if (totalPoints > 50) showEvery = 10;
+                              else if (totalPoints > 20) showEvery = 5;
+                              else if (totalPoints > 10) showEvery = 2;
+                              
+                              if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
+                              
+                              return `${t.profile.game} ${index + 1}`;
+                            },
+                            maxRotation: 45,
+                            minRotation: 45
                           },
-                          maxRotation: 45,
-                          minRotation: 45
+                          title: {
+                            display: true,
+                            text: t.profile.gameNumber
+                          },
+                          grid: {
+                            display: true
+                          }
                         },
-                        title: {
-                          display: true,
-                          text: 'Game Number'
-                        },
-                        grid: {
-                          display: true
+                        y: {
+                          beginAtZero: true,
+                          title: {
+                            display: true,
+                            text: t.games.score
+                          }
                         }
                       },
-                      y: {
-                        beginAtZero: true,
-                        title: {
-                          display: true,
-                          text: 'Score'
-                        }
-                      }
-                    },
-                    plugins: {
-                      ...chartOptions.plugins,
-                      tooltip: {
-                        ...chartOptions.plugins.tooltip,
-                        callbacks: {
-                          title: (context: any) => {
-                            const point = context[0];
-                            if (!point) return '';
-                            const index = point.parsed.x;
-                            const dateData = point.raw.date;
-                            return [
-                              `Game ${index + 1}`,
-                              dateData ? new Date(dateData).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              }) : ''
-                            ];
-                          },
-                          label: (context: any) => {
-                            return `Score: ${context.parsed.y}`;
+                      plugins: {
+                        ...chartOptions.plugins,
+                        tooltip: {
+                          ...chartOptions.plugins.tooltip,
+                          callbacks: {
+                            title: (context: any) => {
+                              const point = context[0];
+                              if (!point) return '';
+                              const index = point.parsed.x;
+                              const dateData = point.raw.date;
+                              return [
+                                `${t.profile.game} ${index + 1}`,
+                                dateData ? formatDate(dateData) : ''
+                              ];
+                            },
+                            label: (context: any) => {
+                              return `${t.games.score}: ${context.parsed.y}`;
+                            }
                           }
                         }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Relative Score Chart */}
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">Performance vs Best Average</h3>
-                <div className="flex items-center text-xs sm:text-sm text-gray-500">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                  Relative to {stats.bestAverage} points
+            <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden">
+              <div className="p-6 sm:p-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
+                  <h3 className="text-xl font-bold text-gray-900">{t.profile.pointsVsBestAverage}</h3>
+                  <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    {t.profile.relativeTo100Points.replace('{points}', stats.bestAverage.toString())}
+                  </div>
                 </div>
-              </div>
-              <div className="h-[250px] sm:h-[300px] lg:h-[400px]">
-                <Line
-                  data={{
-                    datasets: [
-                      {
-                        label: 'Points vs Best Average',
-                        data: stats.scoreHistory.map((entry, index) => ({
-                          x: index,
-                          y: entry.relativeScore,
-                          date: entry.date
-                        })),
-                        segment: {
-                          borderColor: ctx => {
-                            const prev = ctx.p0.parsed.y;
-                            const curr = ctx.p1.parsed.y;
-                            return (prev >= 0 && curr >= 0) ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)';
+                <div className="h-[250px] sm:h-[300px] lg:h-[400px]">
+                  <Line
+                    data={{
+                      datasets: [
+                        {
+                          label: t.profile.pointsVsBestAverage,
+                          data: stats.scoreHistory.map((entry, index) => ({
+                            x: index,
+                            y: entry.relativeScore,
+                            date: entry.date
+                          })),
+                          borderColor: 'rgb(59, 130, 246)',
+                          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                          fill: true,
+                          tension: 0.4,
+                          pointRadius: 4,
+                          pointHoverRadius: 6,
+                          pointBackgroundColor: (ctx) => {
+                            if (!ctx?.parsed?.y) return 'rgb(59, 130, 246)';
+                            return ctx.parsed.y >= 0 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)';
+                          }
+                        }
+                      ]
+                    }}
+                    options={{
+                      ...chartOptions,
+                      scales: {
+                        ...chartOptions.scales,
+                        x: {
+                          type: 'linear',
+                          ticks: {
+                            callback: function(value: any) {
+                              const index = Math.floor(value);
+                              if (index !== value || index < 0 || index >= stats.scoreHistory.length) return '';
+                              
+                              // Show every nth label to avoid crowding
+                              const totalPoints = stats.scoreHistory.length;
+                              let showEvery = 1;
+                              if (totalPoints > 50) showEvery = 10;
+                              else if (totalPoints > 20) showEvery = 5;
+                              else if (totalPoints > 10) showEvery = 2;
+                              
+                              if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
+                              
+                              return `${t.profile.game} ${index + 1}`;
+                            },
+                            maxRotation: 45,
+                            minRotation: 45
+                          },
+                          title: {
+                            display: true,
+                            text: t.profile.gameNumber
+                          },
+                          grid: {
+                            display: true
                           }
                         },
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        pointBackgroundColor: (ctx) => {
-                          if (!ctx?.parsed?.y) return 'rgb(59, 130, 246)';
-                          return ctx.parsed.y >= 0 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)';
-                        }
-                      }
-                    ]
-                  }}
-                  options={{
-                    ...chartOptions,
-                    scales: {
-                      ...chartOptions.scales,
-                      x: {
-                        type: 'linear',
-                        ticks: {
-                          callback: function(value: any) {
-                            const index = Math.floor(value);
-                            if (index !== value || index < 0 || index >= stats.scoreHistory.length) return '';
-                            
-                            // Show every nth label to avoid crowding
-                            const totalPoints = stats.scoreHistory.length;
-                            let showEvery = 1;
-                            if (totalPoints > 50) showEvery = 10;
-                            else if (totalPoints > 20) showEvery = 5;
-                            else if (totalPoints > 10) showEvery = 2;
-                            
-                            if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
-                            
-                            return `Game ${index + 1}`;
+                        y: {
+                          beginAtZero: false,
+                          title: {
+                            display: true,
+                            text: `${t.profile.pointsVsBestAverage.replace('{points}', stats.bestAverage.toString())}`
                           },
-                          maxRotation: 45,
-                          minRotation: 45
-                        },
-                        title: {
-                          display: true,
-                          text: 'Game Number'
-                        },
-                        grid: {
-                          display: true
+                          grid: {
+                            color: (context) => {
+                              if (context.tick.value === 0) {
+                                return 'rgba(0, 0, 0, 0.2)';
+                              }
+                              return 'rgba(0, 0, 0, 0.1)';
+                            }
+                          }
                         }
                       },
-                      y: {
-                        beginAtZero: false,
-                        title: {
-                          display: true,
-                          text: `Points Relative to Best Average (${stats.bestAverage})`
-                        },
-                        grid: {
-                          color: (context) => {
-                            if (context.tick.value === 0) {
-                              return 'rgba(0, 0, 0, 0.2)';
+                      plugins: {
+                        ...chartOptions.plugins,
+                        tooltip: {
+                          ...chartOptions.plugins.tooltip,
+                          callbacks: {
+                            title: (context: any) => {
+                              const point = context[0];
+                              if (!point) return '';
+                              const index = point.parsed.x;
+                              const dateData = point.raw.date;
+                              return [
+                                `${t.profile.game} ${index + 1}`,
+                                dateData ? formatDate(dateData) : ''
+                              ];
+                            },
+                            label: (context: any) => {
+                              const relativeScore = context.parsed.y;
+                              const actualScore = relativeScore + stats.bestAverage;
+                              return `${t.games.score}: ${relativeScore >= 0 ? '+' : ''}${relativeScore} (${actualScore} vs ${stats.bestAverage})`;
                             }
-                            return 'rgba(0, 0, 0, 0.1)';
                           }
                         }
                       }
-                    },
-                    plugins: {
-                      ...chartOptions.plugins,
-                      tooltip: {
-                        ...chartOptions.plugins.tooltip,
-                        callbacks: {
-                          title: (context: any) => {
-                            const point = context[0];
-                            if (!point) return '';
-                            const index = point.parsed.x;
-                            const dateData = point.raw.date;
-                            return [
-                              `Game ${index + 1}`,
-                              dateData ? new Date(dateData).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              }) : ''
-                            ];
-                          },
-                          label: (context: any) => {
-                            const relativeScore = context.parsed.y;
-                            const actualScore = relativeScore + stats.bestAverage;
-                            return `Score: ${relativeScore >= 0 ? '+' : ''}${relativeScore} (${actualScore} vs ${stats.bestAverage})`;
-                          }
-                        }
-                      }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Score History Table */}
-            <div className="bg-white p-3 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 gap-2">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">Round History</h3>
-                <span className="text-xs sm:text-sm text-gray-500">
-                  {stats.scoreHistory.length} total rounds
-                </span>
-              </div>
-              
-              {stats.scoreHistory.length > 0 ? (
-                <>
-                  <div className="overflow-x-auto -mx-3 sm:mx-0">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead>
-                        <tr>
-                          <th className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                          <th className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                          <th className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">vs Best</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {stats.scoreHistory
-                          .slice()
-                          .reverse()
-                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                          .map((entry, index) => (
-                          <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
-                            <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
-                              <div className="flex flex-col">
-                                <span className="font-medium">{entry.date.toLocaleDateString()}</span>
-                                <span className="text-xs text-gray-400">{entry.date.toLocaleTimeString()}</span>
-                              </div>
-                            </td>
-                            <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                              <span className="text-sm font-semibold text-gray-900">{entry.score}</span>
-                            </td>
-                            <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <span
-                                  className={`inline-flex items-center px-1.5 sm:px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                    entry.relativeScore >= 0
-                                      ? 'bg-green-100 text-green-800'
-                                      : 'bg-red-100 text-red-800'
-                                  }`}
-                                  title={`${entry.score} - ${stats.bestAverage} = ${entry.relativeScore}`}
-                                >
-                                  {entry.relativeScore >= 0 ? (
-                                    <>
-                                      <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                                      </svg>
-                                      +{entry.relativeScore}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                                      </svg>
-                                      {entry.relativeScore}
-                                    </>
-                                  )}
-                                </span>
-                              </div>
-                            </td>
+            <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden">
+              <div className="p-6 sm:p-8">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
+                  <h3 className="text-xl font-bold text-gray-900">{t.games.roundHistory}</h3>
+                  <span className="text-xs sm:text-sm text-gray-500">
+                    {stats.scoreHistory.length} {t.games.total.toLowerCase()} {t.games.rounds.toLowerCase()}
+                  </span>
+                </div>
+                
+                {stats.scoreHistory.length > 0 ? (
+                  <>
+                    {/* Mobile-friendly card view on small screens */}
+                    <div className="md:hidden space-y-3">
+                      {stats.scoreHistory
+                        .slice()
+                        .reverse()
+                        .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                        .map((entry, index) => (
+                        <div key={index} className="bg-gray-50/50 rounded-xl p-4 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">{entry.date.toLocaleDateString()}</p>
+                              <p className="text-xs text-gray-500">{entry.date.toLocaleTimeString()}</p>
+                            </div>
+                            <span
+                              className={`inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                entry.relativeScore >= 0
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-red-100 text-red-700'
+                              }`}
+                            >
+                              {entry.relativeScore >= 0 ? '+' : ''}{entry.relativeScore}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center pt-2 border-t border-gray-200/50">
+                            <span className="text-xs text-gray-500">{t.games.score}</span>
+                            <span className="text-lg font-semibold text-gray-900">{entry.score}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop table view */}
+                    <div className="hidden md:block overflow-hidden rounded-2xl border border-gray-100">
+                      <table className="min-w-full">
+                        <thead>
+                          <tr className="bg-gray-50/50">
+                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">{t.games.date}</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">{t.games.score}</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">vs {t.profile.best}</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  {/* Pagination Controls */}
-                  {stats.scoreHistory.length > itemsPerPage && (
-                    <div className="mt-4 flex flex-col sm:flex-row items-center justify-between px-6">
-                      <div className="text-sm text-gray-700 mb-2 sm:mb-0">
-                        Showing{' '}
-                        <span className="font-medium">
-                          {Math.min((currentPage - 1) * itemsPerPage + 1, stats.scoreHistory.length)}
-                        </span>{' '}
-                        to{' '}
-                        <span className="font-medium">
-                          {Math.min(currentPage * itemsPerPage, stats.scoreHistory.length)}
-                        </span>{' '}
-                        of{' '}
-                        <span className="font-medium">{stats.scoreHistory.length}</span> rounds
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                          disabled={currentPage === 1}
-                          className={`p-2 rounded-lg transition-colors duration-150 ${
-                            currentPage === 1
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                          }`}
-                        >
-                          <ChevronLeftIcon className="h-5 w-5" />
-                        </button>
-                        
-                        <div className="flex items-center space-x-1">
-                          {Array.from({ length: Math.ceil(stats.scoreHistory.length / itemsPerPage) }, (_, i) => i + 1)
-                            .filter(page => {
-                              const totalPages = Math.ceil(stats.scoreHistory.length / itemsPerPage);
-                              if (totalPages <= 7) return true;
-                              if (page === 1 || page === totalPages) return true;
-                              if (Math.abs(page - currentPage) <= 1) return true;
-                              if (currentPage <= 3 && page <= 5) return true;
-                              if (currentPage >= totalPages - 2 && page >= totalPages - 4) return true;
-                              return false;
-                            })
-                            .map((page, index, array) => (
-                              <div key={page} className="flex items-center">
-                                {index > 0 && array[index - 1] !== page - 1 && (
-                                  <span className="px-2 text-gray-400">...</span>
-                                )}
-                                <button
-                                  onClick={() => setCurrentPage(page)}
-                                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors duration-150 ${
-                                    currentPage === page
-                                      ? 'bg-blue-500 text-white'
-                                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                  }`}
-                                >
-                                  {page}
-                                </button>
-                              </div>
-                            ))}
+                        </thead>
+                        <tbody className="bg-white">
+                          {stats.scoreHistory
+                            .slice()
+                            .reverse()
+                            .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                            .map((entry, index) => (
+                            <tr key={index} className="hover:bg-gray-50/50 transition-all duration-200 border-t border-gray-100/50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{entry.date.toLocaleDateString()}</span>
+                                  <span className="text-xs text-gray-400">{entry.date.toLocaleTimeString()}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="text-sm font-semibold text-gray-900">{entry.score}</span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
+                                      entry.relativeScore >= 0
+                                        ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200/50'
+                                        : 'bg-gradient-to-r from-red-50 to-pink-50 text-red-700 border border-red-200/50'
+                                    }`}
+                                    title={`${entry.score} - ${stats.bestAverage} = ${entry.relativeScore}`}
+                                  >
+                                    {entry.relativeScore >= 0 ? (
+                                      <>
+                                        <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                        </svg>
+                                        +{entry.relativeScore}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <svg className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                        </svg>
+                                        {entry.relativeScore}
+                                      </>
+                                    )}
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {stats.scoreHistory.length > itemsPerPage && (
+                      <div className="mt-6 flex flex-col sm:flex-row items-center justify-between">
+                        <div className="text-sm text-gray-500 mb-4 sm:mb-0">
+                          {t.common.showing}{' '}
+                          <span className="font-medium">
+                            {Math.min((currentPage - 1) * itemsPerPage + 1, stats.scoreHistory.length)}
+                          </span>{' '}
+                          {t.common.to}{' '}
+                          <span className="font-medium">
+                            {Math.min(currentPage * itemsPerPage, stats.scoreHistory.length)}
+                          </span>{' '}
+                          {t.common.of}{' '}
+                          <span className="font-medium">{stats.scoreHistory.length}</span> {t.games.rounds.toLowerCase()}
                         </div>
                         
-                        <button
-                          onClick={() => setCurrentPage(Math.min(Math.ceil(stats.scoreHistory.length / itemsPerPage), currentPage + 1))}
-                          disabled={currentPage === Math.ceil(stats.scoreHistory.length / itemsPerPage)}
-                          className={`p-2 rounded-lg transition-colors duration-150 ${
-                            currentPage === Math.ceil(stats.scoreHistory.length / itemsPerPage)
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                          }`}
-                        >
-                          <ChevronRightIcon className="h-5 w-5" />
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                            disabled={currentPage === 1}
+                            className={`p-2 rounded-xl transition-all duration-200 ${
+                              currentPage === 1
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
+                                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200/50'
+                            }`}
+                          >
+                            <ChevronLeftIcon className="h-5 w-5" />
+                          </button>
+                          
+                          <div className="flex items-center space-x-1">
+                            {Array.from({ length: Math.ceil(stats.scoreHistory.length / itemsPerPage) }, (_, i) => i + 1)
+                              .filter(page => {
+                                const totalPages = Math.ceil(stats.scoreHistory.length / itemsPerPage);
+                                if (totalPages <= 7) return true;
+                                if (page === 1 || page === totalPages) return true;
+                                if (Math.abs(page - currentPage) <= 1) return true;
+                                if (currentPage <= 3 && page <= 5) return true;
+                                if (currentPage >= totalPages - 2 && page >= totalPages - 4) return true;
+                                return false;
+                              })
+                              .map((page, index, array) => (
+                                <div key={page} className="flex items-center">
+                                  {index > 0 && array[index - 1] !== page - 1 && (
+                                    <span className="px-2 text-gray-400">...</span>
+                                  )}
+                                  <button
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`px-3 py-1 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                                      currentPage === page
+                                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white'
+                                        : 'bg-white text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                    }`}
+                                  >
+                                    {page}
+                                  </button>
+                                </div>
+                              ))}
+                          </div>
+                          
+                          <button
+                            onClick={() => setCurrentPage(Math.min(Math.ceil(stats.scoreHistory.length / itemsPerPage), currentPage + 1))}
+                            disabled={currentPage === Math.ceil(stats.scoreHistory.length / itemsPerPage)}
+                            className={`p-2 rounded-xl transition-all duration-200 ${
+                              currentPage === Math.ceil(stats.scoreHistory.length / itemsPerPage)
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
+                                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200/50'
+                            }`}
+                          >
+                            <ChevronRightIcon className="h-5 w-5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No rounds played yet</p>
-                </div>
-              )}
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>{t.statistics.noDataYet}</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Average Score Trend */}
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-                <h3 className="text-base sm:text-lg font-medium text-gray-900">Score Progression</h3>
-                <div className="flex items-center text-xs sm:text-sm text-gray-500">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                  </svg>
-                  Running average over time
+            <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden">
+              <div className="p-6 sm:p-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2">
+                  <h3 className="text-xl font-bold text-gray-900">{t.statistics.progressOverTime}</h3>
+                  <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                    {t.games.runningAverageOverTime}
+                  </div>
                 </div>
-              </div>
-              <div className="h-[250px] sm:h-[300px] lg:h-[400px]">
-                <Line
-                  data={{
-                    datasets: [
-                      {
-                        label: 'Average Score',
-                        data: stats.averageScoreHistory.map((entry, index) => ({
-                          x: index,
-                          y: entry.average,
-                          date: entry.date
-                        })),
-                        borderColor: 'rgb(16, 185, 129)',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                      }
-                    ]
-                  }}
-                  options={{
-                    ...chartOptions,
-                    scales: {
-                      ...chartOptions.scales,
-                      x: {
-                        type: 'linear',
-                        ticks: {
-                          callback: function(value: any) {
-                            const index = Math.floor(value);
-                            if (index !== value || index < 0 || index >= stats.averageScoreHistory.length) return '';
-                            
-                            // Show every nth label to avoid crowding
-                            const totalPoints = stats.averageScoreHistory.length;
-                            let showEvery = 1;
-                            if (totalPoints > 50) showEvery = 10;
-                            else if (totalPoints > 20) showEvery = 5;
-                            else if (totalPoints > 10) showEvery = 2;
-                            
-                            if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
-                            
-                            return `Game ${index + 1}`;
+                <div className="h-[250px] sm:h-[300px] lg:h-[400px]">
+                  <Line
+                    data={{
+                      datasets: [
+                        {
+                          label: t.games.averageScore,
+                          data: stats.averageScoreHistory.map((entry, index) => ({
+                            x: index,
+                            y: entry.average,
+                            date: entry.date
+                          })),
+                          borderColor: 'rgb(16, 185, 129)',
+                          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                          fill: true,
+                          tension: 0.4,
+                          pointRadius: 4,
+                          pointHoverRadius: 6
+                        }
+                      ]
+                    }}
+                    options={{
+                      ...chartOptions,
+                      scales: {
+                        ...chartOptions.scales,
+                        x: {
+                          type: 'linear',
+                          ticks: {
+                            callback: function(value: any) {
+                              const index = Math.floor(value);
+                              if (index !== value || index < 0 || index >= stats.averageScoreHistory.length) return '';
+                              
+                              // Show every nth label to avoid crowding
+                              const totalPoints = stats.averageScoreHistory.length;
+                              let showEvery = 1;
+                              if (totalPoints > 50) showEvery = 10;
+                              else if (totalPoints > 20) showEvery = 5;
+                              else if (totalPoints > 10) showEvery = 2;
+                              
+                              if (index % showEvery !== 0 && index !== 0 && index !== totalPoints - 1) return '';
+                              
+                              return `${t.profile.game} ${index + 1}`;
+                            },
+                            maxRotation: 45,
+                            minRotation: 45
                           },
-                          maxRotation: 45,
-                          minRotation: 45
+                          title: {
+                            display: true,
+                            text: t.profile.gameNumber
+                          },
+                          grid: {
+                            display: true
+                          }
                         },
-                        title: {
-                          display: true,
-                          text: 'Game Number'
-                        },
-                        grid: {
-                          display: true
+                        y: {
+                          beginAtZero: true,
+                          title: {
+                            display: true,
+                            text: t.games.averageScore
+                          }
                         }
                       },
-                      y: {
-                        beginAtZero: true,
-                        title: {
-                          display: true,
-                          text: 'Average Score'
-                        }
-                      }
-                    },
-                    plugins: {
-                      ...chartOptions.plugins,
-                      tooltip: {
-                        ...chartOptions.plugins.tooltip,
-                        callbacks: {
-                          title: (context: any) => {
-                            const point = context[0];
-                            if (!point) return '';
-                            const index = point.parsed.x;
-                            const dateData = point.raw.date;
-                            return [
-                              `After Game ${index + 1}`,
-                              dateData ? new Date(dateData).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              }) : ''
-                            ];
-                          },
-                          label: (context: any) => {
-                            return `Average: ${context.parsed.y}`;
+                      plugins: {
+                        ...chartOptions.plugins,
+                        tooltip: {
+                          ...chartOptions.plugins.tooltip,
+                          callbacks: {
+                            title: (context: any) => {
+                              const point = context[0];
+                              if (!point) return '';
+                              const index = point.parsed.x;
+                              const dateData = point.raw.date;
+                              return [
+                                t.games.afterGame.replace('{number}', (index + 1).toString()),
+                                dateData ? formatDate(dateData) : ''
+                              ];
+                            },
+                            label: (context: any) => {
+                              return `${t.games.average}: ${context.parsed.y}`;
+                            }
                           }
                         }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </motion.div>

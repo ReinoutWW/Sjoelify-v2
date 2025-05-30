@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/lib/context/auth-context';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
 import { TrophyIcon, ArrowRightIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { GamesList } from '@/features/games/components/GamesList';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
 
   if (loading) {
     return (
@@ -38,8 +40,8 @@ export default function DashboardPage() {
         className="flex items-center justify-center min-h-screen py-12"
       >
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Please sign in to view your dashboard</h2>
-          <p className="mt-2 text-gray-600">You need to be signed in to view your statistics and games.</p>
+          <h2 className="text-2xl font-bold text-gray-900">{t.dashboard.pleaseSignIn}</h2>
+          <p className="mt-2 text-gray-600">{t.dashboard.signInRequired}</p>
         </div>
       </motion.div>
     );
@@ -58,11 +60,11 @@ export default function DashboardPage() {
           <motion.div variants={fadeIn} className="text-center">
             <h1 className="text-4xl font-bold text-gray-900">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">
-                Your Dashboard
+                {t.dashboard.title}
               </span>
             </h1>
             <p className="mt-4 text-lg text-gray-600">
-              Track your progress and manage your games
+              {t.dashboard.subtitle}
             </p>
           </motion.div>
 
@@ -72,28 +74,28 @@ export default function DashboardPage() {
               href="/games/new"
               className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
             >
-              Start New Game
+              {t.dashboard.startNewGame}
               <ArrowRightIcon className="ml-2 -mr-1 h-5 w-5" />
             </Link>
             <Link
               href={`/players/${user.uid}`}
               className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
             >
-              View Your Stats
+              {t.navigation.yourStats}
               <ChartBarIcon className="ml-2 -mr-1 h-5 w-5" />
             </Link>
             <Link
               href="/leaderboard"
               className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
             >
-              View Leaderboard
+              {t.dashboard.viewLeaderboard}
               <TrophyIcon className="ml-2 -mr-1 h-5 w-5" />
             </Link>
           </motion.div>
 
           {/* Recent Games */}
           <motion.div variants={fadeIn}>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Games</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.games.title}</h2>
             <GamesList />
           </motion.div>
         </motion.div>

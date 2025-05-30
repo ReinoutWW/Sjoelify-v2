@@ -260,7 +260,7 @@ export class FriendsService {
     return !snapshot.empty;
   }
 
-  private static async checkIfFriends(user1Id: string, user2Id: string): Promise<boolean> {
+  static async checkIfFriends(user1Id: string, user2Id: string): Promise<boolean> {
     const friendship = await this.getFriendship(user1Id, user2Id);
     return !!friendship;
   }

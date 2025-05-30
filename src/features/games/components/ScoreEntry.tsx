@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeIn } from '@/shared/styles/animations';
 import { BoltIcon, CommandLineIcon } from '@heroicons/react/24/outline';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface ScoreEntryProps {
   onScoreSubmit: (scores: number[]) => void;
@@ -19,6 +20,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
   const [quickInsertMode, setQuickInsertMode] = useState(false);
   const [quickInsertValue, setQuickInsertValue] = useState('');
   const quickInsertRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
   const MAX_TOTAL_DISCS = 30;
   
   const gates = [
@@ -38,7 +40,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
 
     if (increment) {
       if (currentTotal >= MAX_TOTAL_DISCS) {
-        setError(`Maximum of ${MAX_TOTAL_DISCS} discs reached`);
+        setError(t.games.maximumDiscsReached.replace('{max}', MAX_TOTAL_DISCS.toString()));
         return;
       }
       newScores[index]++;
@@ -57,7 +59,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
 
     const newTotal = getTotalDiscs(newScores);
     if (newTotal > MAX_TOTAL_DISCS) {
-      setError(`Maximum of ${MAX_TOTAL_DISCS} discs reached`);
+      setError(t.games.maximumDiscsReached.replace('{max}', MAX_TOTAL_DISCS.toString()));
       return;
     }
 
@@ -74,7 +76,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
       const totalDiscs = getTotalDiscs(newScores);
       
       if (totalDiscs > MAX_TOTAL_DISCS) {
-        setError(`Maximum of ${MAX_TOTAL_DISCS} discs reached`);
+        setError(t.games.maximumDiscsReached.replace('{max}', MAX_TOTAL_DISCS.toString()));
         return;
       }
       
@@ -144,7 +146,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
       <div>
         <div className="mb-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-medium text-gray-900">Enter Discs per Gate</h3>
+            <h3 className="text-base font-medium text-gray-900">{t.games.enterDiscsPerGate}</h3>
             <button
               type="button"
               onClick={toggleQuickInsert}
@@ -155,12 +157,12 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
                 }`}
             >
               <BoltIcon className="h-4 w-4" />
-              Quick Insert
+              {t.games.quickInsert}
             </button>
           </div>
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-1">
-            <p className="text-sm text-gray-500">Count discs from left to right</p>
+            <p className="text-sm text-gray-500">{t.games.countDiscsFromLeftToRight}</p>
             <div className="flex-1 hidden sm:block" />
             <div className="flex items-center gap-2 w-full sm:w-auto">
               {error && (
@@ -176,7 +178,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
                 </motion.div>
               )}
               <p className="text-sm text-gray-500 text-right min-w-[90px] ml-auto sm:ml-0">
-                {getTotalDiscs(scores)}/{MAX_TOTAL_DISCS} discs used
+                {getTotalDiscs(scores)}/{MAX_TOTAL_DISCS} {t.games.discsUsed}
               </p>
             </div>
           </div>
@@ -196,7 +198,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
                   <CommandLineIcon className="h-5 w-5 text-blue-600 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-blue-900 mb-2">
-                      Type 4 digits for gates 2-3-4-1
+                      {t.games.typeDigitsForGates}
                     </p>
                     <input
                       ref={quickInsertRef}
@@ -206,7 +208,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
                         const value = e.target.value.replace(/\D/g, '').slice(0, 4);
                         handleQuickInsert(value);
                       }}
-                      placeholder="e.g., 3345"
+                      placeholder={t.games.exampleNumber}
                       className="w-full px-3 py-2 text-lg font-mono text-center text-gray-900 bg-white border-2 border-blue-300 rounded-md
                         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400
                         placeholder:text-gray-400"
@@ -216,7 +218,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
                       {gates.map((gate, index) => (
                         <div key={index} className="text-center">
                           <div className="font-semibold">{quickInsertValue[index] || '-'}</div>
-                          <div className="opacity-60">{gate.points}pts</div>
+                          <div className="opacity-60">{gate.points}{t.games.pts}</div>
                         </div>
                       ))}
                     </div>
@@ -299,7 +301,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
               ))}
             </div>
             <p className="text-xs text-gray-500 mt-2 text-center">
-              Click the arrows or use up/down keys to adjust the score
+              {t.games.clickArrowsOrUseKeys}
             </p>
           </div>
         )}
@@ -315,15 +317,15 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
         >
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-gray-600">Complete Sets ({scoreBreakdown.completeSets}x)</span>
+              <span className="text-gray-600">{t.games.completeSets} ({scoreBreakdown.completeSets}x)</span>
               <span className="font-medium text-blue-700">+{scoreBreakdown.completeSetPoints}</span>
             </div>
             <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-gray-600">Individual Points</span>
+              <span className="text-gray-600">{t.games.individualPoints}</span>
               <span className="font-medium text-blue-700">+{scoreBreakdown.leftoverPoints}</span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-blue-100">
-              <span className="font-medium text-gray-700">Score</span>
+              <span className="font-medium text-gray-700">{t.games.score}</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-lg sm:text-xl font-bold text-blue-700">{scoreBreakdown.total}</span>
               </div>
@@ -347,8 +349,8 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
         whileTap={{ scale: 0.98 }}
       >
         {selectedPlayer 
-          ? `Submit Scores for ${selectedPlayer.displayName}`
-          : 'Submit Scores'
+          ? `${t.games.submitScoresFor} ${selectedPlayer.displayName}`
+          : t.games.submitScores
         }
       </motion.button>
     </motion.div>

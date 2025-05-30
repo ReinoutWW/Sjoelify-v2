@@ -24,7 +24,7 @@ export interface RegisterCredentials extends LoginCredentials {
 }
 
 export interface AccountSettings {
-  emailNotifications: boolean;
+  privacy: 'public' | 'friends' | 'private';  // Who can view the profile
   shareStatistics: boolean;
   language: 'en' | 'nl';  // Supporting English and Dutch
 } 

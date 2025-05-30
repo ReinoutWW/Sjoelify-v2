@@ -9,6 +9,7 @@ import { formatDate, isFirestoreTimestamp } from '@/shared/utils/date-utils';
 import Link from 'next/link';
 import { LeaderboardService } from '@/features/leaderboard/services/leaderboard-service';
 import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface FirestoreTimestamp {
   seconds: number;
@@ -37,6 +38,7 @@ interface GameSummaryProps {
 export function GameSummary({ game }: GameSummaryProps) {
   const [playerStats, setPlayerStats] = useState<PlayerStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     async function fetchAndProcessStats() {
@@ -146,7 +148,7 @@ export function GameSummary({ game }: GameSummaryProps) {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{game.title}</h1>
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>Game Summary</span>
+              <span>{t.games.gameSummary}</span>
               <span>•</span>
               <time dateTime={formatDate(game.createdAt)}>
                 {formatDate(game.createdAt)}
@@ -156,7 +158,7 @@ export function GameSummary({ game }: GameSummaryProps) {
         </div>
         {!game.isClosed && (
           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
-            Round {game.currentRound}/5
+            {t.games.round} {game.currentRound}/5
           </span>
         )}
       </motion.div>
@@ -186,10 +188,10 @@ export function GameSummary({ game }: GameSummaryProps) {
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1 text-amber-600">
                   <path fillRule="evenodd" d="M5.166 2.621v.858c-1.035.148-2.059.33-3.071.543a.75.75 0 00-.584.859 6.753 6.753 0 006.138 5.6 6.73 6.73 0 002.743 1.346A6.707 6.707 0 019.279 15H8.54c-1.036 0-1.875.84-1.875 1.875V19.5h-.75a2.25 2.25 0 00-2.25 2.25c0 .414.336.75.75.75h15.19c.414 0 .75-.336.75-.75a2.25 2.25 0 00-2.25-2.25h-.75v-2.625c0-1.036-.84-1.875-1.875-1.875h-.739a6.706 6.706 0 01-1.112-3.173 6.73 6.73 0 002.743-1.347 6.753 6.753 0 006.139-5.6.75.75 0 00-.585-.858 47.077 47.077 0 00-3.07-.543V2.62a.75.75 0 00-.658-.744 49.22 49.22 0 00-6.093-.377c-2.063 0-4.096.128-6.093.377a.75.75 0 00-.657.744zm0 2.629c0 1.196.312 2.32.857 3.294A5.266 5.266 0 013.16 5.337a45.6 45.6 0 012.006-.343v.256zm13.5 0v-.256c.674.1 1.343.214 2.006.343a5.265 5.265 0 01-2.863 3.207 6.72 6.72 0 00.857-3.294z" clipRule="evenodd" />
                 </svg>
-                Winner
+                {t.games.winner}
               </span>
             </div>
-            <p className="text-amber-600">Total Score: {gameStats.winner.totalScore}</p>
+            <p className="text-amber-600">{t.games.totalScore}: {gameStats.winner.totalScore}</p>
           </div>
         </div>
       </motion.div>
@@ -204,7 +206,7 @@ export function GameSummary({ game }: GameSummaryProps) {
             <thead className="bg-gray-50/80">
               <tr>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">
-                  Round
+                  {t.games.round}
                 </th>
                 {playerStats.map((player) => (
                   <th
@@ -273,7 +275,7 @@ export function GameSummary({ game }: GameSummaryProps) {
               {/* Summary rows */}
               <tr className="bg-gray-50/70 border-t-2 border-gray-200">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-600">
-                  Average
+                  {t.games.average}
                 </td>
                 {playerStats.map((player) => (
                   <td
@@ -294,7 +296,7 @@ export function GameSummary({ game }: GameSummaryProps) {
                         </span>
                         {player.isNewBestAverage && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 animate-pulse">
-                            New Best!
+                            {t.games.newBest}
                           </span>
                         )}
                       </div>
@@ -304,7 +306,7 @@ export function GameSummary({ game }: GameSummaryProps) {
               </tr>
               <tr className="bg-gray-50/50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-600">
-                  Best Average
+                  {t.games.bestAverage}
                 </td>
                 {playerStats.map((player) => (
                   <td
@@ -315,7 +317,7 @@ export function GameSummary({ game }: GameSummaryProps) {
                       <span className="font-medium text-gray-900">{player.bestAverageInGame}</span>
                       {player.isNewBestAverage && (
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200">
-                          New Record
+                          {t.games.newRecord}
                         </span>
                       )}
                     </div>
@@ -324,7 +326,7 @@ export function GameSummary({ game }: GameSummaryProps) {
               </tr>
               <tr className="bg-primary-50/30 border-t-2 border-primary-100">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-700">
-                  Total
+                  {t.games.total}
                 </td>
                 {playerStats.map((player) => (
                   <td
@@ -369,17 +371,17 @@ export function GameSummary({ game }: GameSummaryProps) {
                   </div>
                   <dl className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <dt className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">Best Round</dt>
+                      <dt className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">{t.games.bestRound}</dt>
                       <dd className="flex items-center space-x-1.5">
                         <span className={`text-sm font-medium ${isBestRound ? 'text-primary-600 font-bold' : 'text-gray-900'} group-hover:text-gray-950 transition-colors`}>{player.bestRound}</span>
                       </dd>
                     </div>
                     <div className="flex items-center justify-between">
-                      <dt className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">Average</dt>
+                      <dt className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">{t.games.average}</dt>
                       <dd className="flex items-center gap-1.5">
                         {player.isNewBestAverage && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 animate-pulse">
-                            New Best!
+                            {t.games.newBest}
                           </span>
                         )}
                         <span
@@ -395,11 +397,11 @@ export function GameSummary({ game }: GameSummaryProps) {
                       </dd>
                     </div>
                     <div className="flex items-center justify-between">
-                      <dt className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">Worst Round</dt>
+                      <dt className="text-sm text-gray-500 group-hover:text-gray-600 transition-colors">{t.games.worstRound}</dt>
                       <dd className="text-sm font-medium text-gray-900 group-hover:text-gray-950 transition-colors">{player.worstRound}</dd>
                     </div>
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                      <dt className="text-sm font-medium text-gray-500 group-hover:text-gray-600 transition-colors">Total Score</dt>
+                      <dt className="text-sm font-medium text-gray-500 group-hover:text-gray-600 transition-colors">{t.games.totalScore}</dt>
                       <dd className="text-sm font-bold text-primary-600">{player.totalScore}</dd>
                     </div>
                   </dl>

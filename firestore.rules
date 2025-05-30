@@ -53,6 +53,21 @@ service cloud.firestore {
       allow delete: if false;  // No deletion allowed
     }
 
+    // User settings collection rules
+    match /userSettings/{userId} {
+      // Allow anyone to read settings (needed for privacy checks on profiles)
+      allow read: if true;
+      
+      // Allow users to create their own settings document
+      allow create: if isOwner(userId);
+      
+      // Allow users to update their own settings
+      allow update: if isOwner(userId);
+      
+      // No deletion allowed for settings
+      allow delete: if false;
+    }
+
     // Friends collection rules
     match /friendRequests/{requestId} {
       allow read: if isAuthenticated() && 

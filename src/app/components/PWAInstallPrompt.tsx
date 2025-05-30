@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPrompt, setShowPrompt] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -67,23 +69,23 @@ export default function PWAInstallPrompt() {
       <div className="flex items-start">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900">
-            Install Sjoelify
+            {t.common.installApp}
           </h3>
           <p className="mt-1 text-sm text-gray-600">
-            Install our app for a better experience with offline access and faster loading.
+            {t.common.installDescription}
           </p>
           <div className="mt-4 flex gap-3">
             <button
               onClick={handleInstall}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-sm font-medium"
             >
-              Install
+              {t.common.install}
             </button>
             <button
               onClick={handleDismiss}
               className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 text-sm font-medium"
             >
-              Not now
+              {t.common.notNow}
             </button>
           </div>
         </div>

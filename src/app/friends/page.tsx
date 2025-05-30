@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/context/auth-context';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 import { FriendsService, FriendRequest } from '@/features/friends/services/friends-service';
 import { UserProfile } from '@/features/account/types';
 import { motion } from 'framer-motion';
@@ -32,6 +33,7 @@ interface FriendRequestWithSender extends FriendRequest {
 
 export default function FriendsPage() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'search'>('friends');
   const [friends, setFriends] = useState<UserProfile[]>([]);
   const [friendRequests, setFriendRequests] = useState<FriendRequestWithSender[]>([]);
@@ -128,7 +130,7 @@ export default function FriendsPage() {
   const handleFriendRequest = async (requestId: string, status: 'accepted' | 'rejected') => {
     try {
       await FriendsService.respondToFriendRequest(requestId, status);
-      toast.success(status === 'accepted' ? 'Friend request accepted' : 'Friend request rejected');
+      toast.success(status === 'accepted' ? t.friends.requestAccepted : 'Friend request rejected');
     } catch (error) {
       console.error('Error handling friend request:', error);
       toast.error('Failed to handle friend request');
@@ -140,7 +142,7 @@ export default function FriendsPage() {
 
     try {
       await FriendsService.sendFriendRequest(user.uid, receiverId);
-      toast.success('Friend request sent successfully');
+      toast.success(t.friends.requestSent);
       // Update local state to show the request was sent
       setSentRequests(prev => [...prev, receiverId]);
       setSearchResults(prev => 
@@ -195,7 +197,7 @@ export default function FriendsPage() {
               }`}
             >
               <UserGroupIcon className="w-5 h-5 mr-1.5 sm:mr-2" />
-              <span className="whitespace-nowrap">Friends</span>
+              <span className="whitespace-nowrap">{t.friends.title}</span>
             </button>
             <button
               onClick={() => setActiveTab('requests')}
@@ -206,7 +208,7 @@ export default function FriendsPage() {
               }`}
             >
               <BellIcon className="w-5 h-5 mr-1.5 sm:mr-2" />
-              <span className="whitespace-nowrap">Requests</span>
+              <span className="whitespace-nowrap">{t.friends.requests}</span>
               {friendRequests.length > 0 && (
                 <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-600 rounded-full">
                   {friendRequests.length}
@@ -222,7 +224,7 @@ export default function FriendsPage() {
               }`}
             >
               <MagnifyingGlassIcon className="w-5 h-5 mr-1.5 sm:mr-2" />
-              <span className="whitespace-nowrap">Find</span>
+              <span className="whitespace-nowrap">{t.friends.find}</span>
             </button>
           </div>
         </div>
@@ -230,12 +232,12 @@ export default function FriendsPage() {
         {/* Content */}
         <div className="p-4 sm:p-6">
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading...</div>
+            <div className="text-center py-8 text-gray-500">{t.common.loading}</div>
           ) : activeTab === 'friends' ? (
             <div className="space-y-4">
-              <h2 className="text-lg font-medium text-gray-900">Your Friends</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t.friends.yourFriends}</h2>
               {friends.length === 0 ? (
-                <p className="text-gray-500">You haven't added any friends yet.</p>
+                <p className="text-gray-500">{t.friends.haventAddedFriends}</p>
               ) : (
                 <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                   {friends.map((friend) => (
@@ -250,7 +252,7 @@ export default function FriendsPage() {
                       <button
                         onClick={() => handleRemoveFriend(friend.id)}
                         className="ml-3 sm:ml-4 p-2 text-gray-400 hover:text-red-500 transition-colors"
-                        title="Remove friend"
+                        title={t.friends.removeFriend}
                       >
                         <UserMinusIcon className="w-5 h-5" />
                       </button>
@@ -261,9 +263,9 @@ export default function FriendsPage() {
             </div>
           ) : activeTab === 'requests' ? (
             <div className="space-y-4">
-              <h2 className="text-lg font-medium text-gray-900">Friend Requests</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t.friends.friendRequests}</h2>
               {friendRequests.length === 0 ? (
-                <p className="text-gray-500">No pending friend requests.</p>
+                <p className="text-gray-500">{t.friends.noPendingRequests}</p>
               ) : (
                 <div className="space-y-3 sm:space-y-4">
                   {friendRequests.map((request) => (
@@ -280,21 +282,21 @@ export default function FriendsPage() {
                             )}
                           </>
                         ) : (
-                          <p className="text-sm font-medium text-gray-900 truncate">Unknown Sender</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{t.friends.unknownSender}</p>
                         )}
                       </div>
                       <div className="ml-3 sm:ml-4 flex gap-1 sm:gap-2 flex-shrink-0">
                         <button
                           onClick={() => handleFriendRequest(request.id, 'accepted')}
                           className="p-1.5 sm:p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
-                          title="Accept request"
+                          title={t.friends.acceptRequest}
                         >
                           <CheckIcon className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleFriendRequest(request.id, 'rejected')}
                           className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                          title="Reject request"
+                          title={t.friends.declineRequest}
                         >
                           <XMarkIcon className="w-5 h-5" />
                         </button>
@@ -306,18 +308,18 @@ export default function FriendsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <h2 className="text-lg font-medium text-gray-900">Find Friends</h2>
+              <h2 className="text-lg font-medium text-gray-900">{t.friends.addFriend}</h2>
               <div className="relative">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name or email..."
+                  placeholder={t.friends.searchByEmail}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 placeholder-gray-400 text-sm sm:text-base"
                 />
                 {searching && (
                   <div className="absolute right-3 top-2.5 text-gray-400 text-sm">
-                    Searching...
+                    {t.common.search}...
                   </div>
                 )}
               </div>
@@ -336,19 +338,19 @@ export default function FriendsPage() {
                         {user.isFriend ? (
                           <div className="flex items-center gap-1 sm:gap-2 text-primary-600">
                             <CheckIcon className="w-4 sm:w-5 h-4 sm:h-5" />
-                            <span className="text-xs sm:text-sm font-medium">Friends</span>
+                            <span className="text-xs sm:text-sm font-medium">{t.friends.title}</span>
                           </div>
                         ) : user.requestSent ? (
                           <div className="flex items-center gap-1 sm:gap-2 text-gray-500 text-xs sm:text-sm">
                             <ClockIcon className="w-4 sm:w-5 h-4 sm:h-5" />
-                            <span className="hidden sm:inline">Request sent</span>
-                            <span className="sm:hidden">Sent</span>
+                            <span className="hidden sm:inline">{t.friends.requestSent}</span>
+                            <span className="sm:hidden">{t.friends.sent}</span>
                           </div>
                         ) : (
                           <button
                             onClick={() => handleSendFriendRequest(user.id)}
                             className="p-1.5 sm:p-2 text-primary-600 hover:bg-primary-50 rounded-full transition-colors"
-                            title="Send friend request"
+                            title={t.friends.sendRequest}
                           >
                             <UserPlusIcon className="w-5 h-5" />
                           </button>
@@ -358,7 +360,7 @@ export default function FriendsPage() {
                   ))}
                 </div>
               ) : searchQuery && !searching ? (
-                <p className="text-gray-500">No users found.</p>
+                <p className="text-gray-500">{t.friends.noResults}</p>
               ) : null}
             </div>
           )}
