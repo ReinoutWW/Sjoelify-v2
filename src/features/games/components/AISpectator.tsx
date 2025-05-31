@@ -335,7 +335,7 @@ ${coachTone === 'super-competitive' ?
   'Give HONEST feedback with STRATEGIC advice. Mix acknowledgment with improvement tips.' :
   'BE SUPER POSITIVE! Everything is great! They are doing amazing!'}
 
-End with emoji: ${coachTone === 'super-competitive' ? '😤 or ��' : coachTone === 'balanced' ? '💪 or 🔥' : '🌟 or 🎉'}`;
+End with emoji: ${coachTone === 'super-competitive' ? '😤 or 😡' : coachTone === 'balanced' ? '💪 or 🔥' : '🌟 or 🎉'}`;
 
       const result = await model.generateContentStream(prompt);
       
@@ -386,11 +386,11 @@ End with emoji: ${coachTone === 'super-competitive' ? '😤 or ��' : coachTo
             }}
             exit={{ opacity: 0, y: 100, scale: 0.9 }}
             transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="fixed bottom-4 right-4 z-50 w-full max-w-sm"
+            className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 z-50 sm:w-full sm:max-w-sm"
           >
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-xl sm:shadow-lg border border-gray-200 overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
+              <div className="flex items-center justify-between px-4 py-3.5 sm:py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100">
                 <div className="flex items-center gap-2">
                   <div className="relative">
                     <ChatBubbleBottomCenterTextIcon className="w-5 h-5 text-blue-600" />
@@ -407,7 +407,7 @@ End with emoji: ${coachTone === 'super-competitive' ? '😤 or ��' : coachTo
                     <motion.span
                       animate={{ opacity: [0.5, 1, 0.5] }}
                       transition={{ repeat: Infinity, duration: 1.5 }}
-                      className="text-xs text-blue-600"
+                      className="text-xs text-blue-600 hidden sm:inline"
                     >
                       • Live
                     </motion.span>
@@ -415,10 +415,10 @@ End with emoji: ${coachTone === 'super-competitive' ? '😤 or ��' : coachTo
                 </div>
                 <button
                   onClick={handleClose}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="p-2 sm:p-1.5 -mr-1 sm:mr-0 rounded-lg hover:bg-gray-100 active:bg-gray-200 transition-colors touch-manipulation"
                   aria-label="Close"
                 >
-                  <XMarkIcon className="w-4 h-4 text-gray-500" />
+                  <XMarkIcon className="w-5 h-5 sm:w-4 sm:h-4 text-gray-500" />
                 </button>
               </div>
 
@@ -431,10 +431,10 @@ End with emoji: ${coachTone === 'super-competitive' ? '😤 or ��' : coachTo
               >
                 <div 
                   ref={messageRef}
-                  className="p-4 text-gray-700 text-sm leading-relaxed max-h-40 overflow-y-auto"
+                  className="p-5 sm:p-4 text-gray-700 text-base sm:text-sm leading-relaxed max-h-48 sm:max-h-40 overflow-y-auto"
                 >
                   {message || (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 justify-center py-2">
                       <motion.div
                         animate={{ opacity: [0.3, 1, 0.3] }}
                         transition={{ repeat: Infinity, duration: 1.5 }}
@@ -472,7 +472,7 @@ End with emoji: ${coachTone === 'super-competitive' ? '😤 or ��' : coachTo
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleReopen}
-            className="fixed bottom-4 right-4 z-50 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-shadow"
+            className="fixed bottom-6 right-6 sm:bottom-4 sm:right-4 z-50 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3.5 sm:p-3 rounded-full shadow-xl sm:shadow-lg hover:shadow-2xl active:shadow-lg transition-all touch-manipulation"
             aria-label="Open AI Spectator"
           >
             <div className="relative">
