@@ -17,6 +17,8 @@ import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
 import { UserProfile } from '@/features/account/types';
 import { GuestPlayer } from '@/features/games/types';
 import { InGameStatsPopup } from '@/features/games/components/InGameStatsPopup';
+import { AISpectator } from '@/features/games/components/AISpectator';
+import { UserSettingsService } from '@/features/account/services/user-settings-service';
 
 // Add helper functions for safe date handling
 const toISOStringOrUndefined = (dateString: string | number | Date | undefined | null): string | undefined => {
@@ -84,6 +86,23 @@ export default function GamePage() {
   const [guestError, setGuestError] = useState<string | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
   const [statsPopupPlayer, setStatsPopupPlayer] = useState<any>(null);
+  const [aiEnabled, setAiEnabled] = useState(false);
+
+  // Check for AI enabled settings on mount
+  useEffect(() => {
+    const checkUserSettings = async () => {
+      if (user?.uid) {
+        try {
+          const settings = await UserSettingsService.getUserSettings(user.uid);
+          setAiEnabled(settings?.AIEnabled || false);
+        } catch (error) {
+          console.error('Error checking user settings:', error);
+        }
+      }
+    };
+    
+    checkUserSettings();
+  }, [user?.uid]);
 
   const handleRemoveGuest = async (guestId: string) => {
     if (!game || !user) return;
@@ -637,6 +656,15 @@ export default function GamePage() {
           onClose={() => setStatsPopupPlayer(null)}
           player={statsPopupPlayer}
           currentGame={game}
+        />
+      )}
+      
+      {/* AI Spectator - show only for active participants */}
+      {game && !game.isClosed && user && game.playerIds.includes(user.uid) && aiEnabled && (
+        <AISpectator
+          game={game}
+          currentRound={game.currentRound}
+          players={game.players}
         />
       )}
     </div>

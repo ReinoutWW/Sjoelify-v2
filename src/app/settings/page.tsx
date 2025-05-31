@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public');
   const [powerUser, setPowerUser] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
+  const [coachPreference, setCoachPreference] = useState<'supportive' | 'competitive' | 'super-competitive'>('supportive');
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   // Load user settings
@@ -42,6 +43,7 @@ export default function SettingsPage() {
             setPrivacy(settings.privacy);
             setPowerUser(settings.powerUser || false);
             setAiEnabled(settings.AIEnabled || false);
+            setCoachPreference(settings.coachPreference || 'supportive');
           }
         } catch (error) {
           console.error('Error loading settings:', error);
@@ -91,6 +93,20 @@ export default function SettingsPage() {
         console.error('Error updating AI enabled setting:', error);
         // Revert on error
         setAiEnabled(aiEnabled);
+      }
+    }
+  };
+
+  // Handle coach preference change
+  const handleCoachPreferenceChange = async (newPreference: 'supportive' | 'competitive' | 'super-competitive') => {
+    if (user?.uid && newPreference !== coachPreference) {
+      setCoachPreference(newPreference);
+      try {
+        await UserSettingsService.updateSettings(user.uid, { coachPreference: newPreference });
+      } catch (error) {
+        console.error('Error updating coach preference:', error);
+        // Revert on error
+        setCoachPreference(coachPreference);
       }
     }
   };
@@ -182,6 +198,73 @@ export default function SettingsPage() {
             </Switch>
           ),
         },
+        ...(aiEnabled ? [{
+          label: t.settings.coachPreference || 'Coach voorkeur',
+          description: t.settings.coachDescription || 'Kies de toon van jouw AI coach',
+          icon: CameraIcon,
+          component: (
+            <Menu as="div" className="relative inline-block text-left">
+              <div>
+                <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                  {coachPreference === 'supportive' ? (t.settings.supportive || 'Ondersteunend') : 
+                   coachPreference === 'competitive' ? (t.settings.competitive || 'Competitief') : 
+                   (t.settings.superCompetitive || 'Super competitief')}
+                  <ChevronDownIcon className="-mr-1 h-5 w-5 text-gray-400" aria-hidden="true" />
+                </Menu.Button>
+              </div>
+
+              <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                <div className="py-1">
+                  <Menu.Item>
+                    {({ active }: { active: boolean }) => (
+                      <button
+                        onClick={() => handleCoachPreferenceChange('supportive')}
+                        className={`${
+                          active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                        } ${
+                          coachPreference === 'supportive' ? 'bg-gray-50' : ''
+                        } group flex w-full flex-col items-start px-4 py-3 text-sm`}
+                      >
+                        <span className="font-medium">{t.settings.supportive || 'Ondersteunend'}</span>
+                        <span className="text-xs text-gray-500 mt-1">{t.settings.supportiveDescription || 'Altijd positief en bemoedigend'}</span>
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }: { active: boolean }) => (
+                      <button
+                        onClick={() => handleCoachPreferenceChange('competitive')}
+                        className={`${
+                          active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                        } ${
+                          coachPreference === 'competitive' ? 'bg-gray-50' : ''
+                        } group flex w-full flex-col items-start px-4 py-3 text-sm`}
+                      >
+                        <span className="font-medium">{t.settings.competitive || 'Competitief'}</span>
+                        <span className="text-xs text-gray-500 mt-1">{t.settings.competitiveDescription || 'Positief maar uitdagend'}</span>
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }: { active: boolean }) => (
+                      <button
+                        onClick={() => handleCoachPreferenceChange('super-competitive')}
+                        className={`${
+                          active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
+                        } ${
+                          coachPreference === 'super-competitive' ? 'bg-gray-50' : ''
+                        } group flex w-full flex-col items-start px-4 py-3 text-sm`}
+                      >
+                        <span className="font-medium">{t.settings.superCompetitive || 'Super competitief'}</span>
+                        <span className="text-xs text-gray-500 mt-1">{t.settings.superCompetitiveDescription || 'Realistisch, direct en veeleisend'}</span>
+                      </button>
+                    )}
+                  </Menu.Item>
+                </div>
+              </Menu.Items>
+            </Menu>
+          ),
+        }] : []),
       ],
     },
     {
