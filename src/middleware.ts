@@ -55,6 +55,9 @@ export function middleware(request: NextRequest) {
       'https://*.googleapis.com',
       'https://*.firebase.com',
       'wss://*.firebaseio.com',
+      // Vertex AI endpoints
+      'https://firebasevertexai.googleapis.com',
+      'https://*.firebasevertexai.googleapis.com',
       // Google Analytics domains (including regional endpoints)
       'https://www.google-analytics.com',
       'https://analytics.google.com',

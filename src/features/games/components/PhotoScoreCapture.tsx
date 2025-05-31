@@ -91,7 +91,7 @@ export function PhotoScoreCapture({ onScoresConfirmed, onCancel }: PhotoScoreCap
     try {
       // Initialize Firebase AI
       const ai = getAI(app, { backend: new GoogleAIBackend() });
-      const model = getGenerativeModel(ai, { model: "gemini-2.0-flash-lite-001" });
+      const model = getGenerativeModel(ai, { model: "gemini-2.5-pro-preview-05-06" });
 
       // Convert image to the required format
       const imagePart = await fileToGenerativePart(imageFile);
@@ -100,10 +100,9 @@ export function PhotoScoreCapture({ onScoresConfirmed, onCancel }: PhotoScoreCap
       const prompt = `Analyze this Sjoelen (Dutch shuffleboard) board image and count the wooden discs in each gate.
 
 CRITICAL INSTRUCTIONS:
-1. Look at the END of the board where there are 4 vertical gates/slots
-2. Count ONLY discs that are COMPLETELY inside each gate
-3. Do NOT count: discs on lines, partially in gates, or still on the playing surface
-4. Gates are numbered 1-4 from LEFT to RIGHT with point values: 2, 3, 4, 1
+1. You will ALWAYS be given a photo of the end score.
+2. Look at the END of the board where there are 4 vertical gates/slots
+3. Gates are numbered 1-4 from LEFT to RIGHT with point values: 2, 3, 4, 1
 
 COUNTING METHOD:
 - Start with gate 1 (leftmost): Count all visible discs inside
