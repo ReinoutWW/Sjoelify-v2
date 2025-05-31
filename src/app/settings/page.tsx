@@ -7,7 +7,7 @@ import { useTranslation } from '@/lib/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { UserSettingsService } from '@/features/account/services/user-settings-service';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
-import { GlobeAltIcon, CogIcon, ShieldCheckIcon, UserIcon, BoltIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { GlobeAltIcon, CogIcon, ShieldCheckIcon, UserIcon, BoltIcon, CameraIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import { Menu, Switch } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 
@@ -30,7 +30,7 @@ export default function SettingsPage() {
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public');
   const [powerUser, setPowerUser] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
-  const [coachPreference, setCoachPreference] = useState<'supportive' | 'competitive' | 'super-competitive'>('supportive');
+  const [coachPreference, setCoachPreference] = useState<'supportive' | 'balanced' | 'super-competitive'>('supportive');
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   // Load user settings
@@ -98,7 +98,7 @@ export default function SettingsPage() {
   };
 
   // Handle coach preference change
-  const handleCoachPreferenceChange = async (newPreference: 'supportive' | 'competitive' | 'super-competitive') => {
+  const handleCoachPreferenceChange = async (newPreference: 'supportive' | 'balanced' | 'super-competitive') => {
     if (user?.uid && newPreference !== coachPreference) {
       setCoachPreference(newPreference);
       try {
@@ -201,13 +201,13 @@ export default function SettingsPage() {
         ...(aiEnabled ? [{
           label: t.settings.coachPreference || 'Coach voorkeur',
           description: t.settings.coachDescription || 'Kies de toon van jouw AI coach',
-          icon: CameraIcon,
+          icon: ChatBubbleLeftRightIcon,
           component: (
             <Menu as="div" className="relative inline-block text-left">
               <div>
                 <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
                   {coachPreference === 'supportive' ? (t.settings.supportive || 'Ondersteunend') : 
-                   coachPreference === 'competitive' ? (t.settings.competitive || 'Competitief') : 
+                   coachPreference === 'balanced' ? (t.settings.balanced || 'Gebalanceerd') : 
                    (t.settings.superCompetitive || 'Super competitief')}
                   <ChevronDownIcon className="-mr-1 h-5 w-5 text-gray-400" aria-hidden="true" />
                 </Menu.Button>
@@ -223,25 +223,25 @@ export default function SettingsPage() {
                           active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                         } ${
                           coachPreference === 'supportive' ? 'bg-gray-50' : ''
-                        } group flex w-full flex-col items-start px-4 py-3 text-sm`}
+                        } group flex w-full flex-col items-start px-4 py-3 text-sm text-left`}
                       >
-                        <span className="font-medium">{t.settings.supportive || 'Ondersteunend'}</span>
-                        <span className="text-xs text-gray-500 mt-1">{t.settings.supportiveDescription || 'Altijd positief en bemoedigend'}</span>
+                        <span className="font-medium text-left">{t.settings.supportive || 'Ondersteunend'}</span>
+                        <span className="text-xs text-gray-500 mt-1 text-left">{t.settings.supportiveDescription || 'Altijd positief en bemoedigend'}</span>
                       </button>
                     )}
                   </Menu.Item>
                   <Menu.Item>
                     {({ active }: { active: boolean }) => (
                       <button
-                        onClick={() => handleCoachPreferenceChange('competitive')}
+                        onClick={() => handleCoachPreferenceChange('balanced')}
                         className={`${
                           active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                         } ${
-                          coachPreference === 'competitive' ? 'bg-gray-50' : ''
-                        } group flex w-full flex-col items-start px-4 py-3 text-sm`}
+                          coachPreference === 'balanced' ? 'bg-gray-50' : ''
+                        } group flex w-full flex-col items-start px-4 py-3 text-sm text-left`}
                       >
-                        <span className="font-medium">{t.settings.competitive || 'Competitief'}</span>
-                        <span className="text-xs text-gray-500 mt-1">{t.settings.competitiveDescription || 'Positief maar uitdagend'}</span>
+                        <span className="font-medium text-left">{t.settings.balanced || 'Gebalanceerd'}</span>
+                        <span className="text-xs text-gray-500 mt-1 text-left">{t.settings.balancedDescription || 'Positief maar uitdagend'}</span>
                       </button>
                     )}
                   </Menu.Item>
@@ -253,10 +253,10 @@ export default function SettingsPage() {
                           active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                         } ${
                           coachPreference === 'super-competitive' ? 'bg-gray-50' : ''
-                        } group flex w-full flex-col items-start px-4 py-3 text-sm`}
+                        } group flex w-full flex-col items-start px-4 py-3 text-sm text-left`}
                       >
-                        <span className="font-medium">{t.settings.superCompetitive || 'Super competitief'}</span>
-                        <span className="text-xs text-gray-500 mt-1">{t.settings.superCompetitiveDescription || 'Realistisch, direct en veeleisend'}</span>
+                        <span className="font-medium text-left">{t.settings.superCompetitive || 'Super competitief'}</span>
+                        <span className="text-xs text-gray-500 mt-1 text-left">{t.settings.superCompetitiveDescription || 'Realistisch, direct en veeleisend'}</span>
                       </button>
                     )}
                   </Menu.Item>
@@ -293,10 +293,10 @@ export default function SettingsPage() {
                           active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                         } ${
                           privacy === 'public' ? 'bg-gray-50' : ''
-                        } group flex w-full flex-col items-start px-4 py-3 text-sm`}
+                        } group flex w-full flex-col items-start px-4 py-3 text-sm text-left`}
                       >
-                        <span className="font-medium">{t.settings.public}</span>
-                        <span className="text-xs text-gray-500 mt-1">{t.settings.publicDescription}</span>
+                        <span className="font-medium text-left">{t.settings.public}</span>
+                        <span className="text-xs text-gray-500 mt-1 text-left">{t.settings.publicDescription}</span>
                       </button>
                     )}
                   </Menu.Item>
@@ -308,10 +308,10 @@ export default function SettingsPage() {
                           active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                         } ${
                           privacy === 'friends' ? 'bg-gray-50' : ''
-                        } group flex w-full flex-col items-start px-4 py-3 text-sm`}
+                        } group flex w-full flex-col items-start px-4 py-3 text-sm text-left`}
                       >
-                        <span className="font-medium">{t.settings.friendsOnly}</span>
-                        <span className="text-xs text-gray-500 mt-1">{t.settings.friendsOnlyDescription}</span>
+                        <span className="font-medium text-left">{t.settings.friendsOnly}</span>
+                        <span className="text-xs text-gray-500 mt-1 text-left">{t.settings.friendsOnlyDescription}</span>
                       </button>
                     )}
                   </Menu.Item>
@@ -323,10 +323,10 @@ export default function SettingsPage() {
                           active ? 'bg-gray-100 text-gray-900' : 'text-gray-700'
                         } ${
                           privacy === 'private' ? 'bg-gray-50' : ''
-                        } group flex w-full flex-col items-start px-4 py-3 text-sm`}
+                        } group flex w-full flex-col items-start px-4 py-3 text-sm text-left`}
                       >
-                        <span className="font-medium">{t.settings.private}</span>
-                        <span className="text-xs text-gray-500 mt-1">{t.settings.privateDescription}</span>
+                        <span className="font-medium text-left">{t.settings.private}</span>
+                        <span className="text-xs text-gray-500 mt-1 text-left">{t.settings.privateDescription}</span>
                       </button>
                     )}
                   </Menu.Item>

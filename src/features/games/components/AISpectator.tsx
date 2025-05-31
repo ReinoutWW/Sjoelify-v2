@@ -288,7 +288,7 @@ export function AISpectator({ game, currentRound, players, onClose }: AISpectato
       const model = getGenerativeModel(ai, { 
         model: "gemini-1.5-flash",
         generationConfig: {
-          temperature: coachTone === 'supportive' ? 0.9 : coachTone === 'competitive' ? 0.7 : 0.5,
+          temperature: coachTone === 'supportive' ? 0.9 : coachTone === 'balanced' ? 0.75 : 0.5,
           maxOutputTokens: 120,
         }
       });
@@ -296,7 +296,7 @@ export function AISpectator({ game, currentRound, players, onClose }: AISpectato
       // Coach tone descriptions - More explicit and different
       const toneInstructions = {
         'supportive': 'Be EXTREMELY positive and encouraging. Use exclamation marks! Focus only on the good. Example: "Great job! You\'re doing amazing!"',
-        'competitive': 'Be encouraging BUT push for more. Mix praise with challenge. Example: "Good round, but you need to push harder to catch up!"',
+        'balanced': 'Give HONEST feedback with STRATEGIC advice. Mix acknowledgment with improvement tips. Example: "Good 85 points, but you need 95+ to catch up. Focus on gate 3!"',
         'super-competitive': 'Be HARSH and DIRECT. Focus on what\'s wrong. Be critical. Example: "That wasn\'t good enough. You\'re falling behind and need to step up NOW."'
       };
       
@@ -308,10 +308,10 @@ export function AISpectator({ game, currentRound, players, onClose }: AISpectato
         5: 'FINAL ROUND - give it everything you\'ve got!'
       };
 
-      const prompt = `You are "Sjef Sjoelbaas", a sjoelen coach with ${coachTone === 'super-competitive' ? 'HARSH' : coachTone === 'competitive' ? 'CHALLENGING' : 'SUPPORTIVE'} personality.
+      const prompt = `You are "Sjef Sjoelbaas", a sjoelen coach with ${coachTone === 'super-competitive' ? 'HARSH' : coachTone === 'balanced' ? 'BALANCED' : 'SUPPORTIVE'} personality.
 Round ${currentRound} of 5 just started. ${roundContext[currentRound as keyof typeof roundContext]}
 IMPORTANT: Respond in Englisch language.
-CRITICAL: Your tone MUST be ${coachTone === 'super-competitive' ? 'HARSH, CRITICAL and DEMANDING' : coachTone === 'competitive' ? 'CHALLENGING but fair' : 'SUPER POSITIVE and ENCOURAGING'}
+CRITICAL: Your tone MUST be ${coachTone === 'super-competitive' ? 'HARSH, CRITICAL and DEMANDING' : coachTone === 'balanced' ? 'BALANCED and STRATEGIC' : 'SUPER POSITIVE and ENCOURAGING'}
 ${toneInstructions[coachTone]}
 Maximum 2 sentences. Include specific numbers!
 
@@ -331,11 +331,11 @@ ${currentRound === 2 ? '- First round done, setting the pace' : ''}
 
 ${coachTone === 'super-competitive' ? 
   'BE CRITICAL! Point out failures. Demand better. No compliments unless truly exceptional (130+ score).' :
-  coachTone === 'competitive' ?
-  'Mix positive with push for improvement. Point out what needs to be better.' :
+  coachTone === 'balanced' ?
+  'Give HONEST feedback with STRATEGIC advice. Mix acknowledgment with improvement tips.' :
   'BE SUPER POSITIVE! Everything is great! They are doing amazing!'}
 
-End with emoji: ${coachTone === 'super-competitive' ? '😤 or 💀' : coachTone === 'competitive' ? '💪 or 🔥' : '🌟 or 🎉'}`;
+End with emoji: ${coachTone === 'super-competitive' ? '😤 or ��' : coachTone === 'balanced' ? '💪 or 🔥' : '🌟 or 🎉'}`;
 
       const result = await model.generateContentStream(prompt);
       

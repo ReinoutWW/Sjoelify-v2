@@ -578,10 +578,10 @@ export const en = {
     coachDescription: 'Choose your AI coach tone',
     supportive: 'Supportive',
     supportiveDescription: 'Always positive and encouraging',
-    competitive: 'Competitive',
-    competitiveDescription: 'Positive but challenging',
+    balanced: 'Balanced',
+    balancedDescription: 'Honest feedback with strategic tips',
     superCompetitive: 'Super Competitive',
-    superCompetitiveDescription: 'Realistic, direct and demanding',
+    superCompetitiveDescription: 'Direct, factual and demanding',
   },
   offline: {
     title: "You're offline",
