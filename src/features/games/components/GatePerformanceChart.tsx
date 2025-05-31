@@ -137,11 +137,24 @@ export function GatePerformanceChart({ playerId, timePeriod = 'all' }: GatePerfo
           Object.entries(playerScore.roundDetails).forEach(([roundNum, gateString]) => {
             labels.push(`G${gameIndex + 1}-R${roundNum}`);
             
-            // Split gate string into individual gate scores
-            // Gate string format is "2341" where positions map to gates 2,3,4,1
+            // Parse gate string - handle both formats: "7797" and "11.7.9.7"
+            let gateScores: number[];
+            if (gateString.includes('.')) {
+              // Dot-delimited format for double digits
+              gateScores = gateString.split('.').map(s => parseInt(s) || 0);
+            } else {
+              // Single digit format
+              gateScores = gateString.split('').map(s => parseInt(s) || 0);
+            }
+            
+            // Ensure we have exactly 4 values
+            while (gateScores.length < 4) {
+              gateScores.push(0);
+            }
+            
+            // Add scores to gate data
             for (let i = 0; i < 4; i++) {
-              const gateScore = parseInt(gateString[i] || '0');
-              gateData[i].push(gateScore);
+              gateData[i].push(gateScores[i] || 0);
             }
           });
         });

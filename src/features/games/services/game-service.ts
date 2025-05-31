@@ -186,8 +186,12 @@ export class GameService {
       // Total round score is complete sets + leftover points
       const roundScore = completeSetPoints + leftoverPoints;
 
-      // Convert scores array to gate string (e.g., [7, 7, 9, 7] -> "7797")
-      const gateString = scores.join('');
+      // Convert scores array to gate string
+      // Use dots only if any score is double-digit (>= 10)
+      const hasDoubleDigit = scores.some(score => score >= 10);
+      const gateString = hasDoubleDigit 
+        ? scores.join('.') 
+        : scores.join('');
 
       // Add round
       const roundRef = doc(collection(db, this.gamesCollection, gameId, this.roundsCollection));

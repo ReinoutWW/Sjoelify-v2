@@ -354,6 +354,7 @@ export const nl = {
     completeSets: 'Complete Sets',
     individualPoints: 'Individuele Punten',
     typeDigitsForGates: 'Type 4 cijfers voor poorten 2-3-4-1',
+    quickInsertHelp: 'Gebruik punten voor dubbele cijfers (bijv. 11.4.4.4)',
     pts: 'ptn',
     clickToEnterScore: 'Klik om score in te voeren',
     clickToEnterYourScore: 'Klik om je score in te voeren',

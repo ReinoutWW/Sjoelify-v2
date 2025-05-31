@@ -354,6 +354,7 @@ export const en = {
     completeSets: 'Complete Sets',
     individualPoints: 'Individual Points',
     typeDigitsForGates: 'Type 4 digits for gates 2-3-4-1',
+    quickInsertHelp: 'Use dots for double digits (e.g., 11.4.4.4)',
     pts: 'pts',
     clickToEnterScore: 'Click to enter score',
     clickToEnterYourScore: 'Click to enter your score',

@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence, connectFirestoreEmulator } from 'firebase/firestore';
+import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 import { getFirebaseConfig } from './get-config';
 import { initializeAnalytics } from './analytics-init';
 
@@ -15,6 +16,28 @@ let analytics: any;
 
 if (firebaseConfig && firebaseConfig.apiKey) {
   app = initializeApp(firebaseConfig);
+  
+  // Initialize App Check (must be done before other services)
+  if (typeof window !== 'undefined') {
+    // Set debug token in development
+    if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_APP_CHECK_DEBUG_TOKEN) {
+      (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = process.env.NEXT_PUBLIC_APP_CHECK_DEBUG_TOKEN;
+    }
+    
+    // Initialize App Check with ReCaptcha provider
+    if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+      try {
+        initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
+          isTokenAutoRefreshEnabled: true
+        });
+        console.log('Firebase App Check initialized');
+      } catch (error) {
+        console.error('Failed to initialize App Check:', error);
+      }
+    }
+  }
+  
   auth = getAuth(app);
   db = getFirestore(app);
   

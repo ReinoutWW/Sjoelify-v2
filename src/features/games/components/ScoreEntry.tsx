@@ -92,18 +92,44 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
   const handleQuickInsert = (value: string) => {
     setQuickInsertValue(value);
     
-    // Only process if we have exactly 4 digits
-    if (value.length === 4) {
-      const newScores = value.split('').map(char => parseInt(char) || 0);
-      const totalDiscs = getTotalDiscs(newScores);
-      
-      if (totalDiscs > MAX_TOTAL_DISCS) {
-        setError(t.games.maximumDiscsReached.replace('{max}', MAX_TOTAL_DISCS.toString()));
-        return;
+    // Check if value contains dots (for double-digit support)
+    if (value.includes('.')) {
+      // Split by dots and validate
+      const parts = value.split('.');
+      if (parts.length <= 4) {
+        const newScores = parts.map(part => {
+          const num = parseInt(part) || 0;
+          return Math.min(num, 30); // Cap at 30 per gate
+        });
+        
+        // Pad with zeros if less than 4 gates
+        while (newScores.length < 4) {
+          newScores.push(0);
+        }
+        
+        const totalDiscs = getTotalDiscs(newScores);
+        if (totalDiscs > MAX_TOTAL_DISCS) {
+          setError(t.games.maximumDiscsReached.replace('{max}', MAX_TOTAL_DISCS.toString()));
+          return;
+        }
+        
+        setScores(newScores.slice(0, 4)); // Take only first 4 values
+        setError(null);
       }
-      
-      setScores(newScores);
-      setError(null);
+    } else {
+      // Original single-digit logic
+      if (value.length === 4 && /^\d{4}$/.test(value)) {
+        const newScores = value.split('').map(char => parseInt(char) || 0);
+        const totalDiscs = getTotalDiscs(newScores);
+        
+        if (totalDiscs > MAX_TOTAL_DISCS) {
+          setError(t.games.maximumDiscsReached.replace('{max}', MAX_TOTAL_DISCS.toString()));
+          return;
+        }
+        
+        setScores(newScores);
+        setError(null);
+      }
     }
   };
 
@@ -219,27 +245,32 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
                 <div className="flex items-start gap-3">
                   <CommandLineIcon className="h-5 w-5 text-blue-600 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-900 mb-2">
+                    <p className="text-sm font-medium text-blue-900 mb-1">
                       {t.games.typeDigitsForGates}
+                    </p>
+                    <p className="text-xs text-blue-700 mb-2">
+                      {t.games.quickInsertHelp}
                     </p>
                     <input
                       ref={quickInsertRef}
                       type="text"
                       value={quickInsertValue}
                       onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                        handleQuickInsert(value);
+                        const value = e.target.value;
+                        // Allow digits and dots
+                        const cleanedValue = value.replace(/[^\d.]/g, '');
+                        setQuickInsertValue(cleanedValue);
+                        handleQuickInsert(cleanedValue);
                       }}
-                      placeholder={t.games.exampleNumber}
+                      placeholder="e.g., 3345 or 11.3.4.5"
                       className="w-full px-3 py-2 text-lg font-mono text-center text-gray-900 bg-white border-2 border-blue-300 rounded-md
                         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400
                         placeholder:text-gray-400"
-                      maxLength={4}
                     />
                     <div className="flex justify-center gap-3 mt-2 text-xs text-blue-700">
                       {gates.map((gate, index) => (
                         <div key={index} className="text-center">
-                          <div className="font-semibold">{quickInsertValue[index] || '-'}</div>
+                          <div className="font-semibold">{scores[index] || '-'}</div>
                           <div className="opacity-60">{gate.points}{t.games.pts}</div>
                         </div>
                       ))}
