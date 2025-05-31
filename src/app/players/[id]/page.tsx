@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Line } from 'react-chartjs-2';
 import {
@@ -29,6 +29,7 @@ import { useAuth } from '@/lib/context/auth-context';
 import { UserSettingsService } from '@/features/account/services/user-settings-service';
 import { FriendsService } from '@/features/friends/services/friends-service';
 import { GatePerformanceChart } from '@/features/games/components/GatePerformanceChart';
+import { AIProfileCoach } from '@/features/games/components/AIProfileCoach';
 
 // Register ChartJS components
 ChartJS.register(
@@ -69,9 +70,28 @@ export default function PlayerProfilePage() {
   const [canViewProfile, setCanViewProfile] = useState(true);
   const [profilePrivacyLevel, setProfilePrivacyLevel] = useState<'public' | 'friends' | 'private'>('public');
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('week');
+  const [aiCoachEnabled, setAiCoachEnabled] = useState(false);
+  const [gateStats, setGateStats] = useState<any>(null);
   const itemsPerPage = 10;
+  const router = useRouter();
   const { t } = useTranslation();
   const { formatDate } = useDateFormatter();
+
+  // Check for AI Coach enabled settings on mount
+  useEffect(() => {
+    const checkUserSettings = async () => {
+      if (user?.uid) {
+        try {
+          const settings = await UserSettingsService.getUserSettings(user.uid);
+          setAiCoachEnabled(settings?.AICoachEnabled || false);
+        } catch (error) {
+          console.error('Error checking user settings:', error);
+        }
+      }
+    };
+    
+    checkUserSettings();
+  }, [user?.uid]);
 
   // Filter data based on time period
   useEffect(() => {
@@ -215,6 +235,15 @@ export default function PlayerProfilePage() {
           scoreHistory,
           averageScoreHistory
         });
+
+        // Calculate gate stats for AI coach
+        const games = gamesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        const calculatedGateStats = calculateGateStats(games);
+        console.log('Calculated gate stats:', calculatedGateStats);
+        setGateStats(calculatedGateStats);
 
       } catch (error) {
         console.error('Error fetching filtered game data:', error);
@@ -383,6 +412,43 @@ export default function PlayerProfilePage() {
     checkPrivacyAndFetchData();
   }, [id, user?.uid, t.statistics.failedToLoad, t.games.newPlayer]);
 
+  // Fetch gate stats for 'all' time period
+  useEffect(() => {
+    const fetchAllTimeGateStats = async () => {
+      if (timePeriod !== 'all' || !id) return;
+      
+      try {
+        const { collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase/config');
+        
+        const gamesQuery = query(
+          collection(db, 'games'),
+          where('playerIds', 'array-contains', id),
+          where('isClosed', '==', true),
+          orderBy('createdAt', 'desc')
+        );
+        
+        const gamesSnapshot = await getDocs(gamesQuery);
+        
+        if (!gamesSnapshot.empty) {
+          const games = gamesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          
+          const calculatedGateStats = calculateGateStats(games);
+          console.log('Calculated gate stats for all time:', calculatedGateStats);
+          setGateStats(calculatedGateStats);
+        }
+      } catch (error) {
+        console.error('Error fetching all time gate stats:', error);
+        setGateStats(null);
+      }
+    };
+    
+    fetchAllTimeGateStats();
+  }, [timePeriod, id]);
+
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -435,6 +501,69 @@ export default function PlayerProfilePage() {
     rare: 'from-blue-100 to-blue-50 text-blue-600 border-blue-200',
     epic: 'from-purple-100 to-purple-50 text-purple-600 border-purple-200',
     legendary: 'from-amber-100 to-amber-50 text-amber-600 border-amber-200'
+  };
+
+  // Calculate gate stats from the filtered game data
+  const calculateGateStats = (games: any[]) => {
+    const gateOrder = [2, 3, 4, 1]; // Sjoelen gate order
+    const gateData: number[][] = [[], [], [], []]; // 4 gates
+    
+    games.forEach((game) => {
+      const playerScore = game.scores[id as string];
+      if (!playerScore?.roundDetails) {
+        return;
+      }
+      
+      // Process each round
+      Object.entries(playerScore.roundDetails).forEach(([roundNum, gateString]) => {
+        // Parse gate string - handle both formats: "7797" and "11.7.9.7"
+        let gateScores: number[];
+        if (typeof gateString === 'string' && gateString.includes('.')) {
+          // Dot-delimited format for double digits
+          gateScores = gateString.split('.').map(s => parseInt(s) || 0);
+        } else if (typeof gateString === 'string') {
+          // Single digit format
+          gateScores = gateString.split('').map(s => parseInt(s) || 0);
+        } else {
+          gateScores = [0, 0, 0, 0];
+        }
+        
+        // Ensure we have exactly 4 values
+        while (gateScores.length < 4) {
+          gateScores.push(0);
+        }
+        
+        // Add scores to gate data (in order 2,3,4,1)
+        for (let i = 0; i < 4; i++) {
+          gateData[i].push(gateScores[i] || 0);
+        }
+      });
+    });
+
+    // Calculate statistics for each gate
+    const gateStats: any = {};
+    
+    gateOrder.forEach((gateNumber, index) => {
+      const data = gateData[index];
+      const average = data.length > 0 ? data.reduce((sum, val) => sum + val, 0) / data.length : 0;
+      
+      // Calculate trend (compare last 5 vs previous 5)
+      let trend: 'improving' | 'declining' | 'stable' = 'stable';
+      if (data.length >= 10) {
+        const recent = data.slice(-5).reduce((a, b) => a + b, 0) / 5;
+        const previous = data.slice(-10, -5).reduce((a, b) => a + b, 0) / 5;
+        if (recent > previous * 1.1) trend = 'improving';
+        else if (recent < previous * 0.9) trend = 'declining';
+      }
+      
+      gateStats[`gate${gateNumber}`] = {
+        average: Math.round(average * 10) / 10,
+        recent: data.slice(-10), // Last 10 values
+        trend
+      };
+    });
+    
+    return gateStats;
   };
 
   if (loading) {
@@ -1281,6 +1410,19 @@ export default function PlayerProfilePage() {
           </motion.div>
         </motion.div>
       </div>
+      
+      {/* AI Profile Coach - show only if user can view profile and AI Coach is enabled */}
+      {canViewProfile && aiCoachEnabled && stats && (
+        <AIProfileCoach 
+          playerName={playerName}
+          stats={{
+            ...(filteredStats || stats),
+            lastPlayed,
+            timePeriod,
+            gateStats
+          }}
+        />
+      )}
     </div>
   );
 } 
