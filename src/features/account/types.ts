@@ -28,4 +28,5 @@ export interface AccountSettings {
   shareStatistics: boolean;
   language: 'en' | 'nl';  // Supporting English and Dutch
   powerUser?: boolean;  // Enable power user features like auto-enable quick insert
+  AIEnabled?: boolean;  // Enable AI features like photo score detection
 } 

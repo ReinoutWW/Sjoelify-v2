@@ -66,6 +66,15 @@ export class FriendsService {
     }
   }
 
+  static async cancelFriendRequest(requestId: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, this.friendRequestsCollection, requestId));
+    } catch (error) {
+      console.error('Error cancelling friend request:', error);
+      throw error;
+    }
+  }
+
   static async respondToFriendRequest(requestId: string, status: 'accepted' | 'rejected'): Promise<void> {
     try {
       const requestRef = doc(db, this.friendRequestsCollection, requestId);
@@ -174,7 +183,7 @@ export class FriendsService {
     }
   }
 
-  static async getOutgoingFriendRequests(userId: string): Promise<FriendRequest[]> {
+  static async getOutgoingFriendRequests(userId: string): Promise<(FriendRequest & { receiver?: UserProfile })[]> {
     try {
       const requestsQuery = query(
         collection(db, this.friendRequestsCollection),
@@ -183,10 +192,29 @@ export class FriendsService {
       );
 
       const snapshot = await getDocs(requestsQuery);
-      return snapshot.docs.map(doc => ({
+      const requests = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as FriendRequest[];
+
+      // Get receiver details for each request
+      const receiverIds = requests.map(r => r.receiverId);
+      if (receiverIds.length === 0) return [];
+
+      const usersQuery = query(
+        collection(db, this.usersCollection),
+        where('id', 'in', receiverIds)
+      );
+      
+      const usersSnapshot = await getDocs(usersQuery);
+      const usersMap = new Map(
+        usersSnapshot.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as UserProfile])
+      );
+
+      return requests.map(request => ({
+        ...request,
+        receiver: usersMap.get(request.receiverId)
+      }));
     } catch (error) {
       console.error('Error getting outgoing friend requests:', error);
       throw error;
@@ -308,7 +336,7 @@ export class FriendsService {
 
   static subscribeToFriendRequests(
     userId: string,
-    onUpdate: (requests: { incoming: (FriendRequest & { sender: UserProfile })[]; outgoing: FriendRequest[] }) => void,
+    onUpdate: (requests: { incoming: (FriendRequest & { sender: UserProfile })[]; outgoing: (FriendRequest & { receiver?: UserProfile })[] }) => void,
     onError?: (error: Error) => void
   ): Unsubscribe {
     try {
@@ -325,16 +353,20 @@ export class FriendsService {
         where('status', '==', 'pending')
       );
 
-      // Subscribe to both queries
-      const unsubscribeIncoming = onSnapshot(incomingQuery, async (snapshot) => {
+      let unsubscribes: Unsubscribe[] = [];
+
+      // Helper function to fetch all data
+      const fetchAllData = async () => {
         try {
-          const requests = snapshot.docs.map(doc => ({
+          // Get incoming requests
+          const incomingSnapshot = await getDocs(incomingQuery);
+          const incomingRequests = incomingSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
           })) as FriendRequest[];
 
           // Get sender details for incoming requests
-          const senderIds = requests.map(r => r.senderId);
+          const senderIds = incomingRequests.map(r => r.senderId);
           let incomingWithSenders: (FriendRequest & { sender: UserProfile })[] = [];
 
           if (senderIds.length > 0) {
@@ -348,7 +380,7 @@ export class FriendsService {
               usersSnapshot.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as UserProfile])
             );
 
-            incomingWithSenders = requests.map(request => ({
+            incomingWithSenders = incomingRequests.map(request => ({
               ...request,
               sender: usersMap.get(request.senderId)!
             }));
@@ -361,17 +393,51 @@ export class FriendsService {
             ...doc.data()
           })) as FriendRequest[];
 
+          // Get receiver details for outgoing requests
+          const receiverIds = outgoingRequests.map(r => r.receiverId);
+          let outgoingWithReceivers: (FriendRequest & { receiver?: UserProfile })[] = [];
+
+          if (receiverIds.length > 0) {
+            const receiversQuery = query(
+              collection(db, this.usersCollection),
+              where('id', 'in', receiverIds)
+            );
+            
+            const receiversSnapshot = await getDocs(receiversQuery);
+            const receiversMap = new Map(
+              receiversSnapshot.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as UserProfile])
+            );
+
+            outgoingWithReceivers = outgoingRequests.map(request => ({
+              ...request,
+              receiver: receiversMap.get(request.receiverId)
+            }));
+          } else {
+            outgoingWithReceivers = outgoingRequests;
+          }
+
           onUpdate({
             incoming: incomingWithSenders,
-            outgoing: outgoingRequests
+            outgoing: outgoingWithReceivers
           });
         } catch (error) {
-          console.error('Error in friend requests subscription:', error);
+          console.error('Error fetching friend requests:', error);
           onError?.(error instanceof Error ? error : new Error('Unknown error'));
         }
-      });
+      };
 
-      return unsubscribeIncoming;
+      // Subscribe to incoming requests
+      const unsubscribeIncoming = onSnapshot(incomingQuery, () => fetchAllData());
+      
+      // Subscribe to outgoing requests
+      const unsubscribeOutgoing = onSnapshot(outgoingQuery, () => fetchAllData());
+
+      unsubscribes = [unsubscribeIncoming, unsubscribeOutgoing];
+
+      // Return a function that unsubscribes from both
+      return () => {
+        unsubscribes.forEach(unsub => unsub());
+      };
     } catch (error) {
       console.error('Error setting up friend requests subscription:', error);
       throw error;

@@ -7,7 +7,7 @@ import { useTranslation } from '@/lib/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { UserSettingsService } from '@/features/account/services/user-settings-service';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
-import { GlobeAltIcon, CogIcon, ShieldCheckIcon, UserIcon, BoltIcon } from '@heroicons/react/24/outline';
+import { GlobeAltIcon, CogIcon, ShieldCheckIcon, UserIcon, BoltIcon, CameraIcon } from '@heroicons/react/24/outline';
 import { Menu, Switch } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 
@@ -29,6 +29,7 @@ export default function SettingsPage() {
   const { t } = useTranslation();
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public');
   const [powerUser, setPowerUser] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   // Load user settings
@@ -40,6 +41,7 @@ export default function SettingsPage() {
           if (settings) {
             setPrivacy(settings.privacy);
             setPowerUser(settings.powerUser || false);
+            setAiEnabled(settings.AIEnabled || false);
           }
         } catch (error) {
           console.error('Error loading settings:', error);
@@ -75,6 +77,20 @@ export default function SettingsPage() {
         console.error('Error updating power user setting:', error);
         // Revert on error
         setPowerUser(powerUser);
+      }
+    }
+  };
+
+  // Handle AI enabled change
+  const handleAiEnabledChange = async (newValue: boolean) => {
+    if (user?.uid && newValue !== aiEnabled) {
+      setAiEnabled(newValue);
+      try {
+        await UserSettingsService.updateSettings(user.uid, { AIEnabled: newValue });
+      } catch (error) {
+        console.error('Error updating AI enabled setting:', error);
+        // Revert on error
+        setAiEnabled(aiEnabled);
       }
     }
   };
@@ -140,6 +156,27 @@ export default function SettingsPage() {
               <span
                 className={`${
                   powerUser ? 'translate-x-6' : 'translate-x-1'
+                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+              />
+            </Switch>
+          ),
+        },
+        {
+          label: t.settings.aiFeatures || 'AI Features',
+          description: t.settings.aiDescription || 'Enable AI-powered features like photo score detection',
+          icon: CameraIcon,
+          component: (
+            <Switch
+              checked={aiEnabled}
+              onChange={handleAiEnabledChange}
+              className={`${
+                aiEnabled ? 'bg-primary-600' : 'bg-gray-200'
+              } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2`}
+            >
+              <span className="sr-only">Enable AI features</span>
+              <span
+                className={`${
+                  aiEnabled ? 'translate-x-6' : 'translate-x-1'
                 } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
               />
             </Switch>
@@ -276,7 +313,14 @@ export default function SettingsPage() {
                           <div className="flex items-center">
                             {item.icon && <item.icon className="h-5 w-5 text-gray-400 mr-3" />}
                             <div>
-                              <h3 className="text-sm font-medium text-gray-900">{item.label}</h3>
+                              <div className="flex items-center gap-2">
+                                <h3 className="text-sm font-medium text-gray-900">{item.label}</h3>
+                                {item.label === (t.settings.aiFeatures || 'AI Features') && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                    BETA
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-sm text-gray-500">{item.description}</p>
                             </div>
                           </div>

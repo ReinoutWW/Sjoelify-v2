@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { fadeIn } from '@/shared/styles/animations';
-import { BoltIcon, CommandLineIcon } from '@heroicons/react/24/outline';
+import { BoltIcon, CommandLineIcon, CameraIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { useAuth } from '@/lib/context/auth-context';
 import { UserSettingsService } from '@/features/account/services/user-settings-service';
+import { PhotoScoreCapture } from './PhotoScoreCapture';
 
 interface ScoreEntryProps {
   onScoreSubmit: (scores: number[]) => void;
@@ -21,14 +22,16 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
   const [error, setError] = useState<string | null>(null);
   const [quickInsertMode, setQuickInsertMode] = useState(false);
   const [quickInsertValue, setQuickInsertValue] = useState('');
+  const [showPhotoCapture, setShowPhotoCapture] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
   const quickInsertRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
   const { user } = useAuth();
   const MAX_TOTAL_DISCS = 30;
   
-  // Check for power user setting on mount
+  // Check for power user and AI enabled settings on mount
   useEffect(() => {
-    const checkPowerUser = async () => {
+    const checkUserSettings = async () => {
       if (user?.uid) {
         try {
           const settings = await UserSettingsService.getUserSettings(user.uid);
@@ -36,13 +39,14 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
             setQuickInsertMode(true);
             setTimeout(() => quickInsertRef.current?.focus(), 100);
           }
+          setAiEnabled(settings?.AIEnabled || false);
         } catch (error) {
-          console.error('Error checking power user setting:', error);
+          console.error('Error checking user settings:', error);
         }
       }
     };
     
-    checkPowerUser();
+    checkUserSettings();
   }, [user?.uid]);
 
   const gates = [
@@ -164,6 +168,16 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
     setQuickInsertValue('');
   };
 
+  const handlePhotoScores = (photoScores: number[]) => {
+    setScores(photoScores);
+    setShowPhotoCapture(false);
+    // If in quick insert mode, update the display
+    if (quickInsertMode) {
+      const hasDoubleDigit = photoScores.some(score => score >= 10);
+      setQuickInsertValue(hasDoubleDigit ? photoScores.join('.') : photoScores.join(''));
+    }
+  };
+
   // Calculate score breakdown
   const scoreBreakdown = (() => {
     const completeSets = Math.min(...scores);
@@ -193,26 +207,38 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
       {/* Score Entry Row */}
       <div>
         <div className="mb-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h3 className="text-base font-medium text-gray-900">{t.games.enterDiscsPerGate}</h3>
-            <button
-              type="button"
-              onClick={toggleQuickInsert}
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-                ${quickInsertMode 
-                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-            >
-              <BoltIcon className="h-4 w-4" />
-              {t.games.quickInsert}
-            </button>
+            <div className="flex items-center gap-2">
+              {aiEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoCapture(true)}
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+                    bg-purple-100 text-purple-700 hover:bg-purple-200"
+                >
+                  <CameraIcon className="h-4 w-4" />
+                  <span className="whitespace-nowrap">{t.games.photoScore}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={toggleQuickInsert}
+                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+                  ${quickInsertMode 
+                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                <BoltIcon className="h-4 w-4" />
+                <span className="whitespace-nowrap">{t.games.quickInsert}</span>
+              </button>
+            </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mt-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-2">
             <p className="text-sm text-gray-500">{t.games.countDiscsFromLeftToRight}</p>
-            <div className="flex-1 hidden sm:block" />
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               {error && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -225,7 +251,7 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
                   <span className="text-xs font-medium text-amber-800">{error}</span>
                 </motion.div>
               )}
-              <p className="text-sm text-gray-500 text-right min-w-[90px] ml-auto sm:ml-0">
+              <p className="text-sm text-gray-500 text-right min-w-[90px]">
                 {getTotalDiscs(scores)}/{MAX_TOTAL_DISCS} {t.games.discsUsed}
               </p>
             </div>
@@ -406,6 +432,14 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
           : t.games.submitScores
         }
       </motion.button>
+
+      {/* Photo Score Capture Modal */}
+      {showPhotoCapture && (
+        <PhotoScoreCapture
+          onScoresConfirmed={handlePhotoScores}
+          onCancel={() => setShowPhotoCapture(false)}
+        />
+      )}
     </motion.div>
   );
 } 

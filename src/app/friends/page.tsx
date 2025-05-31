@@ -31,12 +31,17 @@ interface FriendRequestWithSender extends FriendRequest {
   sender?: UserProfile;
 }
 
+interface FriendRequestWithReceiver extends FriendRequest {
+  receiver?: UserProfile;
+}
+
 export default function FriendsPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'friends' | 'requests' | 'search'>('friends');
   const [friends, setFriends] = useState<UserProfile[]>([]);
   const [friendRequests, setFriendRequests] = useState<FriendRequestWithSender[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<FriendRequestWithReceiver[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +75,7 @@ export default function FriendsPage() {
       user.uid,
       (requests) => {
         setFriendRequests(requests.incoming);
+        setOutgoingRequests(requests.outgoing);
         setSentRequests(requests.outgoing.map(req => req.receiverId));
         setLoading(false);
       },
@@ -158,6 +164,17 @@ export default function FriendsPage() {
     }
   };
 
+  const handleCancelFriendRequest = async (requestId: string) => {
+    try {
+      // Delete the friend request
+      await FriendsService.cancelFriendRequest(requestId);
+      toast.success('Friend request cancelled');
+    } catch (error) {
+      console.error('Error cancelling friend request:', error);
+      toast.error('Failed to cancel friend request');
+    }
+  };
+
   const UserNameLink = ({ user, className = "" }: { user: UserProfile; className?: string }) => (
     <Link
       href={`/players/${user.id}`}
@@ -209,9 +226,9 @@ export default function FriendsPage() {
             >
               <BellIcon className="w-5 h-5 mr-1.5 sm:mr-2" />
               <span className="whitespace-nowrap">{t.friends.requests}</span>
-              {friendRequests.length > 0 && (
+              {(friendRequests.length + outgoingRequests.length) > 0 && (
                 <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-600 rounded-full">
-                  {friendRequests.length}
+                  {friendRequests.length + outgoingRequests.length}
                 </span>
               )}
             </button>
@@ -261,44 +278,90 @@ export default function FriendsPage() {
               )}
             </div>
           ) : activeTab === 'requests' ? (
-            <div className="space-y-4">
-              <h2 className="text-lg font-medium text-gray-900">{t.friends.friendRequests}</h2>
-              {friendRequests.length === 0 ? (
-                <p className="text-gray-500">{t.friends.noPendingRequests}</p>
-              ) : (
-                <div className="space-y-3 sm:space-y-4">
-                  {friendRequests.map((request) => (
-                    <div
-                      key={request.id}
-                      className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg"
-                    >
-                      <div className="min-w-0 flex-1">
-                        {request.sender ? (
-                          <UserNameLink user={request.sender} />
-                        ) : (
-                          <p className="text-sm font-medium text-gray-900 truncate">{t.friends.unknownSender}</p>
-                        )}
+            <div className="space-y-6">
+              {/* Incoming Requests Section */}
+              <div className="space-y-4">
+                <h2 className="text-lg font-medium text-gray-900">{t.friends.incomingRequests}</h2>
+                {friendRequests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <BellIcon className="mx-auto h-12 w-12 text-gray-300" />
+                    <p className="mt-3 text-sm text-gray-500 max-w-sm mx-auto">{t.friends.noIncomingRequests}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 sm:space-y-4">
+                    {friendRequests.map((request) => (
+                      <div
+                        key={request.id}
+                        className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg"
+                      >
+                        <div className="min-w-0 flex-1">
+                          {request.sender ? (
+                            <UserNameLink user={request.sender} />
+                          ) : (
+                            <p className="text-sm font-medium text-gray-900 truncate">{t.friends.unknownSender}</p>
+                          )}
+                        </div>
+                        <div className="ml-3 sm:ml-4 flex gap-1 sm:gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => handleFriendRequest(request.id, 'accepted')}
+                            className="p-1.5 sm:p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                            title={t.friends.acceptRequest}
+                          >
+                            <CheckIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleFriendRequest(request.id, 'rejected')}
+                            className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                            title={t.friends.declineRequest}
+                          >
+                            <XMarkIcon className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="ml-3 sm:ml-4 flex gap-1 sm:gap-2 flex-shrink-0">
-                        <button
-                          onClick={() => handleFriendRequest(request.id, 'accepted')}
-                          className="p-1.5 sm:p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
-                          title={t.friends.acceptRequest}
-                        >
-                          <CheckIcon className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleFriendRequest(request.id, 'rejected')}
-                          className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                          title={t.friends.declineRequest}
-                        >
-                          <XMarkIcon className="w-5 h-5" />
-                        </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Outgoing Requests Section */}
+              <div className="space-y-4">
+                <h2 className="text-lg font-medium text-gray-900">{t.friends.outgoingRequests}</h2>
+                {outgoingRequests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <UserPlusIcon className="mx-auto h-12 w-12 text-gray-300" />
+                    <p className="mt-3 text-sm text-gray-500 max-w-sm mx-auto">{t.friends.noOutgoingRequests}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 sm:space-y-4">
+                    {outgoingRequests.map((request) => (
+                      <div
+                        key={request.id}
+                        className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500">{t.friends.requestSentTo}</span>
+                            {request.receiver ? (
+                              <UserNameLink user={request.receiver} />
+                            ) : (
+                              <span className="text-sm font-medium text-gray-900">{t.friends.unknownRecipient}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="ml-3 sm:ml-4 flex-shrink-0">
+                          <button
+                            onClick={() => handleCancelFriendRequest(request.id)}
+                            className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                            title={t.friends.cancelRequest}
+                          >
+                            <XMarkIcon className="w-5 h-5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

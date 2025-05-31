@@ -21,6 +21,7 @@ export class UserSettingsService {
         shareStatistics: true,
         language: 'nl', // Default to Dutch
         powerUser: false,
+        AIEnabled: false,
       };
     } catch (error) {
       console.error('Error fetching user settings:', error);
@@ -43,6 +44,7 @@ export class UserSettingsService {
           shareStatistics: true,
           language,
           powerUser: false,
+          AIEnabled: false,
         });
       }
     } catch (error) {
@@ -65,6 +67,7 @@ export class UserSettingsService {
           shareStatistics: true,
           language: 'nl',
           powerUser: false,
+          AIEnabled: false,
           ...settings,
         });
       }
