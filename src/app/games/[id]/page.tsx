@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -16,6 +16,7 @@ import { TrophyIcon, ClockIcon, UserCircleIcon, TrashIcon, XCircleIcon } from '@
 import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
 import { UserProfile } from '@/features/account/types';
 import { GuestPlayer } from '@/features/games/types';
+import { InGameStatsPopup } from '@/features/games/components/InGameStatsPopup';
 
 // Add helper functions for safe date handling
 const toISOStringOrUndefined = (dateString: string | number | Date | undefined | null): string | undefined => {
@@ -82,6 +83,7 @@ export default function GamePage() {
   const [guestName, setGuestName] = useState('');
   const [guestError, setGuestError] = useState<string | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
+  const [statsPopupPlayer, setStatsPopupPlayer] = useState<any>(null);
 
   const handleRemoveGuest = async (guestId: string) => {
     if (!game || !user) return;
@@ -443,17 +445,25 @@ export default function GamePage() {
                               <div className="flex items-center gap-2">
                                 <UserCircleIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
                                 {!('isGuest' in player) ? (
-                                  <Link 
-                                    href={`/players/${player.id}`}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setStatsPopupPlayer(player);
+                                    }}
                                     className="text-base font-medium text-gray-900 hover:text-blue-600 transition-colors truncate"
-                                    onClick={(e) => e.stopPropagation()}
                                   >
                                     {player.displayName}
-                                  </Link>
+                                  </button>
                                 ) : (
-                                  <span className="text-base font-medium text-gray-900 truncate">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setStatsPopupPlayer(player);
+                                    }}
+                                    className="text-base font-medium text-gray-900 hover:text-blue-600 transition-colors truncate"
+                                  >
                                     {player.displayName}
-                                  </span>
+                                  </button>
                                 )}
                                 {!('isGuest' in player) && 'verified' in player && player.verified && (
                                   <VerifiedBadge size="sm" />
@@ -619,6 +629,16 @@ export default function GamePage() {
           )}
         </motion.div>
       </div>
+      
+      {/* In-game Stats Popup */}
+      {statsPopupPlayer && game && !game.isClosed && (
+        <InGameStatsPopup
+          isOpen={true}
+          onClose={() => setStatsPopupPlayer(null)}
+          player={statsPopupPlayer}
+          currentGame={game}
+        />
+      )}
     </div>
   );
 } 

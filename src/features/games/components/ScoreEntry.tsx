@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { fadeIn } from '@/shared/styles/animations';
 import { BoltIcon, CommandLineIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { useAuth } from '@/lib/context/auth-context';
+import { UserSettingsService } from '@/features/account/services/user-settings-service';
 
 interface ScoreEntryProps {
   onScoreSubmit: (scores: number[]) => void;
@@ -21,8 +23,28 @@ export function ScoreEntry({ onScoreSubmit, isSubmitting = false, selectedPlayer
   const [quickInsertValue, setQuickInsertValue] = useState('');
   const quickInsertRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
+  const { user } = useAuth();
   const MAX_TOTAL_DISCS = 30;
   
+  // Check for power user setting on mount
+  useEffect(() => {
+    const checkPowerUser = async () => {
+      if (user?.uid) {
+        try {
+          const settings = await UserSettingsService.getUserSettings(user.uid);
+          if (settings?.powerUser) {
+            setQuickInsertMode(true);
+            setTimeout(() => quickInsertRef.current?.focus(), 100);
+          }
+        } catch (error) {
+          console.error('Error checking power user setting:', error);
+        }
+      }
+    };
+    
+    checkPowerUser();
+  }, [user?.uid]);
+
   const gates = [
     { points: '2', dots: 2 },
     { points: '3', dots: 3 },

@@ -7,8 +7,8 @@ import { useTranslation } from '@/lib/hooks/useTranslation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { UserSettingsService } from '@/features/account/services/user-settings-service';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
-import { GlobeAltIcon, CogIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline';
-import { Menu } from '@headlessui/react';
+import { GlobeAltIcon, CogIcon, ShieldCheckIcon, UserIcon, BoltIcon } from '@heroicons/react/24/outline';
+import { Menu, Switch } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 
 interface SettingsItem {
@@ -28,6 +28,7 @@ export default function SettingsPage() {
   const { user, loading } = useAuth();
   const { t } = useTranslation();
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public');
+  const [powerUser, setPowerUser] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   // Load user settings
@@ -38,6 +39,7 @@ export default function SettingsPage() {
           const settings = await UserSettingsService.getUserSettings(user.uid);
           if (settings) {
             setPrivacy(settings.privacy);
+            setPowerUser(settings.powerUser || false);
           }
         } catch (error) {
           console.error('Error loading settings:', error);
@@ -59,6 +61,20 @@ export default function SettingsPage() {
         console.error('Error updating privacy setting:', error);
         // Revert on error
         setPrivacy(privacy);
+      }
+    }
+  };
+
+  // Handle power user change
+  const handlePowerUserChange = async (newValue: boolean) => {
+    if (user?.uid && newValue !== powerUser) {
+      setPowerUser(newValue);
+      try {
+        await UserSettingsService.updateSettings(user.uid, { powerUser: newValue });
+      } catch (error) {
+        console.error('Error updating power user setting:', error);
+        // Revert on error
+        setPowerUser(powerUser);
       }
     }
   };
@@ -107,6 +123,27 @@ export default function SettingsPage() {
           description: t.settings.languageDescription,
           icon: GlobeAltIcon,
           component: <LanguageSwitcher />,
+        },
+        {
+          label: t.settings.powerUser || 'Power User Mode',
+          description: t.settings.powerUserDescription || 'Enable advanced features like auto-enabled quick insert',
+          icon: BoltIcon,
+          component: (
+            <Switch
+              checked={powerUser}
+              onChange={handlePowerUserChange}
+              className={`${
+                powerUser ? 'bg-primary-600' : 'bg-gray-200'
+              } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2`}
+            >
+              <span className="sr-only">Enable power user mode</span>
+              <span
+                className={`${
+                  powerUser ? 'translate-x-6' : 'translate-x-1'
+                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+              />
+            </Switch>
+          ),
         },
       ],
     },

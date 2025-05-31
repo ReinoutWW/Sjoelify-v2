@@ -20,6 +20,7 @@ export class UserSettingsService {
         privacy: 'public',
         shareStatistics: true,
         language: 'nl', // Default to Dutch
+        powerUser: false,
       };
     } catch (error) {
       console.error('Error fetching user settings:', error);
@@ -41,6 +42,7 @@ export class UserSettingsService {
           privacy: 'public',
           shareStatistics: true,
           language,
+          powerUser: false,
         });
       }
     } catch (error) {
@@ -62,6 +64,7 @@ export class UserSettingsService {
           privacy: 'public',
           shareStatistics: true,
           language: 'nl',
+          powerUser: false,
           ...settings,
         });
       }

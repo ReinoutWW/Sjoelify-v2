@@ -27,4 +27,5 @@ export interface AccountSettings {
   privacy: 'public' | 'friends' | 'private';  // Who can view the profile
   shareStatistics: boolean;
   language: 'en' | 'nl';  // Supporting English and Dutch
+  powerUser?: boolean;  // Enable power user features like auto-enable quick insert
 } 
