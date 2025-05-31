@@ -79,7 +79,7 @@ const LeaderboardCard = ({ entry, rank }: { entry: LeaderboardEntry; rank: numbe
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 mb-1.5">
                     <h3 className="font-semibold text-gray-900 truncate text-base sm:text-lg">{entry.displayName}</h3>
-                    <VerifiedBadge size="xs" />
+                    {entry.verified && <VerifiedBadge size="xs" />}
                   </div>
                   
                   {/* Mobile: Stack info vertically */}
@@ -124,12 +124,15 @@ export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showVerifiedOnly, setShowVerifiedOnly] = useState(true);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
         console.log('Fetching leaderboard data...');
-        const data = await LeaderboardService.getLeaderboard();
+        const data = showVerifiedOnly 
+          ? await LeaderboardService.getLeaderboard()
+          : await LeaderboardService.getAllPlayers();
         console.log('Raw leaderboard data:', data);
         
         if (!data || data.length === 0) {
@@ -157,7 +160,7 @@ export default function LeaderboardPage() {
     };
 
     fetchLeaderboard();
-  }, [t.statistics.failedToLoad]);
+  }, [t.statistics.failedToLoad, showVerifiedOnly]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -171,10 +174,32 @@ export default function LeaderboardPage() {
               </span>
             </h1>
             <p className="mt-1 text-sm sm:text-base text-gray-600">{t.leaderboard.subtitle}</p>
-            <p className="mt-1 text-xs sm:text-sm text-gray-500 flex items-center justify-center gap-1">
-              <VerifiedBadge size="xs" showTooltip={false} />
-              {t.leaderboard.onlyVerifiedPlayersShown}
-            </p>
+            
+            {/* Toggle for verified/all players */}
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showVerifiedOnly}
+                  onChange={(e) => setShowVerifiedOnly(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
+                <span className="ml-2 text-xs font-medium text-gray-700 flex items-center gap-1">
+                  {showVerifiedOnly && <VerifiedBadge size="xs" showTooltip={false} />}
+                  {showVerifiedOnly ? 'Verified Only' : 'All Players'}
+                </span>
+              </label>
+            </div>
+            
+            <div className="mt-2 text-xs sm:text-sm text-gray-500 flex items-center justify-center gap-1">
+              {showVerifiedOnly && (
+                <>
+                  <VerifiedBadge size="xs" showTooltip={false} />
+                  {t.leaderboard.onlyVerifiedPlayersShown}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

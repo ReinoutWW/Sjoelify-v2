@@ -1,6 +1,6 @@
 import { collection, addDoc, updateDoc, doc, getDoc, query, where, getDocs, orderBy, limit, runTransaction, onSnapshot, Query, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { Game, Round, PlayerScore } from '../types';
+import { Game, Round, PlayerScore, GuestPlayer } from '../types';
 import { UserProfile } from '@/features/account/types';
 
 export class GameService {
@@ -17,7 +17,8 @@ export class GameService {
       scores: playerIds.reduce((acc, playerId) => ({
         ...acc,
         [playerId]: { total: 0, rounds: {} }
-      }), {})
+      }), {}),
+      guestPlayers: []
     };
 
     const docRef = await addDoc(collection(db, this.gamesCollection), {
@@ -29,19 +30,82 @@ export class GameService {
     return docRef.id;
   }
 
+  static async addGuestPlayer(gameId: string, displayName: string): Promise<string> {
+    const gameRef = doc(db, this.gamesCollection, gameId);
+    const gameDoc = await getDoc(gameRef);
+    
+    if (!gameDoc.exists()) throw new Error('Game not found');
+    
+    const gameData = gameDoc.data() as Game;
+    if (gameData.currentRound > 1) throw new Error('Cannot add guest players after first round');
+    
+    // Create a unique ID for the guest player
+    const guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const guestPlayer: GuestPlayer = {
+      id: guestId,
+      displayName: displayName.toLowerCase(),
+      isGuest: true
+    };
+    
+    await updateDoc(gameRef, {
+      [`guestPlayers`]: [...(gameData.guestPlayers || []), guestPlayer],
+      playerIds: [...gameData.playerIds, guestId],
+      [`scores.${guestId}`]: { total: 0, rounds: {} },
+      updatedAt: new Date()
+    });
+    
+    return guestId;
+  }
+
+  static async removeGuest(gameId: string, guestId: string): Promise<void> {
+    const gameRef = doc(db, this.gamesCollection, gameId);
+    const gameDoc = await getDoc(gameRef);
+    
+    if (!gameDoc.exists()) throw new Error('Game not found');
+    
+    const gameData = gameDoc.data() as Game;
+    // Remove restriction - guests can be removed at any time
+    // if (gameData.currentRound > 1) throw new Error('Cannot remove guest players after first round');
+    
+    // Remove guest from guestPlayers array and playerIds
+    const updatedGuestPlayers = (gameData.guestPlayers || []).filter(guest => guest.id !== guestId);
+    const updatedPlayerIds = gameData.playerIds.filter(id => id !== guestId);
+    
+    // Remove guest scores
+    const { [guestId]: removedScore, ...updatedScores } = gameData.scores;
+    
+    await updateDoc(gameRef, {
+      guestPlayers: updatedGuestPlayers,
+      playerIds: updatedPlayerIds,
+      scores: updatedScores,
+      updatedAt: new Date()
+    });
+  }
+
   static async getGame(gameId: string): Promise<Game | null> {
     const gameDoc = await getDoc(doc(db, this.gamesCollection, gameId));
     if (!gameDoc.exists()) return null;
 
     const gameData = gameDoc.data() as Game;
     
-    // Fetch player details
-    const playersQuery = query(
-      collection(db, 'users'),
-      where('id', 'in', gameData.playerIds)
-    );
-    const playersSnapshot = await getDocs(playersQuery);
-    const players = playersSnapshot.docs.map(doc => doc.data() as UserProfile);
+    // Fetch player details for non-guest players
+    const regularPlayerIds = gameData.playerIds.filter(id => !id.startsWith('guest_'));
+    let players: (UserProfile | GuestPlayer)[] = [];
+    
+    if (regularPlayerIds.length > 0) {
+      const playersQuery = query(
+        collection(db, 'users'),
+        where('id', 'in', regularPlayerIds)
+      );
+      const playersSnapshot = await getDocs(playersQuery);
+      players = playersSnapshot.docs.map(doc => doc.data() as UserProfile);
+    }
+    
+    // Add guest players to the players array
+    if (gameData.guestPlayers?.length) {
+      players = [...players, ...gameData.guestPlayers];
+    }
 
     // Fetch rounds
     const roundsQuery = query(
@@ -122,12 +186,16 @@ export class GameService {
       // Total round score is complete sets + leftover points
       const roundScore = completeSetPoints + leftoverPoints;
 
+      // Convert scores array to gate string (e.g., [7, 7, 9, 7] -> "7797")
+      const gateString = scores.join('');
+
       // Add round
       const roundRef = doc(collection(db, this.gamesCollection, gameId, this.roundsCollection));
       transaction.set(roundRef, {
         playerId,
         roundNumber,
         scores,
+        gateString,
         completeSets,
         completeSetPoints,
         leftoverPoints,
@@ -144,6 +212,10 @@ export class GameService {
         rounds: {
           ...currentPlayerScore.rounds,
           [roundNumber]: roundScore
+        },
+        roundDetails: {
+          ...(currentPlayerScore.roundDetails || {}),
+          [roundNumber]: gateString
         }
       };
 
@@ -217,9 +289,14 @@ export class GameService {
       const updatedRounds = { ...currentPlayerScore.rounds };
       delete updatedRounds[roundNumber];
       
+      // Remove the round details
+      const updatedRoundDetails = { ...(currentPlayerScore.roundDetails || {}) };
+      delete updatedRoundDetails[roundNumber];
+      
       const updatedPlayerScore = {
         total: currentPlayerScore.total - roundScore,
-        rounds: updatedRounds
+        rounds: updatedRounds,
+        roundDetails: Object.keys(updatedRoundDetails).length > 0 ? updatedRoundDetails : undefined
       };
 
       // Check if we need to adjust the current round
@@ -283,12 +360,24 @@ export class GameService {
     const games = await Promise.all(
       snapshot.docs.map(async (doc) => {
         const gameData = doc.data() as Omit<Game, 'id' | 'players'>;
-        const playersQuery = query(
-          collection(db, 'users'),
-          where('id', 'in', gameData.playerIds)
-        );
-        const playersSnapshot = await getDocs(playersQuery);
-        const players = playersSnapshot.docs.map(doc => doc.data() as UserProfile);
+        
+        // Fetch regular player details
+        const regularPlayerIds = gameData.playerIds.filter(id => !id.startsWith('guest_'));
+        let players: (UserProfile | GuestPlayer)[] = [];
+        
+        if (regularPlayerIds.length > 0) {
+          const playersQuery = query(
+            collection(db, 'users'),
+            where('id', 'in', regularPlayerIds)
+          );
+          const playersSnapshot = await getDocs(playersQuery);
+          players = playersSnapshot.docs.map(doc => doc.data() as UserProfile);
+        }
+        
+        // Add guest players
+        if (gameData.guestPlayers?.length) {
+          players = [...players, ...gameData.guestPlayers];
+        }
 
         return {
           ...gameData,
@@ -387,13 +476,23 @@ export class GameService {
       const gameData = gameDoc.data() as Game;
 
       try {
-        // Fetch player details
-        const playersQuery = query(
-          collection(db, 'users'),
-          where('id', 'in', gameData.playerIds)
-        );
-        const playersSnapshot = await getDocs(playersQuery);
-        const players = playersSnapshot.docs.map(doc => doc.data() as UserProfile);
+        // Fetch regular player details
+        const regularPlayerIds = gameData.playerIds.filter(id => !id.startsWith('guest_'));
+        let players: (UserProfile | GuestPlayer)[] = [];
+        
+        if (regularPlayerIds.length > 0) {
+          const playersQuery = query(
+            collection(db, 'users'),
+            where('id', 'in', regularPlayerIds)
+          );
+          const playersSnapshot = await getDocs(playersQuery);
+          players = playersSnapshot.docs.map(doc => doc.data() as UserProfile);
+        }
+        
+        // Add guest players
+        if (gameData.guestPlayers?.length) {
+          players = [...players, ...gameData.guestPlayers];
+        }
 
         // Subscribe to rounds collection
         const roundsQuery = query(

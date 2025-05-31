@@ -247,7 +247,6 @@ export default function FriendsPage() {
                     >
                       <div className="min-w-0 flex-1">
                         <UserNameLink user={friend} />
-                        <p className="text-sm text-gray-500 mt-1 truncate">{friend.email}</p>
                       </div>
                       <button
                         onClick={() => handleRemoveFriend(friend.id)}
@@ -275,12 +274,7 @@ export default function FriendsPage() {
                     >
                       <div className="min-w-0 flex-1">
                         {request.sender ? (
-                          <>
-                            <UserNameLink user={request.sender} />
-                            {request.sender.email && (
-                              <p className="text-sm text-gray-500 mt-1 truncate">{request.sender.email}</p>
-                            )}
-                          </>
+                          <UserNameLink user={request.sender} />
                         ) : (
                           <p className="text-sm font-medium text-gray-900 truncate">{t.friends.unknownSender}</p>
                         )}
@@ -332,7 +326,6 @@ export default function FriendsPage() {
                     >
                       <div className="min-w-0 flex-1">
                         <UserNameLink user={user} />
-                        <p className="text-sm text-gray-500 mt-1 truncate">{user.email}</p>
                       </div>
                       <div className="ml-3 sm:ml-4 flex-shrink-0">
                         {user.isFriend ? (

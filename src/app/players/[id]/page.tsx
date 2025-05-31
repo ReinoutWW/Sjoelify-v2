@@ -28,6 +28,7 @@ import { useDateFormatter } from '@/lib/hooks/useDateFormatter';
 import { useAuth } from '@/lib/context/auth-context';
 import { UserSettingsService } from '@/features/account/services/user-settings-service';
 import { FriendsService } from '@/features/friends/services/friends-service';
+import { GatePerformanceChart } from '@/features/games/components/GatePerformanceChart';
 
 // Register ChartJS components
 ChartJS.register(
@@ -51,6 +52,8 @@ interface PlayerStats {
   averageScoreHistory: { date: Date; average: number }[];
 }
 
+type TimePeriod = 'week' | 'month' | 'year' | 'all';
+
 export default function PlayerProfilePage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -59,14 +62,185 @@ export default function PlayerProfilePage() {
   const [playerName, setPlayerName] = useState<string>('');
   const [isVerified, setIsVerified] = useState<boolean>(false);
   const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [filteredStats, setFilteredStats] = useState<PlayerStats | null>(null);
   const [lastPlayed, setLastPlayed] = useState<Date | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isPrivate, setIsPrivate] = useState(false);
   const [canViewProfile, setCanViewProfile] = useState(true);
   const [profilePrivacyLevel, setProfilePrivacyLevel] = useState<'public' | 'friends' | 'private'>('public');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('week');
   const itemsPerPage = 10;
   const { t } = useTranslation();
   const { formatDate } = useDateFormatter();
+
+  // Filter data based on time period
+  useEffect(() => {
+    if (!stats) {
+      setFilteredStats(null);
+      return;
+    }
+
+    const fetchFilteredGameData = async () => {
+      const now = new Date();
+      let cutoffDate: Date;
+
+      switch (timePeriod) {
+        case 'week':
+          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          cutoffDate.setHours(0, 0, 0, 0);
+          break;
+        case 'month':
+          cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          cutoffDate.setHours(0, 0, 0, 0);
+          break;
+        case 'year':
+          cutoffDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+          cutoffDate.setHours(0, 0, 0, 0);
+          break;
+        case 'all':
+        default:
+          // Show all data
+          setFilteredStats(null);
+          return;
+      }
+
+      try {
+        // Fetch actual games for this player in the time period
+        const { collection, query, where, getDocs, orderBy, Timestamp } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase/config');
+        
+        const cutoffTimestamp = Timestamp.fromDate(cutoffDate);
+        
+        const gamesQuery = query(
+          collection(db, 'games'),
+          where('playerIds', 'array-contains', id),
+          where('isClosed', '==', true),
+          where('createdAt', '>=', cutoffTimestamp),
+          orderBy('createdAt', 'desc')
+        );
+        
+        const gamesSnapshot = await getDocs(gamesQuery);
+        
+        if (gamesSnapshot.empty) {
+          setFilteredStats({
+            gamesPlayed: 0,
+            averageScore: 0,
+            personalBest: 0,
+            bestAverage: 0,
+            scoreHistory: [],
+            averageScoreHistory: []
+          });
+          setCurrentPage(1);
+          return;
+        }
+
+        // Calculate stats from actual game data
+        let allScores: { date: Date; score: number }[] = [];
+        let bestGameAverage = 0;
+        let gamesPlayed = 0;
+
+        gamesSnapshot.docs.forEach(doc => {
+          const gameData = doc.data();
+          const playerScores = gameData.scores?.[id as string];
+          
+          if (playerScores?.rounds) {
+            gamesPlayed++;
+            const gameDate = gameData.createdAt?.toDate ? gameData.createdAt.toDate() : new Date(gameData.createdAt);
+            
+            // Get all round scores for this game
+            const roundScores = Object.entries(playerScores.rounds)
+              .map(([roundNum, score]) => ({
+                round: parseInt(roundNum),
+                score: score as number
+              }))
+              .sort((a, b) => a.round - b.round);
+            
+            // Calculate this game's average
+            if (roundScores.length > 0) {
+              const gameAverage = Math.round(
+                roundScores.reduce((sum, r) => sum + r.score, 0) / roundScores.length
+              );
+              
+              if (gameAverage > bestGameAverage) {
+                bestGameAverage = gameAverage;
+              }
+              
+              // Add scores to the history with proper dates
+              roundScores.forEach((r, index) => {
+                const roundDate = new Date(gameDate);
+                roundDate.setMinutes(roundDate.getMinutes() + (index * 5)); // Approximate round times
+                allScores.push({
+                  date: roundDate,
+                  score: r.score
+                });
+              });
+            }
+          }
+        });
+
+        // Sort scores by date
+        allScores.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+        // Calculate overall stats
+        const periodScores = allScores.map(s => s.score);
+        const periodAverageScore = periodScores.length > 0
+          ? Math.round(periodScores.reduce((a, b) => a + b, 0) / periodScores.length)
+          : 0;
+        const periodPersonalBest = periodScores.length > 0
+          ? Math.max(...periodScores)
+          : 0;
+
+        // Convert to the expected format with relative scores
+        const scoreHistory = allScores.map(entry => ({
+          date: entry.date,
+          score: entry.score,
+          relativeScore: entry.score - bestGameAverage
+        }));
+
+        // Calculate running average
+        let runningTotal = 0;
+        const averageScoreHistory = scoreHistory.map((entry, index) => {
+          runningTotal += entry.score;
+          return {
+            date: entry.date,
+            average: Math.round(runningTotal / (index + 1))
+          };
+        });
+
+        setFilteredStats({
+          gamesPlayed,
+          averageScore: periodAverageScore,
+          personalBest: periodPersonalBest,
+          bestAverage: bestGameAverage,
+          scoreHistory,
+          averageScoreHistory
+        });
+
+      } catch (error) {
+        console.error('Error fetching filtered game data:', error);
+        // Fall back to simple filtering if fetch fails
+        const filteredScoreHistory = stats.scoreHistory.filter(score => score.date >= cutoffDate);
+        setFilteredStats({
+          gamesPlayed: Math.ceil(filteredScoreHistory.length / 5),
+          averageScore: filteredScoreHistory.length > 0
+            ? Math.round(filteredScoreHistory.reduce((sum, s) => sum + s.score, 0) / filteredScoreHistory.length)
+            : 0,
+          personalBest: filteredScoreHistory.length > 0
+            ? Math.max(...filteredScoreHistory.map(s => s.score))
+            : 0,
+          bestAverage: 0,
+          scoreHistory: filteredScoreHistory,
+          averageScoreHistory: []
+        });
+      }
+
+      setCurrentPage(1);
+    };
+
+    if (timePeriod !== 'all') {
+      fetchFilteredGameData();
+    }
+  }, [stats, timePeriod, id]);
 
   useEffect(() => {
     const checkPrivacyAndFetchData = async () => {
@@ -163,9 +337,9 @@ export default function PlayerProfilePage() {
         console.log('Converting score history:', playerData.scoreHistory);
         const scoreHistory = playerData.scoreHistory.map(score => {
           const relativeScore = score.score - playerData.bestAverageInGame;
-          console.log(`Calculating relative score: ${score.score} - ${playerData.bestAverageInGame} = ${relativeScore}`);
+          const scoreDate = new Date(score.timestamp);
           return {
-            date: new Date(score.timestamp),
+            date: scoreDate,
             score: score.score,
             relativeScore
           };
@@ -376,6 +550,9 @@ export default function PlayerProfilePage() {
   // TypeScript type guard - stats is definitely not null after this point
   if (!stats) return null;
 
+  // Use filtered stats if available and not showing all time, otherwise use original stats
+  const displayStats = (timePeriod !== 'all' && filteredStats) ? filteredStats : stats;
+
   return (
     <div className="min-h-screen bg-gray-50 py-6 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -416,7 +593,7 @@ export default function PlayerProfilePage() {
                 <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                   <div className="flex items-center gap-1.5 text-gray-600">
                     <ChartBarIcon className="h-4 w-4" />
-                    <span className="font-medium">{stats.gamesPlayed}</span>
+                    <span className="font-medium">{displayStats.gamesPlayed}</span>
                     <span className="text-gray-500">{t.profile.gamesPlayed}</span>
                   </div>
                   {lastPlayed && (
@@ -431,6 +608,52 @@ export default function PlayerProfilePage() {
             </div>
           </motion.div>
 
+          {/* Time Period Filter */}
+          <motion.div variants={fadeIn} className="flex justify-center">
+            <div className="bg-white rounded-xl p-1 inline-flex shadow-sm">
+              <button
+                onClick={() => setTimePeriod('week')}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                  timePeriod === 'week'
+                    ? 'bg-primary-500 text-white shadow-md'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                {t.statistics.last7Days}
+              </button>
+              <button
+                onClick={() => setTimePeriod('month')}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                  timePeriod === 'month'
+                    ? 'bg-primary-500 text-white shadow-md'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                {t.statistics.last30Days}
+              </button>
+              <button
+                onClick={() => setTimePeriod('year')}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                  timePeriod === 'year'
+                    ? 'bg-primary-500 text-white shadow-md'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                {t.profile.lastYear}
+              </button>
+              <button
+                onClick={() => setTimePeriod('all')}
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                  timePeriod === 'all'
+                    ? 'bg-primary-500 text-white shadow-md'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                {t.statistics.allTime}
+              </button>
+            </div>
+          </motion.div>
+
           {/* Stats Overview */}
           <motion.div variants={fadeIn} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {/* Average Score */}
@@ -441,7 +664,7 @@ export default function PlayerProfilePage() {
               </div>
               <div>
                 <p className="text-[11px] text-gray-500 mb-1">{t.games.average}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.averageScore}</p>
+                <p className="text-2xl font-semibold text-gray-900">{displayStats.averageScore}</p>
               </div>
             </div>
 
@@ -454,7 +677,7 @@ export default function PlayerProfilePage() {
               </div>
               <div>
                 <p className="text-[11px] text-gray-500 mb-1">{t.profile.bestAvg}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.bestAverage}</p>
+                <p className="text-2xl font-semibold text-gray-900">{displayStats.bestAverage}</p>
               </div>
             </div>
 
@@ -466,7 +689,7 @@ export default function PlayerProfilePage() {
               </div>
               <div>
                 <p className="text-[11px] text-gray-500 mb-1">{t.profile.best}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.personalBest}</p>
+                <p className="text-2xl font-semibold text-gray-900">{displayStats.personalBest}</p>
               </div>
             </div>
 
@@ -479,7 +702,7 @@ export default function PlayerProfilePage() {
               </div>
               <div>
                 <p className="text-[11px] text-gray-500 mb-1">{t.profile.games}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.gamesPlayed}</p>
+                <p className="text-2xl font-semibold text-gray-900">{displayStats.gamesPlayed}</p>
               </div>
             </div>
           </motion.div>
@@ -487,7 +710,7 @@ export default function PlayerProfilePage() {
           {/* Charts */}
           <motion.div variants={fadeIn} className="space-y-6">
             {/* Performance Indicator */}
-            {stats.scoreHistory.length > 0 && (
+            {displayStats.scoreHistory.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden">
                 <div className="p-6 sm:p-8">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -495,9 +718,9 @@ export default function PlayerProfilePage() {
                       <h3 className="text-lg font-bold text-gray-900">{t.profile.recentPerformance}</h3>
                       <p className="text-sm text-gray-500 mt-2">
                         {(() => {
-                          const recentScores = stats.scoreHistory.slice(-5);
+                          const recentScores = displayStats.scoreHistory.slice(-5);
                           const avgRecent = Math.round(recentScores.reduce((sum, s) => sum + s.score, 0) / recentScores.length);
-                          const diff = avgRecent - stats.averageScore;
+                          const diff = avgRecent - displayStats.averageScore;
                           return (
                             <>
                               {t.profile.lastGames.replace('{count}', '5')}: <span className="font-semibold">{avgRecent}</span>
@@ -513,9 +736,9 @@ export default function PlayerProfilePage() {
                     </div>
                     <div className="flex-shrink-0">
                       {(() => {
-                        const recentScores = stats.scoreHistory.slice(-5);
+                        const recentScores = displayStats.scoreHistory.slice(-5);
                         const avgRecent = Math.round(recentScores.reduce((sum, s) => sum + s.score, 0) / recentScores.length);
-                        const diff = avgRecent - stats.averageScore;
+                        const diff = avgRecent - displayStats.averageScore;
                         return (
                           <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                             diff > 0 ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-sm' : 
@@ -572,7 +795,7 @@ export default function PlayerProfilePage() {
                       datasets: [
                         {
                           label: t.games.score,
-                          data: stats.scoreHistory.map((entry, index) => ({
+                          data: displayStats.scoreHistory.map((entry, index) => ({
                             x: index,
                             y: entry.score,
                             date: entry.date
@@ -595,10 +818,10 @@ export default function PlayerProfilePage() {
                           ticks: {
                             callback: function(value: any) {
                               const index = Math.floor(value);
-                              if (index !== value || index < 0 || index >= stats.scoreHistory.length) return '';
+                              if (index !== value || index < 0 || index >= displayStats.scoreHistory.length) return '';
                               
                               // Show every nth label to avoid crowding
-                              const totalPoints = stats.scoreHistory.length;
+                              const totalPoints = displayStats.scoreHistory.length;
                               let showEvery = 1;
                               if (totalPoints > 50) showEvery = 10;
                               else if (totalPoints > 20) showEvery = 5;
@@ -663,7 +886,7 @@ export default function PlayerProfilePage() {
                     <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                     </svg>
-                    {t.profile.relativeTo100Points.replace('{points}', stats.bestAverage.toString())}
+                    {t.profile.relativeTo100Points.replace('{points}', displayStats.bestAverage.toString())}
                   </div>
                 </div>
                 <div className="h-[250px] sm:h-[300px] lg:h-[400px]">
@@ -672,7 +895,7 @@ export default function PlayerProfilePage() {
                       datasets: [
                         {
                           label: t.profile.pointsVsBestAverage,
-                          data: stats.scoreHistory.map((entry, index) => ({
+                          data: displayStats.scoreHistory.map((entry, index) => ({
                             x: index,
                             y: entry.relativeScore,
                             date: entry.date
@@ -699,10 +922,10 @@ export default function PlayerProfilePage() {
                           ticks: {
                             callback: function(value: any) {
                               const index = Math.floor(value);
-                              if (index !== value || index < 0 || index >= stats.scoreHistory.length) return '';
+                              if (index !== value || index < 0 || index >= displayStats.scoreHistory.length) return '';
                               
                               // Show every nth label to avoid crowding
-                              const totalPoints = stats.scoreHistory.length;
+                              const totalPoints = displayStats.scoreHistory.length;
                               let showEvery = 1;
                               if (totalPoints > 50) showEvery = 10;
                               else if (totalPoints > 20) showEvery = 5;
@@ -727,7 +950,7 @@ export default function PlayerProfilePage() {
                           beginAtZero: false,
                           title: {
                             display: true,
-                            text: `${t.profile.pointsVsBestAverage.replace('{points}', stats.bestAverage.toString())}`
+                            text: `${t.profile.pointsVsBestAverage.replace('{points}', displayStats.bestAverage.toString())}`
                           },
                           grid: {
                             color: (context) => {
@@ -756,8 +979,8 @@ export default function PlayerProfilePage() {
                             },
                             label: (context: any) => {
                               const relativeScore = context.parsed.y;
-                              const actualScore = relativeScore + stats.bestAverage;
-                              return `${t.games.score}: ${relativeScore >= 0 ? '+' : ''}${relativeScore} (${actualScore} vs ${stats.bestAverage})`;
+                              const actualScore = relativeScore + displayStats.bestAverage;
+                              return `${t.games.score}: ${relativeScore >= 0 ? '+' : ''}${relativeScore} (${actualScore} vs ${displayStats.bestAverage})`;
                             }
                           }
                         }
@@ -768,21 +991,24 @@ export default function PlayerProfilePage() {
               </div>
             </div>
 
+            {/* Gate Performance Chart */}
+            <GatePerformanceChart playerId={id as string} timePeriod={timePeriod} />
+
             {/* Score History Table */}
             <div className="bg-white rounded-2xl border border-gray-200/50 overflow-hidden">
               <div className="p-6 sm:p-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
                   <h3 className="text-xl font-bold text-gray-900">{t.games.roundHistory}</h3>
                   <span className="text-xs sm:text-sm text-gray-500">
-                    {stats.scoreHistory.length} {t.games.total.toLowerCase()} {t.games.rounds.toLowerCase()}
+                    {displayStats.scoreHistory.length} {t.games.total.toLowerCase()} {t.games.rounds.toLowerCase()}
                   </span>
                 </div>
                 
-                {stats.scoreHistory.length > 0 ? (
+                {displayStats.scoreHistory.length > 0 ? (
                   <>
                     {/* Mobile-friendly card view on small screens */}
                     <div className="md:hidden space-y-3">
-                      {stats.scoreHistory
+                      {displayStats.scoreHistory
                         .slice()
                         .reverse()
                         .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
@@ -822,7 +1048,7 @@ export default function PlayerProfilePage() {
                           </tr>
                         </thead>
                         <tbody className="bg-white">
-                          {stats.scoreHistory
+                          {displayStats.scoreHistory
                             .slice()
                             .reverse()
                             .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
@@ -845,7 +1071,7 @@ export default function PlayerProfilePage() {
                                         ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200/50'
                                         : 'bg-gradient-to-r from-red-50 to-pink-50 text-red-700 border border-red-200/50'
                                     }`}
-                                    title={`${entry.score} - ${stats.bestAverage} = ${entry.relativeScore}`}
+                                    title={`${entry.score} - ${displayStats.bestAverage} = ${entry.relativeScore}`}
                                   >
                                     {entry.relativeScore >= 0 ? (
                                       <>
@@ -872,19 +1098,19 @@ export default function PlayerProfilePage() {
                     </div>
 
                     {/* Pagination Controls */}
-                    {stats.scoreHistory.length > itemsPerPage && (
+                    {displayStats.scoreHistory.length > itemsPerPage && (
                       <div className="mt-6 flex flex-col sm:flex-row items-center justify-between">
                         <div className="text-sm text-gray-500 mb-4 sm:mb-0">
                           {t.common.showing}{' '}
                           <span className="font-medium">
-                            {Math.min((currentPage - 1) * itemsPerPage + 1, stats.scoreHistory.length)}
+                            {Math.min((currentPage - 1) * itemsPerPage + 1, displayStats.scoreHistory.length)}
                           </span>{' '}
                           {t.common.to}{' '}
                           <span className="font-medium">
-                            {Math.min(currentPage * itemsPerPage, stats.scoreHistory.length)}
+                            {Math.min(currentPage * itemsPerPage, displayStats.scoreHistory.length)}
                           </span>{' '}
                           {t.common.of}{' '}
-                          <span className="font-medium">{stats.scoreHistory.length}</span> {t.games.rounds.toLowerCase()}
+                          <span className="font-medium">{displayStats.scoreHistory.length}</span> {t.games.rounds.toLowerCase()}
                         </div>
                         
                         <div className="flex items-center space-x-2">
@@ -901,9 +1127,9 @@ export default function PlayerProfilePage() {
                           </button>
                           
                           <div className="flex items-center space-x-1">
-                            {Array.from({ length: Math.ceil(stats.scoreHistory.length / itemsPerPage) }, (_, i) => i + 1)
+                            {Array.from({ length: Math.ceil(displayStats.scoreHistory.length / itemsPerPage) }, (_, i) => i + 1)
                               .filter(page => {
-                                const totalPages = Math.ceil(stats.scoreHistory.length / itemsPerPage);
+                                const totalPages = Math.ceil(displayStats.scoreHistory.length / itemsPerPage);
                                 if (totalPages <= 7) return true;
                                 if (page === 1 || page === totalPages) return true;
                                 if (Math.abs(page - currentPage) <= 1) return true;
@@ -931,10 +1157,10 @@ export default function PlayerProfilePage() {
                           </div>
                           
                           <button
-                            onClick={() => setCurrentPage(Math.min(Math.ceil(stats.scoreHistory.length / itemsPerPage), currentPage + 1))}
-                            disabled={currentPage === Math.ceil(stats.scoreHistory.length / itemsPerPage)}
+                            onClick={() => setCurrentPage(Math.min(Math.ceil(displayStats.scoreHistory.length / itemsPerPage), currentPage + 1))}
+                            disabled={currentPage === Math.ceil(displayStats.scoreHistory.length / itemsPerPage)}
                             className={`p-2 rounded-xl transition-all duration-200 ${
-                              currentPage === Math.ceil(stats.scoreHistory.length / itemsPerPage)
+                              currentPage === Math.ceil(displayStats.scoreHistory.length / itemsPerPage)
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
                                 : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200/50'
                             }`}
@@ -971,7 +1197,7 @@ export default function PlayerProfilePage() {
                       datasets: [
                         {
                           label: t.games.averageScore,
-                          data: stats.averageScoreHistory.map((entry, index) => ({
+                          data: displayStats.averageScoreHistory.map((entry, index) => ({
                             x: index,
                             y: entry.average,
                             date: entry.date
@@ -994,10 +1220,10 @@ export default function PlayerProfilePage() {
                           ticks: {
                             callback: function(value: any) {
                               const index = Math.floor(value);
-                              if (index !== value || index < 0 || index >= stats.averageScoreHistory.length) return '';
+                              if (index !== value || index < 0 || index >= displayStats.averageScoreHistory.length) return '';
                               
                               // Show every nth label to avoid crowding
-                              const totalPoints = stats.averageScoreHistory.length;
+                              const totalPoints = displayStats.averageScoreHistory.length;
                               let showEvery = 1;
                               if (totalPoints > 50) showEvery = 10;
                               else if (totalPoints > 20) showEvery = 5;

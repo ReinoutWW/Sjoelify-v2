@@ -14,6 +14,8 @@ import { useGame } from '@/features/games/hooks/use-game';
 import { fadeIn } from '@/shared/styles/animations';
 import { TrophyIcon, ClockIcon, UserCircleIcon, TrashIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
+import { UserProfile } from '@/features/account/types';
+import { GuestPlayer } from '@/features/games/types';
 
 // Add helper functions for safe date handling
 const toISOStringOrUndefined = (dateString: string | number | Date | undefined | null): string | undefined => {
@@ -77,6 +79,23 @@ export default function GamePage() {
   const [abandoning, setAbandoning] = useState(false);
   const [reverting, setReverting] = useState<string | null>(null);
   const router = useRouter();
+  const [guestName, setGuestName] = useState('');
+  const [guestError, setGuestError] = useState<string | null>(null);
+  const [addingGuest, setAddingGuest] = useState(false);
+
+  const handleRemoveGuest = async (guestId: string) => {
+    if (!game || !user) return;
+    
+    if (!confirm(t.games.removePlayer + '?')) {
+      return;
+    }
+    
+    try {
+      await GameService.removeGuest(game.id, guestId);
+    } catch (err) {
+      console.error('Failed to remove guest:', err);
+    }
+  };
 
   const handleScoreSubmit = async (scores: number[]) => {
     if (!game || !user) return;
@@ -171,7 +190,9 @@ export default function GamePage() {
     // Can't select if player already submitted
     if (hasSubmittedCurrentRound(playerId)) return false;
     // Must be a participant to submit for others
-    return game.playerIds.includes(user.uid) && !game.isClosed;
+    const isParticipant = game.playerIds.includes(user.uid);
+    // Can select if you're a participant and the game is not closed
+    return isParticipant && !game.isClosed;
   };
 
   const canSubmitForPlayer = (playerId: string) => {
@@ -179,13 +200,14 @@ export default function GamePage() {
     // Game must not be closed
     if (game.isClosed) return false;
     // Must be a participant in the game
-    if (!game.playerIds.includes(user.uid)) return false;
+    const isParticipant = game.playerIds.includes(user.uid);
+    if (!isParticipant) return false;
     // Can't submit if round already submitted
     if (hasSubmittedCurrentRound(playerId)) return false;
     // Can submit for yourself
     if (playerId === user.uid) return true;
-    // Can submit for others if you're a participant and they haven't submitted
-    return game.playerIds.includes(playerId);
+    // Can submit for others (including guests) if you're a participant
+    return true;
   };
 
   const canRevertScore = (playerId: string) => {
@@ -200,6 +222,22 @@ export default function GamePage() {
     if (playerId === user.uid) return true;
     // Can revert others' scores if you're a participant
     return true;
+  };
+
+  const handleAddGuest = async () => {
+    if (!game || !user) return;
+    
+    setAddingGuest(true);
+    try {
+      await GameService.addGuestPlayer(game.id, guestName);
+      setGuestName('');
+      setGuestError(null);
+    } catch (err) {
+      console.error('Failed to add guest:', err);
+      setGuestError('Failed to add guest. Please try again.');
+    } finally {
+      setAddingGuest(false);
+    }
   };
 
   if (loading) {
@@ -330,16 +368,33 @@ export default function GamePage() {
                               {selectedPlayerId ? (
                                 <>
                                   <span>{game.players.find(p => p.id === selectedPlayerId)?.displayName}</span>
-                                  {game.players.find(p => p.id === selectedPlayerId)?.verified && (
-                                    <VerifiedBadge size="xs" />
-                                  )}
+                                  {(() => {
+                                    const player = game.players.find(p => p.id === selectedPlayerId);
+                                    if (!player) return null;
+                                    if (!('isGuest' in player) && 'verified' in player && player.verified) {
+                                      return <VerifiedBadge size="xs" />;
+                                    }
+                                    if ('isGuest' in player && player.isGuest) {
+                                      return (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
+                                          {t.common.guest}
+                                        </span>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
                                 </>
                               ) : (
                                 <>
                                   <span>{game.players.find(p => p.id === user?.uid)?.displayName}</span>
-                                  {game.players.find(p => p.id === user?.uid)?.verified && (
-                                    <VerifiedBadge size="xs" />
-                                  )}
+                                  {(() => {
+                                    const player = game.players.find(p => p.id === user?.uid);
+                                    if (!player) return null;
+                                    if (!('isGuest' in player) && 'verified' in player && player.verified) {
+                                      return <VerifiedBadge size="xs" />;
+                                    }
+                                    return null;
+                                  })()}
                                   <span>{t.games.you}</span>
                                 </>
                               )}
@@ -378,10 +433,8 @@ export default function GamePage() {
                             whileTap={isClickable ? { scale: 0.99 } : undefined}
                             onClick={() => {
                               if (isCurrentUser && selectedPlayerId !== null) {
-                                // Clicking on yourself returns to self-selection mode
                                 setSelectedPlayerId(null);
                               } else if (canSelect && !isSelected) {
-                                // Clicking on another player selects them directly (only if not already selected)
                                 setSelectedPlayerId(player.id);
                               }
                             }}
@@ -389,15 +442,26 @@ export default function GamePage() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <UserCircleIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                                <Link 
-                                  href={`/players/${player.id}`}
-                                  className="text-base font-medium text-gray-900 hover:text-blue-600 transition-colors truncate"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  {player.displayName}
-                                </Link>
-                                {player.verified && (
+                                {!('isGuest' in player) ? (
+                                  <Link 
+                                    href={`/players/${player.id}`}
+                                    className="text-base font-medium text-gray-900 hover:text-blue-600 transition-colors truncate"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    {player.displayName}
+                                  </Link>
+                                ) : (
+                                  <span className="text-base font-medium text-gray-900 truncate">
+                                    {player.displayName}
+                                  </span>
+                                )}
+                                {!('isGuest' in player) && 'verified' in player && player.verified && (
                                   <VerifiedBadge size="sm" />
+                                )}
+                                {'isGuest' in player && (player as GuestPlayer).isGuest && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
+                                    {t.common.guest}
+                                  </span>
                                 )}
                                 {isCurrentUser && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
@@ -416,17 +480,45 @@ export default function GamePage() {
                                     {t.games.selected}
                                   </motion.span>
                                 )}
+                                {'isGuest' in player && player.isGuest && game.createdBy === user?.uid && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemoveGuest(player.id);
+                                    }}
+                                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 transition-colors duration-200"
+                                    title={t.games.removePlayer}
+                                  >
+                                    <XCircleIcon className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
                               </div>
                               <div className="mt-1 flex items-center gap-4">
                                 <p className="text-sm text-gray-500">
                                   {t.games.total}: <span className="font-medium text-gray-700">{getPlayerScore(player.id)}</span>
                                 </p>
-                                {hasSubmittedCurrentRound(player.id) && (
-                                  <span className="inline-flex items-center gap-1 text-sm text-green-600">
-                                    <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 001.414 0z" clipRule="evenodd" />
-                                    </svg>
-                                    {t.games.round} {game.currentRound}: +{getCurrentRoundScore(player.id)}
+                                {hasSubmittedCurrentRound(player.id) ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className="inline-flex items-center gap-1 text-sm text-green-600">
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRevertScore(player.id);
+                                        }}
+                                        disabled={reverting === player.id}
+                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                                        title={t.games.revertScoreTitle}
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                                          <path fillRule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L4.81 8.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H4.81l4.72 4.72a.75.75 0 11-1.06 1.06l-6-6a.75.75 0 010-1.06l6-6a.75.75 0 011.06 0z" clipRule="evenodd" />
+                                        </svg>
+                                      </button>
+                                      {t.games.round} {game.currentRound}: +{getCurrentRoundScore(player.id)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-gray-500">
+                                    {t.games.waitingForScore}
                                   </span>
                                 )}
                               </div>
@@ -444,34 +536,59 @@ export default function GamePage() {
                                   <p className="text-xs font-medium text-blue-600">{t.games.clickToEnterYourScore.replace(t.common.clickTo + ' ', '')}</p>
                                 </div>
                               )}
-                              {hasSubmittedCurrentRound(player.id) && (
-                                <div className="flex items-center gap-2">
-                                  {canRevertScore(player.id) && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRevertScore(player.id);
-                                      }}
-                                      disabled={reverting === player.id}
-                                      className="inline-flex items-center justify-center w-6 h-6 rounded-full text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                                      title={t.games.revertScoreTitle}
-                                    >
-                                      <XCircleIcon className="h-3.5 w-3.5" />
-                                    </button>
-                                  )}
-                                  <div className="flex-shrink-0">
-                                    <div className="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center">
-                                      <svg className="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 001.414 0z" clipRule="evenodd" />
-                                      </svg>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           </motion.div>
                         );
                       })}
+
+                      {/* Add Guest Card - Only show in first round */}
+                      {game.currentRound === 1 && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex flex-col p-4 rounded-lg border-2 border-dashed border-gray-300 bg-white hover:border-gray-400 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <div className="flex flex-col gap-3">
+                              <div className="flex items-center gap-2">
+                                <UserCircleIcon className="h-5 w-5 text-gray-400" />
+                                <div className="flex-1 relative">
+                                  <input
+                                    type="text"
+                                    value={guestName}
+                                    onChange={(e) => {
+                                      const value = e.target.value.toLowerCase().slice(0, 10);
+                                      setGuestName(value);
+                                      setGuestError(null);
+                                    }}
+                                    placeholder={t.games.playerName}
+                                    maxLength={10}
+                                    className="block w-full text-sm border-0 focus:ring-0 px-0 placeholder-gray-400 text-black pr-10"
+                                    disabled={addingGuest}
+                                  />
+                                  <span className="absolute right-0 top-0 text-xs text-gray-400">
+                                    {guestName.length}/10
+                                  </span>
+                                </div>
+                              </div>
+                              {guestError && (
+                                <p className="text-sm text-red-600">{guestError}</p>
+                              )}
+                              <button
+                                onClick={handleAddGuest}
+                                disabled={addingGuest || !guestName.trim()}
+                                className={`w-full py-2 px-3 text-sm font-medium rounded-md 
+                                  ${addingGuest || !guestName.trim()
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                  } transition-colors`}
+                              >
+                                {addingGuest ? t.games.creatingGame : t.games.addPlayer}
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
                     </div>
                   </div>
                 </div>

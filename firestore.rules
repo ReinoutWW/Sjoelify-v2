@@ -19,6 +19,11 @@ service cloud.firestore {
               request.auth.uid in gameData.playerIds);
     }
 
+    // Helper function to check if a player ID is a guest
+    function isGuestPlayer(playerId) {
+      return playerId is string && playerId.matches('^guest_.*');
+    }
+
     // Helper function to validate round data
     function isValidRoundData(roundData) {
       return roundData.keys().hasAll([
@@ -113,7 +118,18 @@ service cloud.firestore {
       // Allow update if user is a participant
       // Note: When reverting a score, the game might need to be reopened if it was closed
       allow update: if isAuthenticated() && 
-                   isGameParticipant(resource.data);
+                   isGameParticipant(resource.data) &&
+                   (
+                     // Allow adding guest players only in first round
+                     (request.resource.data.currentRound == 1 &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasAny(['guestPlayers']) &&
+                      request.resource.data.guestPlayers.size() > resource.data.get('guestPlayers', []).size()) ||
+                     // Allow removing guest players at any time
+                     (request.resource.data.diff(resource.data).affectedKeys().hasAny(['guestPlayers', 'playerIds', 'scores']) &&
+                      request.resource.data.get('guestPlayers', []).size() < resource.data.get('guestPlayers', []).size()) ||
+                     // Allow other updates (excluding guestPlayers modifications)
+                     (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['guestPlayers']))
+                   );
       
       // Allow delete if user is the game creator
       allow delete: if isAuthenticated() && 
@@ -128,12 +144,13 @@ service cloud.firestore {
         // 1. User is a participant
         // 2. Game is not closed
         // 3. Round number matches current round
-        // 4. Target player is a participant
+        // 4. Target player is a participant or a guest player
         allow write: if isAuthenticated() && 
                     isGameParticipant(get(/databases/$(database)/documents/games/$(gameId)).data) && 
                     !get(/databases/$(database)/documents/games/$(gameId)).data.isClosed && 
                     request.resource.data.roundNumber == get(/databases/$(database)/documents/games/$(gameId)).data.currentRound && 
-                    request.resource.data.playerId in get(/databases/$(database)/documents/games/$(gameId)).data.playerIds;
+                    (request.resource.data.playerId in get(/databases/$(database)/documents/games/$(gameId)).data.playerIds ||
+                     isGuestPlayer(request.resource.data.playerId));
         
         // Allow delete if:
         // 1. User is a participant in the game

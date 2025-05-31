@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { LeaderboardService } from '@/features/leaderboard/services/leaderboard-service';
 import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { UserProfile } from '@/features/account/types';
 
 interface FirestoreTimestamp {
   seconds: number;
@@ -43,8 +44,8 @@ export function GameSummary({ game }: GameSummaryProps) {
   useEffect(() => {
     async function fetchAndProcessStats() {
       try {
-        // Get the overall best average from the leaderboard
-        const leaderboardData = await LeaderboardService.getLeaderboard();
+        // Get all players' data (including non-verified) to show their best averages
+        const leaderboardData = await LeaderboardService.getAllPlayers();
 
         const stats = game.players.map((player) => {
           const playerScores = game.scores[player.id];
@@ -57,10 +58,10 @@ export function GameSummary({ game }: GameSummaryProps) {
             ? Math.round(roundScores.reduce((a, b) => a + b, 0) / roundScores.length) 
             : 0;
           
-          // Get this player's best average
+          // Get this player's all-time best average from any single game
           const playerBestAverage = playerData?.bestAverageInGame || 0;
           
-          // Calculate relative scores against player's own best average
+          // Calculate relative scores against player's all-time best average
           const relativeScores = Object.entries(rounds).reduce((acc, [round, score]) => ({
             ...acc,
             [round]: score - playerBestAverage
@@ -181,9 +182,14 @@ export function GameSummary({ game }: GameSummaryProps) {
           <div className="min-w-0">
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-2xl font-bold text-amber-900 truncate">{gameStats.winner.displayName}</h2>
-              {game.players.find(p => p.id === gameStats.winner.playerId)?.verified && (
-                <VerifiedBadge size="md" />
-              )}
+              {(() => {
+                const winnerPlayer = game.players.find(p => p.id === gameStats.winner.playerId);
+                if (!winnerPlayer) return null;
+                if (!('isGuest' in winnerPlayer) && 'verified' in winnerPlayer && (winnerPlayer as UserProfile).verified) {
+                  return <VerifiedBadge size="md" />;
+                }
+                return null;
+              })()}
               <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-0.5 text-sm font-medium text-amber-800 border border-amber-200">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 mr-1 text-amber-600">
                   <path fillRule="evenodd" d="M5.166 2.621v.858c-1.035.148-2.059.33-3.071.543a.75.75 0 00-.584.859 6.753 6.753 0 006.138 5.6 6.73 6.73 0 002.743 1.346A6.707 6.707 0 019.279 15H8.54c-1.036 0-1.875.84-1.875 1.875V19.5h-.75a2.25 2.25 0 00-2.25 2.25c0 .414.336.75.75.75h15.19c.414 0 .75-.336.75-.75a2.25 2.25 0 00-2.25-2.25h-.75v-2.625c0-1.036-.84-1.875-1.875-1.875h-.739a6.706 6.706 0 01-1.112-3.173 6.73 6.73 0 002.743-1.347 6.753 6.753 0 006.139-5.6.75.75 0 00-.585-.858 47.077 47.077 0 00-3.07-.543V2.62a.75.75 0 00-.658-.744 49.22 49.22 0 00-6.093-.377c-2.063 0-4.096.128-6.093.377a.75.75 0 00-.657.744zm0 2.629c0 1.196.312 2.32.857 3.294A5.266 5.266 0 013.16 5.337a45.6 45.6 0 012.006-.343v.256zm13.5 0v-.256c.674.1 1.343.214 2.006.343a5.265 5.265 0 01-2.863 3.207 6.72 6.72 0 00.857-3.294z" clipRule="evenodd" />
@@ -191,7 +197,10 @@ export function GameSummary({ game }: GameSummaryProps) {
                 {t.games.winner}
               </span>
             </div>
-            <p className="text-amber-600">{t.games.totalScore}: {gameStats.winner.totalScore}</p>
+            <div className="flex items-center gap-4">
+              <p className="text-amber-600">{t.games.totalScore}: {gameStats.winner.totalScore}</p>
+              <p className="text-amber-600">{t.games.bestRound}: {gameStats.winner.bestRound}</p>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -220,9 +229,21 @@ export function GameSummary({ game }: GameSummaryProps) {
                     >
                       <div className="flex items-center gap-1 truncate">
                         <span className="truncate">{player.displayName}</span>
-                        {game.players.find(p => p.id === player.playerId)?.verified && (
-                          <VerifiedBadge size="xs" />
-                        )}
+                        {(() => {
+                          const gamePlayer = game.players.find(p => p.id === player.playerId);
+                          if (!gamePlayer) return null;
+                          if (!('isGuest' in gamePlayer) && 'verified' in gamePlayer && (gamePlayer as UserProfile).verified) {
+                            return <VerifiedBadge size="xs" />;
+                          }
+                          if ('isGuest' in gamePlayer) {
+                            return (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                Guest
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                     </Link>
                   </th>
@@ -365,9 +386,21 @@ export function GameSummary({ game }: GameSummaryProps) {
                   <div className="flex items-center gap-2 mb-4">
                     <UserCircleIcon className="h-6 w-6 text-gray-400 group-hover:text-primary-600 transition-colors" />
                     <h3 className="font-medium text-gray-900 truncate group-hover:text-primary-600 transition-colors">{player.displayName}</h3>
-                    {game.players.find(p => p.id === player.playerId)?.verified && (
-                      <VerifiedBadge size="xs" />
-                    )}
+                    {(() => {
+                      const gamePlayer = game.players.find(p => p.id === player.playerId);
+                      if (!gamePlayer) return null;
+                      if (!('isGuest' in gamePlayer) && 'verified' in gamePlayer && (gamePlayer as UserProfile).verified) {
+                        return <VerifiedBadge size="xs" />;
+                      }
+                      if ('isGuest' in gamePlayer) {
+                        return (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                            Guest
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   <dl className="space-y-2">
                     <div className="flex items-center justify-between">

@@ -13,6 +13,7 @@ export interface Round {
   playerId: string;
   roundNumber: number;
   scores: number[];
+  gateString?: string;
   completeSets: number;
   completeSetPoints: number;
   leftoverPoints: number;
@@ -21,18 +22,25 @@ export interface Round {
   updatedAt?: Date;
 }
 
+export interface GuestPlayer {
+  id: string;
+  displayName: string;
+  isGuest: true;
+}
+
 export interface Game extends BaseEntity {
   id: string;
   title: string;
   createdBy: string;
   playerIds: string[];
-  players: UserProfile[];
+  players: (UserProfile | GuestPlayer)[];
   currentRound: number;
   isClosed: boolean;
   createdAt: Date;
   updatedAt: Date;
   scores: Record<string, PlayerScore>;
   rounds?: Round[];
+  guestPlayers?: GuestPlayer[];
 }
 
 export interface GameSummary {
@@ -55,4 +63,5 @@ export interface GameStats {
 export interface PlayerScore {
   total: number;
   rounds: Record<number, number>;
+  roundDetails?: Record<number, string>;
 } 
