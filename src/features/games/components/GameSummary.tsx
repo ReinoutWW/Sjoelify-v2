@@ -2,15 +2,37 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
 import { Game } from '../types';
 import { fadeIn, staggerChildren } from '@/shared/styles/animations';
-import { UserCircleIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { formatDate, isFirestoreTimestamp } from '@/shared/utils/date-utils';
 import Link from 'next/link';
 import { LeaderboardService } from '@/features/leaderboard/services/leaderboard-service';
 import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { UserProfile } from '@/features/account/types';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface FirestoreTimestamp {
   seconds: number;
@@ -364,6 +386,139 @@ export function GameSummary({ game }: GameSummaryProps) {
               </tr>
             </tbody>
           </table>
+        </div>
+      </motion.div>
+
+      {/* All Players Progress Chart */}
+      <motion.div
+        variants={fadeIn}
+        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+      >
+        <div className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ChartBarIcon className="h-5 w-5 text-gray-600" />
+            <h3 className="text-lg font-semibold text-gray-900">
+              {t.games.allPlayersProgress || 'All Players Progress'}
+            </h3>
+          </div>
+          
+          <div className="h-64 sm:h-80">
+            <Line 
+              data={{
+                labels: ['R1', 'R2', 'R3', 'R4', 'R5'],
+                datasets: playerStats.map((player, index) => {
+                  const roundScores = [1, 2, 3, 4, 5].map(r => player.rounds[r] || null);
+                  
+                  const colors = [
+                    '#3B82F6', // Blue
+                    '#10B981', // Green
+                    '#F59E0B', // Amber
+                    '#EF4444', // Red
+                    '#8B5CF6', // Purple
+                    '#EC4899', // Pink
+                    '#14B8A6', // Teal
+                    '#F97316', // Orange
+                  ];
+                  
+                  const color = colors[index % colors.length];
+                  const isWinner = player.playerId === gameStats?.winner.playerId;
+                  
+                  return {
+                    label: player.displayName,
+                    data: roundScores,
+                    borderColor: color,
+                    backgroundColor: color + '20', // Add transparency
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    borderWidth: isWinner ? 3 : 2,
+                    spanGaps: false,
+                    ...(isWinner && { 
+                      borderDash: undefined,
+                      pointRadius: 6,
+                      pointHoverRadius: 8,
+                    })
+                  };
+                })
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: 'top' as const,
+                    labels: {
+                      boxWidth: 12,
+                      usePointStyle: true,
+                      pointStyle: 'circle',
+                      font: {
+                        size: 12
+                      },
+                      generateLabels: (chart) => {
+                        const datasets = chart.data.datasets;
+                        return datasets.map((dataset, i) => ({
+                          text: dataset.label || '',
+                          fillStyle: dataset.borderColor as string,
+                          strokeStyle: dataset.borderColor as string,
+                          lineWidth: dataset.borderWidth as number,
+                          hidden: !chart.isDatasetVisible(i),
+                          index: i,
+                          pointStyle: 'circle',
+                          // Add winner indicator
+                          fontStyle: playerStats[i]?.playerId === gameStats?.winner.playerId ? 'bold' : 'normal'
+                        }));
+                      }
+                    }
+                  },
+                  tooltip: {
+                    callbacks: {
+                      label: (context: any) => {
+                        if (context.parsed.y === null) return '';
+                        const playerName = context.dataset.label;
+                        const isWinner = playerStats.find(p => p.displayName === playerName)?.playerId === gameStats?.winner.playerId;
+                        return `${playerName}: ${context.parsed.y} ${t.games.pts}${isWinner ? ' 👑' : ''}`;
+                      }
+                    }
+                  }
+                },
+                scales: {
+                  x: {
+                    title: {
+                      display: true,
+                      text: t.games.rounds
+                    }
+                  },
+                  y: {
+                    beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: t.games.score
+                    }
+                  }
+                }
+              }}
+            />
+          </div>
+
+          {/* Quick Stats Below Chart */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-gray-200">
+            <div className="text-center">
+              <p className="text-xs text-gray-500">{t.games.highestScore}</p>
+              <p className="text-lg font-semibold text-gray-900">{gameStats?.highestScore}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-gray-500">{t.games.lowestScore}</p>
+              <p className="text-lg font-semibold text-gray-900">{gameStats?.lowestScore}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-gray-500">{t.games.averageScore}</p>
+              <p className="text-lg font-semibold text-gray-900">{gameStats?.overallAverage}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-gray-500">{t.games.players}</p>
+              <p className="text-lg font-semibold text-gray-900">{playerStats.length}</p>
+            </div>
+          </div>
         </div>
       </motion.div>
 
