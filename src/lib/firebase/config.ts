@@ -3,6 +3,7 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence, connectFirestoreEmulator } from 'firebase/firestore';
 import { initializeAppCheck, ReCaptchaV3Provider, getToken } from 'firebase/app-check';
 import { getFirebaseConfig } from './get-config';
+import { getAppCheckConfig } from './app-check-config';
 import { initializeAnalytics } from './analytics-init';
 
 // Get Firebase config from the centralized utility
@@ -25,10 +26,11 @@ if (firebaseConfig && firebaseConfig.apiKey) {
     }
     
     // Initialize App Check with ReCaptcha provider
-    if (process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY) {
+    const recaptchaSiteKey = getAppCheckConfig();
+    if (recaptchaSiteKey) {
       try {
         const appCheck = initializeAppCheck(app, {
-          provider: new ReCaptchaV3Provider(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY),
+          provider: new ReCaptchaV3Provider(recaptchaSiteKey),
           isTokenAutoRefreshEnabled: true
         });
         console.log('Firebase App Check initialized successfully');
@@ -45,7 +47,7 @@ if (firebaseConfig && firebaseConfig.apiKey) {
         console.error('Failed to initialize App Check:', error);
       }
     } else {
-      console.warn('NEXT_PUBLIC_RECAPTCHA_SITE_KEY not found - App Check not initialized');
+      console.warn('ReCAPTCHA site key not found - App Check not initialized');
     }
   }
   
