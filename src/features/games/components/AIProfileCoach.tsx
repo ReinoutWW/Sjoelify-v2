@@ -396,9 +396,9 @@ Keep it concise but insightful. Maximum ${stats.gateStats ? '200' : '150'} words
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className={`fixed bottom-6 right-6 z-50 ${
-              isMinimized ? '' : 'w-full max-w-sm'
-            }`}
+            className={`fixed bottom-6 ${
+              isMinimized ? 'right-6' : 'left-4 right-4 sm:left-auto sm:right-6 sm:w-full sm:max-w-sm'
+            } z-50`}
           >
             {isMinimized ? (
               // Minimized state - floating button with mood indicator
@@ -493,8 +493,8 @@ Keep it concise but insightful. Maximum ${stats.gateStats ? '200' : '150'} words
                             className="absolute pointer-events-none"
                             initial={{ 
                               opacity: 0,
-                              x: Math.random() * 300,
-                              y: Math.random() * 200,
+                              x: `${20 + (i * 15)}%`,
+                              y: `${10 + (i * 12)}%`,
                               scale: 0
                             }}
                             animate={{ 
