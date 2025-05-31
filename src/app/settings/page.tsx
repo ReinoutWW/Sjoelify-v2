@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const [privacy, setPrivacy] = useState<'public' | 'friends' | 'private'>('public');
   const [powerUser, setPowerUser] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiCoachEnabled, setAiCoachEnabled] = useState(false);
   const [coachPreference, setCoachPreference] = useState<'supportive' | 'balanced' | 'super-competitive'>('supportive');
   const [loadingSettings, setLoadingSettings] = useState(true);
 
@@ -43,6 +44,7 @@ export default function SettingsPage() {
             setPrivacy(settings.privacy);
             setPowerUser(settings.powerUser || false);
             setAiEnabled(settings.AIEnabled || false);
+            setAiCoachEnabled(settings.AICoachEnabled || false);
             setCoachPreference(settings.coachPreference || 'supportive');
           }
         } catch (error) {
@@ -93,6 +95,20 @@ export default function SettingsPage() {
         console.error('Error updating AI enabled setting:', error);
         // Revert on error
         setAiEnabled(aiEnabled);
+      }
+    }
+  };
+
+  // Handle AI Coach enabled change
+  const handleAiCoachEnabledChange = async (newValue: boolean) => {
+    if (user?.uid && newValue !== aiCoachEnabled) {
+      setAiCoachEnabled(newValue);
+      try {
+        await UserSettingsService.updateSettings(user.uid, { AICoachEnabled: newValue });
+      } catch (error) {
+        console.error('Error updating AI Coach enabled setting:', error);
+        // Revert on error
+        setAiCoachEnabled(aiCoachEnabled);
       }
     }
   };
@@ -198,7 +214,28 @@ export default function SettingsPage() {
             </Switch>
           ),
         },
-        ...(aiEnabled ? [{
+        {
+          label: t.settings.aiCoach || 'AI Coach',
+          description: t.settings.aiCoachDescription || 'Enable Sjef Sjoelbaas, your personal AI sjoelen coach',
+          icon: ChatBubbleLeftRightIcon,
+          component: (
+            <Switch
+              checked={aiCoachEnabled}
+              onChange={handleAiCoachEnabledChange}
+              className={`${
+                aiCoachEnabled ? 'bg-primary-600' : 'bg-gray-200'
+              } relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2`}
+            >
+              <span className="sr-only">Enable AI Coach</span>
+              <span
+                className={`${
+                  aiCoachEnabled ? 'translate-x-6' : 'translate-x-1'
+                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+              />
+            </Switch>
+          ),
+        },
+        ...(aiCoachEnabled ? [{
           label: t.settings.coachPreference || 'Coach voorkeur',
           description: t.settings.coachDescription || 'Kies de toon van jouw AI coach',
           icon: ChatBubbleLeftRightIcon,
@@ -399,6 +436,11 @@ export default function SettingsPage() {
                               <div className="flex items-center gap-2">
                                 <h3 className="text-sm font-medium text-gray-900">{item.label}</h3>
                                 {item.label === (t.settings.aiFeatures || 'AI Features') && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                    BETA
+                                  </span>
+                                )}
+                                {item.label === (t.settings.aiCoach || 'AI Coach') && (
                                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                                     BETA
                                   </span>

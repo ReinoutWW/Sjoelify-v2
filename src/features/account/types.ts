@@ -29,5 +29,6 @@ export interface AccountSettings {
   language: 'en' | 'nl';  // Supporting English and Dutch
   powerUser?: boolean;  // Enable power user features like auto-enable quick insert
   AIEnabled?: boolean;  // Enable AI features like photo score detection
+  AICoachEnabled?: boolean;  // Enable AI Coach (Sjef Sjoelbaas)
   coachPreference?: 'supportive' | 'balanced' | 'super-competitive';  // AI coach tone preference
 } 

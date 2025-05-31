@@ -404,6 +404,9 @@ export const nl = {
     bestGameScore: 'Beste Spel Score',
     comparedToBest: 'Vergeleken met beste',
     allPlayersProgress: 'Voortgang Alle Spelers',
+    toBest: 'tot beste',
+    onTrack: 'op koers',
+    avgNeeded: 'gem nodig',
   },
   statistics: {
     title: 'Jouw Statistieken',
@@ -579,6 +582,8 @@ export const nl = {
     powerUserDescription: 'Schakel geavanceerde functies in zoals auto-ingeschakelde quick insert',
     aiFeatures: 'AI Functies',
     aiDescription: 'Schakel AI-functies in zoals foto score detectie',
+    aiCoach: 'AI Coach',
+    aiCoachDescription: 'Schakel Sjef Sjoelbaas in, jouw persoonlijke AI sjoelen coach',
     coachPreference: 'Coach voorkeur',
     coachDescription: 'Kies de toon van jouw AI coach',
     supportive: 'Ondersteunend',

@@ -404,6 +404,9 @@ export const en = {
     bestGameScore: 'Best Game Score',
     comparedToBest: 'Compared to best',
     allPlayersProgress: 'All Players Progress',
+    toBest: 'to best',
+    onTrack: 'on track',
+    avgNeeded: 'avg needed',
   },
   statistics: {
     title: 'Your Statistics',
@@ -574,6 +577,8 @@ export const en = {
     powerUserDescription: 'Enable advanced features like auto-enabled quick insert',
     aiFeatures: 'AI Features',
     aiDescription: 'Enable AI-powered features like photo score detection',
+    aiCoach: 'AI Coach',
+    aiCoachDescription: 'Enable Sjef Sjoelbaas, your personal AI sjoelen coach',
     coachPreference: 'Coach Preference',
     coachDescription: 'Choose your AI coach tone',
     supportive: 'Supportive',

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useAuth } from '@/lib/context/auth-context';
 import { useTranslation } from '@/lib/hooks/useTranslation';
@@ -86,15 +86,15 @@ export default function GamePage() {
   const [guestError, setGuestError] = useState<string | null>(null);
   const [addingGuest, setAddingGuest] = useState(false);
   const [statsPopupPlayer, setStatsPopupPlayer] = useState<any>(null);
-  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiCoachEnabled, setAiCoachEnabled] = useState(false);
 
-  // Check for AI enabled settings on mount
+  // Check for AI Coach enabled settings on mount
   useEffect(() => {
     const checkUserSettings = async () => {
       if (user?.uid) {
         try {
           const settings = await UserSettingsService.getUserSettings(user.uid);
-          setAiEnabled(settings?.AIEnabled || false);
+          setAiCoachEnabled(settings?.AICoachEnabled || false);
         } catch (error) {
           console.error('Error checking user settings:', error);
         }
@@ -450,8 +450,8 @@ export default function GamePage() {
                                 ? 'border-blue-100 bg-blue-50/30'
                                 : ''
                               }`}
-                            whileHover={isClickable ? { scale: 1.01 } : undefined}
-                            whileTap={isClickable ? { scale: 0.99 } : undefined}
+                            whileHover={isClickable ? { scale: 1.005 } : undefined}
+                            whileTap={isClickable ? { scale: 0.995 } : undefined}
                             onClick={() => {
                               if (isCurrentUser && selectedPlayerId !== null) {
                                 setSelectedPlayerId(null);
@@ -460,111 +460,130 @@ export default function GamePage() {
                               }
                             }}
                           >
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <UserCircleIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                                {!('isGuest' in player) ? (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setStatsPopupPlayer(player);
-                                    }}
-                                    className="text-base font-medium text-gray-900 hover:text-blue-600 transition-colors truncate"
-                                  >
-                                    {player.displayName}
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setStatsPopupPlayer(player);
-                                    }}
-                                    className="text-base font-medium text-gray-900 hover:text-blue-600 transition-colors truncate"
-                                  >
-                                    {player.displayName}
-                                  </button>
-                                )}
-                                {!('isGuest' in player) && 'verified' in player && player.verified && (
-                                  <VerifiedBadge size="sm" />
-                                )}
-                                {'isGuest' in player && (player as GuestPlayer).isGuest && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
-                                    {t.common.guest}
-                                  </span>
-                                )}
-                                {isCurrentUser && (
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                                    {t.games.you.replace('(', '').replace(')', '')}
-                                  </span>
-                                )}
-                                {isSelected && (
-                                  <motion.span 
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-600 text-white"
-                                  >
-                                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                    {t.games.selected}
-                                  </motion.span>
-                                )}
-                                {'isGuest' in player && player.isGuest && game.createdBy === user?.uid && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRemoveGuest(player.id);
-                                    }}
-                                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 hover:border-red-300 transition-colors duration-200"
-                                    title={t.games.removePlayer}
-                                  >
-                                    <XCircleIcon className="h-3.5 w-3.5" />
-                                  </button>
-                                )}
-                              </div>
-                              <div className="mt-1 flex items-center gap-4">
-                                <p className="text-sm text-gray-500">
-                                  {t.games.total}: <span className="font-medium text-gray-700">{getPlayerScore(player.id)}</span>
-                                </p>
-                                {hasSubmittedCurrentRound(player.id) ? (
-                                  <div className="flex items-center gap-2">
-                                    <span className="inline-flex items-center gap-1 text-sm text-green-600">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleRevertScore(player.id);
-                                        }}
-                                        disabled={reverting === player.id}
-                                        className="inline-flex items-center justify-center w-5 h-5 rounded-full text-gray-500 bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                                        title={t.games.revertScoreTitle}
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
-                                          <path fillRule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L4.81 8.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H4.81l4.72 4.72a.75.75 0 11-1.06 1.06l-6-6a.75.75 0 010-1.06l6-6a.75.75 0 011.06 0z" clipRule="evenodd" />
-                                        </svg>
-                                      </button>
-                                      {t.games.round} {game.currentRound}: +{getCurrentRoundScore(player.id)}
-                                    </span>
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  {/* Name and badges row */}
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <UserCircleIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                                      {!('isGuest' in player) ? (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setStatsPopupPlayer(player);
+                                          }}
+                                          className="text-base font-medium text-gray-900 hover:text-blue-600 transition-colors"
+                                        >
+                                          {player.displayName}
+                                        </button>
+                                      ) : (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setStatsPopupPlayer(player);
+                                          }}
+                                          className="text-base font-medium text-gray-900 hover:text-blue-600 transition-colors"
+                                        >
+                                          {player.displayName}
+                                        </button>
+                                      )}
+                                      {!('isGuest' in player) && 'verified' in player && player.verified && (
+                                        <VerifiedBadge size="sm" />
+                                      )}
+                                      {'isGuest' in player && (player as GuestPlayer).isGuest && (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                                          {t.common.guest}
+                                        </span>
+                                      )}
+                                      {isCurrentUser && (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 border border-blue-200">
+                                          {t.games.you.replace('(', '').replace(')', '')}
+                                        </span>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Selected badge - positioned separately */}
+                                    <div className="flex items-center gap-2">
+                                      <AnimatePresence>
+                                        {isSelected && (
+                                          <motion.span 
+                                            initial={{ scale: 0, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            exit={{ scale: 0, opacity: 0 }}
+                                            transition={{ duration: 0.15 }}
+                                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-600 text-white"
+                                          >
+                                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            {t.games.selected}
+                                          </motion.span>
+                                        )}
+                                      </AnimatePresence>
+                                    </div>
                                   </div>
-                                ) : (
-                                  <span className="text-sm text-gray-500">
-                                    {t.games.waitingForScore}
-                                  </span>
-                                )}
+                                  
+                                  {/* Score and status row */}
+                                  <div className="mt-2 flex items-center gap-3 text-sm">
+                                    <span className="text-gray-500">
+                                      {t.games.total}: <span className="font-semibold text-gray-700">{getPlayerScore(player.id)}</span>
+                                    </span>
+                                    <span className="text-gray-300">•</span>
+                                    {hasSubmittedCurrentRound(player.id) ? (
+                                      <span className="inline-flex items-center gap-1.5 text-green-600">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        {t.games.round} {game.currentRound}: +{getCurrentRoundScore(player.id)}
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleRevertScore(player.id);
+                                          }}
+                                          disabled={reverting === player.id}
+                                          className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-gray-400 bg-gray-100 hover:bg-gray-200 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150"
+                                          title={t.games.revertScoreTitle}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                                            <path fillRule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L4.81 8.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H4.81l4.72 4.72a.75.75 0 11-1.06 1.06l-6-6a.75.75 0 010-1.06l6-6a.75.75 0 011.06 0z" clipRule="evenodd" />
+                                          </svg>
+                                        </button>
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-500">
+                                        {t.games.waitingForScore}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {/* Right side actions */}
+                                <div className="flex items-center gap-2 ml-3">
+                                  {'isGuest' in player && player.isGuest && game.createdBy === user?.uid && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemoveGuest(player.id);
+                                      }}
+                                      className="inline-flex items-center justify-center w-6 h-6 rounded-full text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-600 transition-colors duration-150"
+                                      title={t.games.removePlayer}
+                                    >
+                                      <XCircleIcon className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                  
+                                  {/* Click hint - only show icon when clickable */}
+                                  {((canSelect && !isSelected && !(isCurrentUser && selectedPlayerId !== null)) || 
+                                   (isCurrentUser && selectedPlayerId !== null)) && (
+                                    <div className="text-blue-500">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2z" />
+                                      </svg>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {canSelect && !isSelected && !(isCurrentUser && selectedPlayerId !== null) && (
-                                <div className="text-right">
-                                  <p className="text-xs text-gray-500">{t.common.clickTo}</p>
-                                  <p className="text-xs font-medium text-blue-600">{t.games.clickToEnterScore.replace(t.common.clickTo + ' ', '')}</p>
-                                </div>
-                              )}
-                              {isCurrentUser && selectedPlayerId !== null && (
-                                <div className="text-right">
-                                  <p className="text-xs text-gray-500">{t.common.clickTo}</p>
-                                  <p className="text-xs font-medium text-blue-600">{t.games.clickToEnterYourScore.replace(t.common.clickTo + ' ', '')}</p>
-                                </div>
-                              )}
                             </div>
                           </motion.div>
                         );
@@ -660,7 +679,7 @@ export default function GamePage() {
       )}
       
       {/* AI Spectator - show only for active participants */}
-      {game && !game.isClosed && user && game.playerIds.includes(user.uid) && aiEnabled && (
+      {game && !game.isClosed && user && game.playerIds.includes(user.uid) && aiCoachEnabled && (
         <AISpectator
           game={game}
           currentRound={game.currentRound}
