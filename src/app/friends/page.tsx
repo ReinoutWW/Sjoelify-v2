@@ -21,6 +21,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { useDebounce } from '@/shared/hooks/useDebounce';
 import Link from 'next/link';
+import { ShareButton } from '@/shared/components/ShareButton';
 
 interface SearchResult extends UserProfile {
   requestSent?: boolean;
@@ -204,45 +205,54 @@ export default function FriendsPage() {
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {/* Header */}
         <div className="border-b border-gray-200">
-          <div className="flex overflow-x-auto scrollbar-hide">
-            <button
-              onClick={() => setActiveTab('friends')}
-              className={`flex items-center flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-medium ${
-                activeTab === 'friends'
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <UserGroupIcon className="w-5 h-5 mr-1.5 sm:mr-2" />
-              <span className="whitespace-nowrap">{t.friends.title}</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={`flex items-center flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-medium ${
-                activeTab === 'requests'
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <BellIcon className="w-5 h-5 mr-1.5 sm:mr-2" />
-              <span className="whitespace-nowrap">{t.friends.requests}</span>
-              {(friendRequests.length + outgoingRequests.length) > 0 && (
-                <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-600 rounded-full">
-                  {friendRequests.length + outgoingRequests.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('search')}
-              className={`flex items-center flex-shrink-0 px-4 sm:px-6 py-4 text-sm font-medium ${
-                activeTab === 'search'
-                  ? 'text-primary-600 border-b-2 border-primary-600'
-                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <MagnifyingGlassIcon className="w-5 h-5 mr-1.5 sm:mr-2" />
-              <span className="whitespace-nowrap">{t.friends.find}</span>
-            </button>
+          <div className="px-4 sm:px-6">
+            <div className="flex items-center justify-between py-4">
+              <h1 className="text-lg font-semibold text-gray-900">{t.friends.title}</h1>
+              <ShareButton 
+                title={t.friends.title}
+                text={t.friends.subtitle}
+              />
+            </div>
+            <div className="flex overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+              <button
+                onClick={() => setActiveTab('friends')}
+                className={`flex items-center flex-shrink-0 px-3 sm:px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'friends'
+                    ? 'text-primary-600 border-primary-600'
+                    : 'text-gray-500 hover:text-gray-700 border-transparent'
+                }`}
+              >
+                <UserGroupIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5" />
+                <span className="whitespace-nowrap">{t.friends.title}</span>
+              </button>
+              <button
+                onClick={() => setActiveTab('requests')}
+                className={`flex items-center flex-shrink-0 px-3 sm:px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'requests'
+                    ? 'text-primary-600 border-primary-600'
+                    : 'text-gray-500 hover:text-gray-700 border-transparent'
+                }`}
+              >
+                <BellIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5" />
+                <span className="whitespace-nowrap">{t.friends.requests}</span>
+                {(friendRequests.length + outgoingRequests.length) > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 text-xs font-medium bg-primary-100 text-primary-600 rounded-full">
+                    {friendRequests.length + outgoingRequests.length}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('search')}
+                className={`flex items-center flex-shrink-0 px-3 sm:px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'search'
+                    ? 'text-primary-600 border-primary-600'
+                    : 'text-gray-500 hover:text-gray-700 border-transparent'
+                }`}
+              >
+                <MagnifyingGlassIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5" />
+                <span className="whitespace-nowrap">{t.friends.find}</span>
+              </button>
+            </div>
           </div>
         </div>
 

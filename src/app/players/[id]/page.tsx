@@ -30,6 +30,7 @@ import { UserSettingsService } from '@/features/account/services/user-settings-s
 import { FriendsService } from '@/features/friends/services/friends-service';
 import { GatePerformanceChart } from '@/features/games/components/GatePerformanceChart';
 import { AIProfileCoach } from '@/features/games/components/AIProfileCoach';
+import { ShareButton } from '@/shared/components/ShareButton';
 
 // Register ChartJS components
 ChartJS.register(
@@ -692,7 +693,15 @@ export default function PlayerProfilePage() {
           className="space-y-6 sm:space-y-8"
         >
           {/* Player Header - Direct on background */}
-          <motion.div variants={fadeIn} className="mb-6">
+          <motion.div variants={fadeIn} className="mb-6 relative">
+            {/* Share Button - positioned in top right */}
+            <div className="absolute top-0 right-0 z-10">
+              <ShareButton 
+                title={`${playerName} - ${t.profile.title}`}
+                text={`${t.games.averageScore}: ${displayStats.averageScore} pts | ${t.statistics.best}: ${displayStats.personalBest} pts`}
+              />
+            </div>
+            
             <div className="flex flex-col items-center gap-4 py-4">
               {/* Modern Avatar */}
               <div className="relative">

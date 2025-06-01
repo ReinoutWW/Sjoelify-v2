@@ -22,6 +22,7 @@ import { LeaderboardService } from '@/features/leaderboard/services/leaderboard-
 import { VerifiedBadge } from '@/shared/components/VerifiedBadge';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { UserProfile } from '@/features/account/types';
+import { ShareButton } from '@/shared/components/ShareButton';
 
 // Register Chart.js components
 ChartJS.register(
@@ -160,30 +161,36 @@ export function GameSummary({ game }: GameSummaryProps) {
       {/* Game Title */}
       <motion.div
         variants={fadeIn}
-        className="flex items-center justify-between"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary-100 to-primary-50 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-primary-600">
+          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl bg-gradient-to-br from-primary-100 to-primary-50 flex items-center justify-center flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 sm:w-6 sm:h-6 text-primary-600">
               <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM9 7.5A.75.75 0 009 9h1.5c.184 0 .355.097.448.257L12 10.5l1.052-1.243A.5.5 0 0113.5 9H15a.75.75 0 000-1.5H9Zm-1.5 6.44 2.72-2.72a.75.75 0 011.06 0l2.72 2.72a.75.75 0 11-1.06 1.06L12 13.06l-.97.97a.75.75 0 01-1.06 0l-.97-.97-.53.53a.75.75 0 01-1.06-1.06Z" clipRule="evenodd" />
             </svg>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{game.title}</h1>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>{t.games.gameSummary}</span>
-              <span>•</span>
-              <time dateTime={formatDate(game.createdAt)}>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 truncate">{game.title}</h1>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-gray-500">
+              <span className="whitespace-nowrap">{t.games.gameSummary}</span>
+              <span className="hidden sm:inline">•</span>
+              <time dateTime={formatDate(game.createdAt)} className="whitespace-nowrap">
                 {formatDate(game.createdAt)}
               </time>
             </div>
           </div>
         </div>
-        {!game.isClosed && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
-            {t.games.round} {game.currentRound}/5
-          </span>
-        )}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <ShareButton 
+            title={`${game.title} - ${t.games.gameSummary}`}
+            text={`${gameStats?.winner.displayName} ${t.games.wonWith} ${gameStats?.winner.totalScore} ${t.games.pts}!`}
+          />
+          {!game.isClosed && (
+            <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-primary-100 text-primary-800 whitespace-nowrap">
+              {t.games.round} {game.currentRound}/5
+            </span>
+          )}
+        </div>
       </motion.div>
 
       {/* Winner Section */}
